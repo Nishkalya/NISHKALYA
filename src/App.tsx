@@ -488,15 +488,35 @@ export default function App() {
   const [isConfigLoading, setIsConfigLoading] = useState(true);
   const [adminTab, setAdminTab] = useState<'messages' | 'content'>('messages');
 
+  const handleFirestoreError = (error: any, operationType: string, path: string) => {
+    const errInfo = {
+      error: error.message || String(error),
+      operationType,
+      path,
+      authInfo: {
+        userId: auth.currentUser?.uid,
+        email: auth.currentUser?.email,
+        emailVerified: auth.currentUser?.emailVerified,
+      }
+    };
+    console.error('Firestore Error:', JSON.stringify(errInfo));
+    // We don't necessarily want to throw and crash the UI, but we log it for the AI to see in logs
+  };
+
   useEffect(() => {
     // Real-time config listener
     const unsubConfig = onSnapshot(doc(db, 'config', 'website'), (snapshot) => {
       if (snapshot.exists()) {
         setWebsiteConfig(snapshot.data());
       } else {
-        // Auto-seed if missing
-        setDoc(doc(db, 'config', 'website'), DEFAULT_CONFIG);
+        // Only try to seed if we have a user and they are admin
+        if (auth.currentUser?.email === 'nishkalya@gmail.com') {
+          setDoc(doc(db, 'config', 'website'), DEFAULT_CONFIG).catch(err => handleFirestoreError(err, 'write', 'config/website'));
+        }
       }
+      setIsConfigLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, 'get', 'config/website');
       setIsConfigLoading(false);
     });
 
@@ -507,12 +527,16 @@ export default function App() {
       if (projs.length > 0) {
         setProjects(projs);
       } else {
-        // Seed projects if empty (one by one or use batches for better performance)
-        DEFAULT_PROJECTS.forEach(async (p, idx) => {
-          const { id, ...rest } = p;
-          await setDoc(doc(db, 'projects', id), { ...rest, order: idx });
-        });
+        // Only try to seed if we have a user and they are admin
+        if (auth.currentUser?.email === 'nishkalya@gmail.com') {
+          DEFAULT_PROJECTS.forEach(async (p, idx) => {
+            const { id, ...rest } = p;
+            await setDoc(doc(db, 'projects', id), { ...rest, order: idx }).catch(err => handleFirestoreError(err, 'write', 'projects/' + id));
+          });
+        }
       }
+    }, (error) => {
+      handleFirestoreError(error, 'list', 'projects');
     });
 
     return () => {
@@ -605,6 +629,8 @@ export default function App() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setAdminMessages(msgs);
+      }, (error) => {
+        handleFirestoreError(error, 'list', 'messages');
       });
       return () => unsubscribe();
     }
@@ -613,10 +639,18 @@ export default function App() {
   const handleAdminLogin = async () => {
     setIsLoggingIn(true);
     try {
+      console.log("Attempting Google Login (Popup)...");
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed", error);
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      console.log("Login successful:", result.user.email);
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      if (error.code === 'auth/popup-blocked') {
+        alert("Pop-up blocked! Please allow pop-ups for this site or try again.");
+      } else {
+        alert("Login failed: " + (error.message || "Unknown error"));
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -2946,6 +2980,7 @@ export default function App() {
                 <button onClick={() => scrollToSection('services')} className="block text-zinc-600 hover:text-zinc-900 text-xs md:text-sm transition-colors font-light text-left w-full">Services</button>
                 <button onClick={() => { setCurrentView('projects'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="block text-zinc-600 hover:text-zinc-900 text-xs md:text-sm transition-colors font-light text-left w-full">Projects</button>
                 <button onClick={() => scrollToSection('contact')} className="block text-zinc-600 hover:text-zinc-900 text-xs md:text-sm transition-colors font-light text-left w-full">Contact</button>
+                <button onClick={() => setCurrentView('admin')} className="block text-zinc-200 hover:text-zinc-400 text-[8px] transition-colors font-light text-left w-full pt-4">Admin Login</button>
               </div>
               <div className="space-y-3 md:space-y-4">
                 <div className="text-[9px] md:text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-6">Social</div>
