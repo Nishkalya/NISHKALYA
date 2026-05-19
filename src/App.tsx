@@ -70,6 +70,7 @@ import {
 import { 
   signInWithPopup, 
   GoogleAuthProvider, 
+  signInWithEmailAndPassword,
   onAuthStateChanged, 
   signOut,
   User 
@@ -615,6 +616,8 @@ export default function App() {
   const [isAdminView, setIsAdminView] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [selectedAdminMessage, setSelectedAdminMessage] = useState<any | null>(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -673,6 +676,20 @@ export default function App() {
     setCurrentView('home');
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      console.log("Email login successful");
+    } catch (error: any) {
+      console.error("Email login failed:", error);
+      alert("Login failed: " + (error.message || "Invalid credentials"));
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const AdminDashboard = () => {
     if (!currentUser) {
       return (
@@ -683,12 +700,50 @@ export default function App() {
             </div>
             <h2 className="text-3xl font-light text-zinc-900" style={{ fontFamily: "'Georgia', serif" }}>Admin Access</h2>
             <p className="text-zinc-600 text-sm font-light">Please log in with the authorized account to access the dashboard and manage inquiries.</p>
+            
+            <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1">Email Address</label>
+                <input 
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:border-[#D8B45C] outline-none transition-all"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1">Password</label>
+                <input 
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm focus:border-[#D8B45C] outline-none transition-all"
+                  required
+                />
+              </div>
+              <button 
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-4 bg-[#D8B45C] text-white font-bold rounded-2xl hover:bg-[#A67C00] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px] shadow-lg shadow-[#D8B45C]/20"
+              >
+                {isLoggingIn ? "Verifying..." : "Login with Password"}
+              </button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-100"></div></div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-white px-4 text-zinc-400 font-bold">Or</span></div>
+            </div>
+
             <button 
               onClick={handleAdminLogin}
               disabled={isLoggingIn}
-              className="w-full py-4 bg-[#1f2328] text-white font-bold rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
+              className="w-full py-4 bg-zinc-50 border border-zinc-200 text-zinc-700 font-bold rounded-2xl hover:bg-zinc-100 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
             >
-              <LogIn size={16} /> {isLoggingIn ? "Authenticating..." : "Login with Google"}
+              <LogIn size={16} /> {isLoggingIn ? "Authenticating..." : "Continue with Google"}
             </button>
           </div>
         </div>
