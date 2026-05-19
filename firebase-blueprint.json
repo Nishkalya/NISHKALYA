@@ -1,86 +1,71 @@
 {
   "entities": {
-    "Message": {
-      "title": "Contact Message",
-      "description": "A message submitted via the contact form",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "Name of the sender"
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "Email of the sender"
-        },
-        "subject": {
-          "type": "string",
-          "description": "Subject line"
-        },
-        "message": {
-          "type": "string",
-          "description": "The message body"
-        },
-        "company": {
-          "type": "string",
-          "description": "Company name"
-        },
-        "service": {
-          "type": "string",
-          "description": "Selected service"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "When the message was sent"
-        },
-        "status": {
-          "type": "string",
-          "enum": ["unread", "read", "archived"],
-          "description": "Status of the message"
-        }
-      },
-      "required": ["name", "email", "message", "createdAt", "status"]
-    },
     "Project": {
-      "title": "Portfolio Project",
-      "description": "A project in the portfolio gallery",
+      "title": "Project",
+      "description": "A portfolio project entity",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "category": { "type": "string" },
-        "desc": { "type": "string" },
-        "iconType": { "type": "string", "enum": ["message", "eye", "layout", "chart"] },
-        "link": { "type": "string" },
-        "fullDetails": { "type": "object" },
-        "order": { "type": "number" }
+        "title": { "type": "string", "description": "The title of the project" },
+        "category": { "type": "string", "description": "The category of the project" },
+        "desc": { "type": "string", "description": "Short description of the project" },
+        "iconType": { "type": "string", "enum": ["message", "eye", "layout", "chart"], "description": "Icon type identifier" },
+        "link": { "type": "string", "format": "uri", "description": "Live preview URL" },
+        "screenshots": { "type": "array", "items": { "type": "string" }, "description": "URLs of project screenshots" },
+        "videoUrl": { "type": "string", "format": "uri", "description": "URL of a project video" },
+        "fullDetails": {
+          "type": "object",
+          "properties": {
+            "overview": { "type": "string", "description": "Detailed markdown overview" },
+            "features": { "type": "array", "items": { "type": "string" }, "description": "List of key features" },
+            "techStack": { 
+              "type": "array", 
+              "items": { 
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "role": { "type": "string" }
+                }
+              }
+            },
+            "structure": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "desc": { "type": "string" }
+                }
+              }
+            },
+            "license": { "type": "string" },
+            "status": { "type": "string", "description": "e.g., Active Node, Production" }
+          }
+        },
+        "isActive": { "type": "boolean", "description": "Whether the project is visible on the main page" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "category", "desc", "iconType"]
     },
-    "WebsiteConfig": {
-      "title": "Website Configuration",
-      "description": "Global content and configuration for the website",
+    "Admin": {
+      "title": "Admin",
+      "description": "User with administrative privileges",
       "type": "object",
       "properties": {
-        "hero": { "type": "object" },
-        "about": { "type": "object" },
-        "services": { "type": "array" }
-      }
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin"] }
+      },
+      "required": ["email", "role"]
     }
   },
   "firestore": {
-    "/messages/{messageId}": {
-      "schema": "Message",
-      "description": "Collection of contact form submissions"
-    },
-    "/projects/{projectId}": {
+    "projects": {
       "schema": "Project",
-      "description": "Dynamic portfolio projects"
+      "description": "Collection of projects shown on the portfolio"
     },
-    "/config/website": {
-      "schema": "WebsiteConfig",
-      "description": "Global website content"
+    "admins": {
+      "schema": "Admin",
+      "description": "Collection of admin users"
     }
   }
 }

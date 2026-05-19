@@ -52,7 +52,16 @@ import {
   Package,
   Box,
   Activity,
-  Maximize2
+  Maximize2,
+  Minimize2,
+  Square,
+  Columns2,
+  Monitor,
+  Smartphone,
+  PanelLeftClose,
+  List,
+  FileJson,
+  Compass
 } from 'lucide-react';
 import { 
   collection, 
@@ -76,375 +85,12 @@ import {
   User 
 } from 'firebase/auth';
 import { db, auth } from './lib/firebase';
+import { Project, projectService } from './services/projectService';
+import { DEFAULT_CONFIG, DEFAULT_PROJECTS } from './constants';
+import firebaseConfig from '../firebase-applet-config.json';
 
-interface Project {
-  id: string;
-  title: string;
-  category: string;
-  desc: string;
-  iconType: 'message' | 'eye' | 'layout' | 'chart';
-  link?: string;
-  fullDetails?: {
-    overview?: string;
-    features: string[];
-    techStack: { name: string, role?: string }[];
-    structure: { name: string, desc: string }[];
-    license: string;
-    acknowledgements?: string;
-    howItWorks?: string[];
-    runLocally?: string[];
-    improvements?: string[];
-  };
-}
 
-const DEFAULT_PROJECTS: Project[] = [
-  {
-    id: '1',
-    title: "Orion — AI Customer Intelligence",
-    category: "AI · NLP · SaaS",
-    desc: "An LLM-powered platform that analyzes customer conversations in real-time, surfacing insights and automating support workflows at scale.",
-    iconType: 'message',
-    link: "https://vishal291137.github.io/TIME-LIGHT/",
-    fullDetails: {
-      overview: "# Orion Intelligence\n\nOrion is a state-of-the-art **LLM-powered platform** designed to bridge the gap between customer voices and actionable business intelligence. It processes thousands of conversations simultaneously to extract sentiment, detect urgent issues, and recommend responses.\n\n### ⚡ Strategic Impact\nBy implementing Orion, support teams see a **40% reduction in response times** and a significantly higher NPS due to more accurate and personalized interactions.",
-      features: [
-        "Real-time sentiment analysis using customized LLMs",
-        "Automated support ticket categorization & prioritization",
-        "Integration with popular CRM systems (Salesforce, Zendesk)",
-        "Interactive dashboard with trend prediction & volume forecasting"
-      ],
-      techStack: [
-        { name: "Python / FastAPI", role: "Scalable backend & AI orchestration" },
-        { name: "OpenAI GPT-4", role: "Primary LLM for NLP tasks" },
-        { name: "Pinecone", role: "Vector storage for semantic search" },
-        { name: "React", role: "Dynamic analytics frontend" }
-      ],
-      structure: [
-        { name: "api/sentiment.py", desc: "Core NLP inference engine logic" },
-        { name: "db/vectors.py", desc: "Semantic embedding management" },
-        { name: "ui/dashboard/", desc: "Real-time stats & visualization" },
-        { name: "config/prompts.yaml", desc: "Optimized LLM prompt templates" }
-      ],
-      license: "Proprietary License — All Rights Reserved.",
-      howItWorks: [
-        "Captures incoming webhooks from communication channels",
-        "Generates vector embeddings for semantic understanding",
-        "Queries long-term memory for contextual relevance",
-        "Outputs direct actions or suggested responses to human agents"
-      ],
-      runLocally: [
-        "export OPENAI_API_KEY='your_key_here'",
-        "docker-compose build",
-        "docker-compose up -d",
-        "open http://localhost:8000/docs"
-      ],
-      improvements: [
-        "Multi-lingual agentic support",
-        "On-premise deployment options",
-        "Fine-grained role-based access control",
-        "Advanced voice-to-text integration"
-      ]
-    }
-  },
-  {
-    id: '2',
-    title: "Flux — Smart City Dashboard",
-    category: "Computer Vision · IoT",
-    desc: "A real-time urban monitoring system using computer vision to manage traffic, energy, and public safety across a network of smart sensors.",
-    iconType: 'eye',
-    link: "https://vishal291137.github.io/TIME-LIGHT/",
-    fullDetails: {
-      overview: "# Flux Urban Monitoring\n\nFlux transforms urban management into a **data-driven science**. By leveraging advanced computer vision at the edge, Flux monitors traffic flow, detects safety incidents, and optimizes street lighting to reduce energy consumption by up to 30%.\n\n### 🌐 Vision\nTo build cities that breathe and respond in real-time, creating safer and more efficient environments for millions.",
-      features: [
-        "Real-time object detection for traffic flow optimization",
-        "Emergency incident detection (accidents, fires) using CNNs",
-        "Adaptive energy management for smart street lighting",
-        "Public safety alerts via real-time edge processing"
-      ],
-      techStack: [
-        { name: "TensorRT", role: "High-performance edge inference" },
-        { name: "NVIDIA Jetson", role: "Hardware for edge computer vision" },
-        { name: "Mqtt", role: "Low-latency IoT communication protocol" },
-        { name: "D3.js", role: "Complex spatial data visualization" }
-      ],
-      structure: [
-        { name: "inference/yolo_v8.py", desc: "Optimized object detection model" },
-        { name: "iot/bridge.py", desc: "Edge-to-cloud notification layer" },
-        { name: "viz/map.tsx", desc: "Real-time geographic visualization" }
-      ],
-      license: "Open Source Apache 2.0 — Free for public municipal use.",
-      howItWorks: [
-        "Captures 4K video streams from city cameras",
-        "Processes frames locally to detect traffic patterns",
-        "Aggregates data via secure MQTT channels",
-        "Visualizes city-wide status in the Flux Dashboard"
-      ],
-      runLocally: [
-        "pip install flux-cv-toolkit",
-        "flux init --city-config default",
-        "flux run --vision-only",
-        "Visit http://localhost:3000/flux"
-      ],
-      improvements: [
-        "Predictive traffic jam avoidance modules",
-        "Privacy-first anonymization at source",
-        "Solar-powered sensor integration",
-        "Public transit ETA synchronization"
-      ]
-    }
-  },
-  {
-    id: '3',
-    title: "Aura — Creative Design Engine",
-    category: "Generative AI · Creative",
-    desc: "A generative AI platform for brand teams to create consistent, on-brand visual assets at 100× speed, trained on proprietary brand guidelines.",
-    iconType: 'layout',
-    link: "https://vishal291137.github.io/TIME-LIGHT/",
-    fullDetails: {
-      overview: "# Aura Generative Creative\n\nAura is where **Brand Integrity meets Generative Power**. Aura allows designers to train custom adapters on their own brand assets, ensuring that every AI-generated image or layout adheres strictly to brand colors, styles, and philosophy.\n\n### ✨ Creative Freedom\nDesigners no longer spend hours on repetitive tasks. Aura handles the grunt work, allowing the team to focus on pure strategy and creative direction.",
-      features: [
-        "Custom LoRA training on proprietary brand assets",
-        "Multi-platform asset generation (Social, Web, Print)",
-        "Vector-compatible SVG generation from text prompts",
-        "Integrated collaborative workspace for creative reviews"
-      ],
-      techStack: [
-        { name: "Stable Diffusion XL", role: "Foundation image generation model" },
-        { name: "PyTorch", role: "Deep learning framework for LoRA training" },
-        { name: "React + Tailwind", role: "Seamless creative studio UI" },
-        { name: "AWS S3 / CloudFront", role: "High-speed asset delivery" }
-      ],
-      structure: [
-        { name: "training/lora_trainer.py", desc: "Custom brand adapter logic" },
-        { name: "generation/pipeline.py", desc: "Multi-modal generation stack" },
-        { name: "studio/editor.tsx", desc: "Canvas-based creative workspace" }
-      ],
-      license: "Commercial SaaS License — Enterprise-only.",
-      howItWorks: [
-        "Accepts text-to-image or image-to-image prompts",
-        "Applies brand-specific LoRA adapters at inference",
-        "Up-scales images using neural super-resolution",
-        "Exports ready-to-use marketing assets"
-      ],
-      runLocally: [
-        "npm install aura-studio-client",
-        "aura-dev login --api-key=test",
-        "aura-dev start-workspace",
-        "Accessible at http://localhost:5173"
-      ],
-      improvements: [
-        "Video-to-Video style transfer",
-        "Integrated font generation",
-        "Automated AD copy generation",
-        "One-click social media scheduling"
-      ]
-    }
-  },
-  {
-    id: '4',
-    title: "Sage — Predictive Finance AI",
-    category: "ML · Analytics · FinTech",
-    desc: "A machine learning suite for financial advisors that predicts market trends, profiles risk appetite, and auto-generates investment strategies.",
-    iconType: 'chart',
-    link: "https://vishal291137.github.io/TIME-LIGHT/",
-    fullDetails: {
-      overview: "# Sage Predictive Analytics\n\nSage is a **financial co-pilot** that uses ensemble machine learning to forecast market shifts. It analyzes technical indicators, social sentiment, and macro-economic factors to give financial advisors a 72-hour window of predictive foresight.\n\n### 📈 Strategic Precision\nWith Sage, firms can make data-validated decisions in high-volatility environments, protecting client assets and identifying alpha opportunities early.",
-      features: [
-        "Multi-variable time-series forecasting (Prophet/XGBoost)",
-        "Real-time social sentiment analysis from financial news",
-        "Automated portfolio rebalancing recommendations",
-        "Advanced risk heatmaps for global assets"
-      ],
-      techStack: [
-        { name: "XGBoost / LightGBM", role: "Primary forecasting models" },
-        { name: "Redis", role: "High-speed live data caching" },
-        { name: "PostgreSQL", role: "Relational storage for historical data" },
-        { name: "Recharts", role: "Interactive financial charting" }
-      ],
-      structure: [
-        { name: "models/forecaster.py", desc: "XGBoost predictive logic" },
-        { name: "ingestion/live_feed.py", desc: "Market data websocket handler" },
-        { name: "analytics/metrics.ts", desc: "Financial KPI calculations" }
-      ],
-      license: "B2B Enterprise License — Compliance-ready.",
-      howItWorks: [
-        "Ingests millions of data points every minute",
-        "Normalizes data across global timezones",
-        "Runs parallel simulations for risk profiling",
-        "Generates PDF strategies for end-clients"
-      ],
-      runLocally: [
-        "source venv/bin/activate",
-        "pip install -r requirements.txt",
-        "sage run-simulation --asset=BTC",
-        "View logs in terminal"
-      ],
-      improvements: [
-        "Explainable AI (XAI) for regulatory reports",
-        "Crypto-native liquidity modeling",
-        "Automated tax-harvesting logic",
-        "Collaborative advisor dashboards"
-      ]
-    }
-  },
-  {
-    id: '5',
-    title: "Time Light — Aesthetic Chronometry",
-    category: "Web · Creative · Experience",
-    desc: "A high-performance web experience exploring the intersection of light, shadow, and the temporal dimensions of digital space.",
-    iconType: 'layout',
-    link: "https://vishal291137.github.io/TIME-LIGHT/",
-    fullDetails: {
-      overview: "# Website License\n\nA sleek and modern web-based digital clock interface with dynamic lighting and time display.\n\n### 🔥 Key Attributes\nThis project explores the intersection of **temporal precision** and **aesthetic luminosity**. Designed for high-end digital environments where time is not just data, but a visual anchor.\n\n### 🚀 Vision\nTo create a time-telling experience that feels alive—responding to the rhythm of the day through subtle shifts in glow and shadow.",
-      features: [
-        "Real-time clock interface with high precision",
-        "Smooth visual transitions with modern UI patterns",
-        "Fully responsive design optimized for mobile and desktop",
-        "Light/Dark mode aesthetics with dynamic glowing motifs"
-      ],
-      techStack: [
-        { name: "HTML", role: "Page structure & semantic layout" },
-        { name: "CSS", role: "Styling, animations & glow effects" },
-        { name: "JavaScript", role: "Real-time clock logic & DOM updates" }
-      ],
-      structure: [
-        { name: "index.html", desc: "Main entry point and HTML skeleton" },
-        { name: "main.css", desc: "Global visual styling and transitions" },
-        { name: "main.js", desc: "Live temporal logic and clock updates" },
-        { name: "assets/", desc: "Optimized media and visual assets" }
-      ],
-      license: "MIT License — Free to use and modify with attribution.",
-      acknowledgements: "Inspired by minimal design concepts for clock UIs. Created with ❤️ by Vishal291137",
-      howItWorks: [
-        "Uses setInterval() in JS to update every second",
-        "Real-time clock pads zeros for hours/minutes/seconds",
-        "Glowing text effect using CSS text-shadow properties",
-        "Deep navy/black backgrounds for maximum visual contrast"
-      ],
-      runLocally: [
-        "git clone https://github.com/VISHAL291137/TIME-LIGHT.git",
-        "cd TIME-LIGHT",
-        "Open index.html in any modern browser"
-      ],
-      improvements: [
-        "AM/PM toggle logic",
-        "Global Timezone selector",
-        "Customizable Alarm features",
-        "Analog clock visual overlay"
-      ]
-    }
-  }
-];
 
-const DEFAULT_CONFIG = {
-  colors: {
-    primary: "#D8B45C",
-    secondary: "#A67C00"
-  },
-  hero: {
-    badge: "śuddha-kalpanā · sūkṣma-karma",
-    heading: "Ready to build something Remarkable?",
-    subheading: "From your first digital step to a fully realized intelligent product — Nishkalya delivers reliable development, swift execution, and sustained growth.",
-    stats: [
-      { label: 'Projects Delivered', value: '120+' },
-      { label: 'Client Satisfaction', value: '98%' },
-      { label: 'AI Models Deployed', value: '40+' },
-      { label: 'Average Rating', value: '5★' },
-    ]
-  },
-  about: {
-    badge: "About Us",
-    heading: "Where Imagination Meets Intelligence",
-    paragraphs: [
-      "Nishkalya is an AI-first digital studio and full-stack solution hub — built on the Sanskrit principles of śuddha-kalpanā (pure creation) and sūkṣma-karma (precise craftsmanship).",
-      "We don't just build software. We shape the future of how humans and machines interact. Founded on the belief that great technology must be both powerful and beautiful, our team of engineers, designers, and AI researchers work together to create products that genuinely move people.",
-      "Every solution we deliver is sthira (stable), śubhra (clean), and samanvita (well-integrated). Our approach is simple: engineer experiences that feel balanced, intentional, and dependable.",
-      "With hands-on expertise in machine learning, LLM integration, computer vision, UI/UX design, full-stack development, Python automation, and system optimization, Nishkalya merges modern technology with a refined, user-centered philosophy inspired by timeless design values.",
-      "Whether you are beginning your first digital journey or expanding an existing vision — Nishkalya delivers reliable development, swift execution, and sustained long-term support."
-    ],
-    skills: ["Machine Learning", "UI/UX Design", "LLM Integration", "Computer Vision", "Full-Stack Dev", "AI Strategy"]
-  },
-  services: [
-    {
-      title: "AI Product Development",
-      desc: "End-to-end development of AI-powered products from model selection to production deployment.",
-      why: "Static software is legacy. AI-first products adapt, learn, and scale your impact exponentially.",
-      what: "We engineer custom model layers, RAG systems, and deployment pipelines that turn raw data into autonomous value.",
-      details: [
-        "Custom LLM fine-tuning for proprietary data",
-        "Scalable vector database implementation (RAG)",
-        "Autonomous agent development (LangGraph/AutoGPT)",
-        "Production-ready API orchestration"
-      ],
-      outcome: "Intelligent systems that automate complex decision making."
-    },
-    {
-      title: "UI/UX Design Systems",
-      desc: "Bespoke design systems that fuse aesthetic brilliance with intelligent UX patterns.",
-      why: "Beauty is not an ornament; it is the bridge of trust between complex technology and the human user.",
-      what: "We build scalable component libraries, high-fidelity prototypes, and motion systems.",
-      details: [
-        "Atomic design system architecture",
-        "High-fidelity interactive prototyping",
-        "Accessibility (A11y) & Usability audits",
-        "Motion & Interaction language design"
-      ],
-      outcome: "Cohesive, stunning, and user-centered digital identities."
-    },
-    {
-      title: "LLM Integration",
-      desc: "Seamlessly weave large language models into your existing workflows and automated pipelines.",
-      why: "Knowledge is only powerful when accessible. LLMs turn silent data into conversational intelligence.",
-      what: "We implement RAG architectures, prompt engineering, and intelligent agentic workflows.",
-      details: [
-        "Advanced Prompt Engineering techniques",
-        "Token usage optimization & Cost management",
-        "Multi-modal model integration (Text/Image/Audio)",
-        "Real-time streaming response handling"
-      ],
-      outcome: "Reduced operational overhead through natural language automation."
-    },
-    {
-      title: "Computer Vision",
-      desc: "Real-time object detection and visual search systems that transform how products see.",
-      why: "For a machine to serve the world, it must first be able to see and understand its environment.",
-      what: "We specialize in edge inference, real-time spatial analysis, and neural image processing.",
-      details: [
-        "Real-time object detection and tracking",
-        "Image segmentation & Pattern recognition",
-        "Edge deployment (TensorRT/CoreML)",
-        "Automated visual quality control"
-      ],
-      outcome: "Enhanced visual intelligence for physical and digital spaces."
-    },
-    {
-      title: "Data Intelligence",
-      desc: "Turn raw data into strategic advantage with custom analytics and predictive models.",
-      why: "Decisions made in the dark are gambles. Data intelligence turns uncertainty into strategic foresight.",
-      what: "We develop predictive modeling, interactive dashboards, and automated reporting systems.",
-      details: [
-        "Predictive analytics & Time-series forecasting",
-        "Interactive D3.js/Recharts dashboards",
-        "Data cleanup & ETL pipeline engineering",
-        "Statistical modeling & insight generation"
-      ],
-      outcome: "Actionable foresight that drives revenue and efficiency."
-    },
-    {
-      title: "Web & App Development",
-      desc: "High-performance, scalable applications built with modern frameworks and pixel-perfect design.",
-      why: "Your digital presence is your most valuable asset. It should be as resilient as it is beautiful.",
-      what: "We create full-stack architectures, API orchestrations, and high-performance frontend engineering.",
-      details: [
-        "React/Next.js/Node.js ecosystem mastery",
-        "Low-latency API architecture & WebSockets",
-        "Cloud-native deployment (GCP/AWS/Azure)",
-        "Microservices & Serverless integration"
-      ],
-      outcome: "Scalable foundations tailored for the modern web."
-    }
-  ]
-};
 
 export default function App() {
   const containerVariants: any = {
@@ -470,6 +116,14 @@ export default function App() {
     }
   };
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [adminMessages, setAdminMessages] = useState<any[]>([]);
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [isActionPending, setIsActionPending] = useState(false);
+  const [selectedAdminMessage, setSelectedAdminMessage] = useState<any | null>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -481,9 +135,14 @@ export default function App() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [activePreviewUrl, setActivePreviewUrl] = useState<string | null>(null);
   const [selectedProjectForPreview, setSelectedProjectForPreview] = useState<Project | null>(null);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile' | 'full'>('desktop');
+  const [isLiveViewExpanded, setIsLiveViewExpanded] = useState(false);
+  const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [showFullPreview, setShowFullPreview] = useState(false);
+  const [detailsTab, setDetailsTab] = useState<'details' | 'browse'>('details');
   const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin'>('home');
   const [websiteConfig, setWebsiteConfig] = useState<any>(DEFAULT_CONFIG);
   const [isConfigLoading, setIsConfigLoading] = useState(true);
@@ -511,7 +170,7 @@ export default function App() {
         setWebsiteConfig(snapshot.data());
       } else {
         // Only try to seed if we have a user and they are admin
-        if (auth.currentUser?.email === 'nishkalya@gmail.com') {
+        if (isAdmin && currentUser?.email === 'nishkalya@gmail.com') {
           setDoc(doc(db, 'config', 'website'), DEFAULT_CONFIG).catch(err => handleFirestoreError(err, 'write', 'config/website'));
         }
       }
@@ -529,10 +188,11 @@ export default function App() {
         setProjects(projs);
       } else {
         // Only try to seed if we have a user and they are admin
-        if (auth.currentUser?.email === 'nishkalya@gmail.com') {
-          DEFAULT_PROJECTS.forEach(async (p, idx) => {
+        if (isAdmin && currentUser?.email === 'nishkalya@gmail.com') {
+          DEFAULT_PROJECTS.forEach(async (p: any, idx: number) => {
             const { id, ...rest } = p;
-            await setDoc(doc(db, 'projects', id), { ...rest, order: idx }).catch(err => handleFirestoreError(err, 'write', 'projects/' + id));
+            // Use provided ID if available, otherwise it's just a seed
+            await setDoc(doc(db, 'projects', id || String(idx)), { ...rest, order: idx }).catch(err => handleFirestoreError(err, 'write', 'projects/' + (id || idx)));
           });
         }
       }
@@ -544,7 +204,7 @@ export default function App() {
       unsubConfig();
       unsubProjects();
     };
-  }, []);
+  }, [isAdmin, currentUser]);
 
   useEffect(() => {
     if (activePreviewUrl) {
@@ -607,21 +267,37 @@ export default function App() {
     }, 100);
   };
 
+
   const [selectedService, setSelectedService] = useState<any | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [showFullAbout, setShowFullAbout] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [adminMessages, setAdminMessages] = useState<any[]>([]);
-  const [isAdminView, setIsAdminView] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [selectedAdminMessage, setSelectedAdminMessage] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      if (user) {
+        try {
+          const adminDoc = await projectService.checkIsAdmin(user.uid);
+          setIsAdmin(adminDoc);
+          // If the user is our bootstrap email but not in admins yet, we'll auto-boot if they hit it or allow them to self-promote
+          if (!adminDoc && user.email === 'nishkalya@gmail.com') {
+             // For now, we'll treat them as admin in the UI but they might need to 'Verify' to write if rules are strict
+             setIsAdmin(true); 
+          }
+        } catch (err) {
+          console.error("Admin check failed", err);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -647,6 +323,7 @@ export default function App() {
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider);
       console.log("Login successful:", result.user.email);
+      setCurrentView('admin');
     } catch (error: any) {
       console.error("Login failed:", error);
       
@@ -672,19 +349,35 @@ export default function App() {
   };
 
   const handleAdminLogout = async () => {
-    await signOut(auth);
-    setCurrentView('home');
+    setIsLoggingIn(true);
+    try {
+      await signOut(auth);
+      setCurrentView('home');
+    } catch (error) {
+      console.error("Sign out failed", error);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
     try {
+      setLoginError(null);
+      console.log("Attempting Email/Password Login for:", loginEmail);
       await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       console.log("Email login successful");
+      setCurrentView('admin'); // Ensure we switch to admin view on success
     } catch (error: any) {
       console.error("Email login failed:", error);
-      alert("Login failed: " + (error.message || "Invalid credentials"));
+      if (error.code === 'auth/operation-not-allowed') {
+        setLoginError('setup-required');
+      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        alert("Invalid Email or Password. Please check your credentials or ensure the user exists in Firebase Console.");
+      } else {
+        alert("Login failed: " + (error.message || "Unknown error"));
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -701,6 +394,33 @@ export default function App() {
             <h2 className="text-3xl font-light text-zinc-900" style={{ fontFamily: "'Georgia', serif" }}>Admin Access</h2>
             <p className="text-zinc-600 text-sm font-light">Please log in with the authorized account to access the dashboard and manage inquiries.</p>
             
+            {loginError === 'setup-required' && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 bg-amber-50 border border-amber-100 rounded-2xl text-left space-y-4"
+              >
+                <div className="flex items-center gap-3 text-amber-800 font-bold text-[10px] uppercase tracking-widest">
+                  <div className="w-6 h-6 bg-amber-200 rounded-full flex items-center justify-center text-amber-900 ring-4 ring-amber-100">!</div>
+                  Setup Required
+                </div>
+                <div className="text-[11px] text-amber-800/80 space-y-3 leading-relaxed">
+                  <p>Email/Password login is currently <span className="font-bold underline">disabled</span> in your Firebase Console.</p>
+                  <ol className="list-decimal list-inside space-y-2 font-medium">
+                    <li>Open <a href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`} target="_blank" rel="noopener noreferrer" className="underline text-amber-900">Firebase Auth Console</a></li>
+                    <li>Click <strong>Add new provider</strong> → <strong>Email/Password</strong> → <strong>Enable</strong>.</li>
+                    <li>Go to the <strong>Users</strong> tab and <strong>Add user</strong> manually with these credentials.</li>
+                  </ol>
+                  <button 
+                    onClick={() => setLoginError(null)}
+                    className="text-amber-900 font-bold hover:underline"
+                  >
+                    Got it, I've enabled it. Try again.
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
             <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-1">Email Address</label>
@@ -756,17 +476,26 @@ export default function App() {
           <div className="max-w-md w-full text-center space-y-6 p-10 bg-red-50 border border-red-100 rounded-3xl">
             <h2 className="text-xl font-bold text-red-800">Access Denied</h2>
             <p className="text-red-600 text-sm">Your account ({currentUser.email}) is not authorized to access the admin panel.</p>
-            <button onClick={handleAdminLogout} className="text-zinc-600 hover:text-zinc-900 text-xs font-bold uppercase tracking-widest">Sign Out</button>
+            <button 
+              onClick={handleAdminLogout} 
+              disabled={isLoggingIn}
+              className="text-zinc-600 hover:text-zinc-900 text-xs font-bold uppercase tracking-widest disabled:opacity-50"
+            >
+              {isLoggingIn ? "Signing Out..." : "Sign Out"}
+            </button>
           </div>
         </div>
       );
     }
 
     const updateConfig = async (newConfig: any) => {
+      setIsActionPending(true);
       try {
         await setDoc(doc(db, 'config', 'website'), newConfig);
       } catch (err) {
         console.error("Failed to update config", err);
+      } finally {
+        setIsActionPending(false);
       }
     };
 
@@ -780,6 +509,16 @@ export default function App() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {isActionPending && (
+              <motion.div 
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2 text-[#A67C00] text-[10px] font-bold uppercase tracking-widest mr-4"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-[#A67C00] animate-pulse"></div>
+                Syncing...
+              </motion.div>
+            )}
             <div className="flex bg-zinc-100 p-1 rounded-xl">
               <button 
                 onClick={() => setAdminTab('messages')}
@@ -794,7 +533,39 @@ export default function App() {
                 <Edit2 size={12} /> Content
               </button>
             </div>
-            <button onClick={handleAdminLogout} className="p-3 bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 rounded-xl transition-all"><LogOut size={18} /></button>
+            <button 
+              onClick={handleAdminLogout} 
+              disabled={isLoggingIn}
+              className="p-3 bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 rounded-xl transition-all disabled:opacity-50"
+            >
+              <LogOut size={18} className={isLoggingIn ? "animate-pulse" : ""} />
+            </button>
+            {!isAdmin && currentUser?.email === 'nishkalya@gmail.com' && (
+              <button 
+                onClick={async () => {
+                  if (currentUser) {
+                    setIsActionPending(true);
+                    try {
+                      await setDoc(doc(db, 'admins', currentUser.uid), {
+                        email: currentUser.email,
+                        promotedBy: 'system_bootstrap',
+                        createdAt: serverTimestamp()
+                      });
+                      setIsAdmin(true);
+                      alert("Admin status verified. Refreshing permissions.");
+                    } catch (err) {
+                      console.error("Self-promotion failed", err);
+                      alert("Verification failed. Check Firestore rules.");
+                    } finally {
+                      setIsActionPending(false);
+                    }
+                  }
+                }}
+                className="px-6 py-3 bg-[#A67C00] text-white font-bold rounded-xl hover:bg-[#8A6600] transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-amber-600/20 flex items-center gap-2"
+              >
+                <Shield size={16} /> Verify
+              </button>
+            )}
           </div>
         </div>
 
@@ -1372,25 +1143,37 @@ export default function App() {
               <div className="mt-12 pt-8 border-t border-zinc-100 flex flex-wrap gap-4">
                 {message.status === 'unread' && (
                   <button 
+                    disabled={isActionPending}
                     onClick={async () => {
-                      await updateDoc(doc(db, 'messages', message.id), { status: 'read' });
-                      onClose();
+                      setIsActionPending(true);
+                      try {
+                        await updateDoc(doc(db, 'messages', message.id), { status: 'read' });
+                        onClose();
+                      } finally {
+                        setIsActionPending(false);
+                      }
                     }}
-                    className="px-8 py-4 bg-[#D8B45C] text-white rounded-2xl hover:bg-[#C49B3C] transition-all text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-amber-600/20 flex items-center gap-2"
+                    className="px-8 py-4 bg-[#D8B45C] text-white rounded-2xl hover:bg-[#C49B3C] transition-all text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-amber-600/20 flex items-center gap-2 disabled:opacity-70"
                   >
-                    <Check size={14} /> Mark as Read
+                    <Check size={14} className={isActionPending ? "animate-pulse" : ""} /> {isActionPending ? "Updating..." : "Mark as Read"}
                   </button>
                 )}
                 <button 
+                  disabled={isActionPending}
                   onClick={async () => {
                     if (window.confirm("Are you sure you want to delete this message?")) {
-                      await deleteDoc(doc(db, 'messages', message.id));
-                      onClose();
+                      setIsActionPending(true);
+                      try {
+                        await deleteDoc(doc(db, 'messages', message.id));
+                        onClose();
+                      } finally {
+                        setIsActionPending(false);
+                      }
                     }
                   }}
-                  className="px-8 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl hover:bg-red-100 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"
+                  className="px-8 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl hover:bg-red-100 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-70"
                 >
-                  <Trash size={14} /> Delete Inquiry
+                  <Trash size={14} className={isActionPending ? "animate-pulse" : ""} /> {isActionPending ? "Deleting..." : "Delete Inquiry"}
                 </button>
               </div>
             </div>
@@ -1596,6 +1379,21 @@ export default function App() {
     });
   };
 
+  if (isAuthLoading || isConfigLoading) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+         <div className="flex flex-col items-center gap-4">
+           <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-10 h-10 border-2 border-zinc-200 border-t-[#D8B45C] rounded-full shadow-sm"
+            />
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-zinc-400 animate-pulse">Initializing Studio</span>
+         </div>
+      </div>
+    );
+  }
+
   const handleEditProject = (project: Project) => {
     setProjectModal({
       isOpen: true,
@@ -1612,11 +1410,14 @@ export default function App() {
 
   const confirmDelete = async () => {
     if (projectToDelete) {
+      setIsActionPending(true);
       try {
         await deleteDoc(doc(db, 'projects', projectToDelete));
         setProjectToDelete(null);
       } catch (err) {
         console.error("Failed to delete project", err);
+      } finally {
+        setIsActionPending(false);
       }
     }
   };
@@ -1625,6 +1426,7 @@ export default function App() {
     e.preventDefault();
     if (!projectModal.project) return;
 
+    setIsActionPending(true);
     try {
       const { id, ...rest } = projectModal.project;
       if (projectModal.mode === 'add') {
@@ -1636,6 +1438,8 @@ export default function App() {
       setProjectModal({ isOpen: false, mode: 'add', project: null });
     } catch (err) {
       console.error("Failed to save project", err);
+    } finally {
+      setIsActionPending(false);
     }
   };
 
@@ -1643,6 +1447,7 @@ export default function App() {
     e.preventDefault();
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
+      setIsSubmitting(true);
       try {
         await addDoc(collection(db, 'messages'), {
           ...formData,
@@ -1662,6 +1467,8 @@ export default function App() {
       } catch (error) {
         console.error("Error submitting form", error);
         setErrors({ submit: "Failed to send message. Please try again." });
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
       setErrors(newErrors);
@@ -2024,9 +1831,12 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   className="group cursor-pointer relative"
+                  onMouseEnter={() => setHoveredProject(project)}
+                  onMouseLeave={() => setHoveredProject(null)}
                   onClick={() => {
                     if (project.link) {
                       setSelectedProjectForPreview(project);
+                      setIsFlipped(false);
                       setActivePreviewUrl(project.link);
                       setIsIframeLoading(true);
                       setShowFullPreview(false);
@@ -2399,10 +2209,40 @@ export default function App() {
                     className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
                   />
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Screenshots (Comma separated URLs)</label>
+                    <textarea 
+                      rows={3}
+                      value={projectModal.project?.screenshots?.join(', ') || ''}
+                      onChange={(e) => setProjectModal({ 
+                        ...projectModal, 
+                        project: { 
+                          ...projectModal.project!, 
+                          screenshots: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '') 
+                        }
+                      })}
+                      placeholder="https://img1.com, https://img2.com"
+                      className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] text-white focus:outline-none focus:border-violet-500 transition-colors resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Video URL (Direct link or YouTube/Vimeo)</label>
+                    <input 
+                      value={projectModal.project?.videoUrl || ''}
+                      onChange={(e) => setProjectModal({ ...projectModal, project: { ...projectModal.project!, videoUrl: e.target.value }})}
+                      placeholder="https://video-link.mp4"
+                      className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] text-white focus:outline-none focus:border-violet-500 transition-colors"
+                    />
+                  </div>
+                </div>
                 <button 
                   type="submit"
-                  className="w-full py-4 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 transition-all text-xs uppercase tracking-widest shadow-lg shadow-violet-600/20"
+                  disabled={isActionPending}
+                  className="w-full py-4 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 transition-all text-xs uppercase tracking-widest shadow-lg shadow-violet-600/20 disabled:opacity-70 flex items-center justify-center gap-2"
                 >
+                  {isActionPending && <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
                   {projectModal.mode === 'add' ? 'Create Project' : 'Save Changes'}
                 </button>
               </form>
@@ -2438,15 +2278,18 @@ export default function App() {
               <div className="flex gap-4">
                 <button 
                   onClick={() => setProjectToDelete(null)}
-                  className="flex-1 py-3 bg-white border border-zinc-200 text-zinc-600 font-bold rounded-xl hover:text-zinc-900 transition-all text-[10px] uppercase tracking-widest"
+                  disabled={isActionPending}
+                  className="flex-1 py-3 bg-white border border-zinc-200 text-zinc-600 font-bold rounded-xl hover:text-zinc-900 transition-all text-[10px] uppercase tracking-widest disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={confirmDelete}
-                  className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-red-600/20"
+                  disabled={isActionPending}
+                  className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-red-600/20 disabled:opacity-70 flex items-center justify-center gap-2"
                 >
-                  Delete
+                  {isActionPending && <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full" />}
+                  {isActionPending ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </motion.div>
@@ -2455,9 +2298,77 @@ export default function App() {
       </AnimatePresence>
 
       {/* Terminal / VS Code Style Project Preview */}
+      {/* Project Hover Preview Pane */}
       <AnimatePresence>
-        {activePreviewUrl && selectedProjectForPreview && (
-          <div className="fixed inset-0 z-[201] flex items-center justify-center overflow-hidden p-0 sm:p-4 md:p-8">
+        {hoveredProject && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.95 }}
+            className="fixed top-24 right-8 bottom-24 w-[400px] z-[50] hidden xl:flex flex-col bg-white/80 backdrop-blur-2xl border border-zinc-200 rounded-[3rem] shadow-2xl overflow-hidden pointer-events-none"
+          >
+            <div className="relative h-64 bg-zinc-100 overflow-hidden">
+              {hoveredProject.videoUrl ? (
+                <video 
+                  src={hoveredProject.videoUrl} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : hoveredProject.screenshots && hoveredProject.screenshots.length > 0 ? (
+                <img 
+                  src={hoveredProject.screenshots[0]} 
+                  alt={hoveredProject.title} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-4">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                    {getProjectIcon(hoveredProject.iconType, 32)}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Visual Preview Unavailable</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+            </div>
+
+            <div className="p-10 flex-1 flex flex-col">
+              <div className="mb-8">
+                <div className="text-[10px] font-bold text-[#A67C00] uppercase tracking-[0.4em] mb-3">{hoveredProject.category}</div>
+                <h3 className="text-3xl font-light text-zinc-900 leading-tight mb-4" style={{ fontFamily: "'Georgia', serif" }}>{hoveredProject.title}</h3>
+                <div className="w-12 h-0.5 bg-amber-500"></div>
+              </div>
+
+              <p className="text-zinc-600 text-sm leading-relaxed mb-8 flex-1">{hoveredProject.desc}</p>
+
+              {hoveredProject.screenshots && hoveredProject.screenshots.length > 1 && (
+                <div className="grid grid-cols-2 gap-3 mb-8">
+                  {hoveredProject.screenshots.slice(1, 3).map((shot, idx) => (
+                    <img 
+                      key={idx} 
+                      src={shot} 
+                      alt="Thumbnail" 
+                      className="w-full aspect-video object-cover rounded-xl border border-zinc-100"
+                      referrerPolicy="no-referrer"
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#A67C00]">
+                <ArrowRight size={14} /> Click to explore full details
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedProjectForPreview && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-0 sm:p-4 md:p-8 overflow-hidden">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2466,290 +2377,211 @@ export default function App() {
               onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }}
             />
             
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.98, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: 20 }}
-              className="relative w-full h-full max-h-full sm:max-h-[94vh] max-w-full sm:max-w-7xl bg-[#0d1117] sm:rounded-2xl border-t sm:border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
-            >
-              {/* VS Code Style Header */}
-              <div className="h-12 md:h-14 bg-[#161b22] border-b border-white/5 flex items-center justify-between px-4 shrink-0 select-none">
-                <div className="flex items-center gap-4 md:gap-6">
-                  {/* Window Controls - Hidden on tiny mobile */}
-                  <div className="hidden xs:flex gap-2">
-                    <button onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }} className="w-3 h-3 rounded-full bg-[#ff5f56] border border-black/10 hover:opacity-80 transition-opacity" />
-                    <div className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black/10" />
-                    <div className="w-3 h-3 rounded-full bg-[#27c93f] border border-black/10" />
-                  </div>
-                  
-                  {/* File/Tab Name */}
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <Terminal size={14} className="text-amber-500 shrink-0" />
-                    <span className="text-[10px] md:text-[11px] font-medium tracking-wide uppercase opacity-60 truncate max-w-[120px] md:max-w-none">
-                      {showFullPreview ? 'Live_Instance.sh' : 'README.md'}
-                    </span>
-                  </div>
-                </div>
+            <div className={`relative w-full transition-all duration-500 ${showFullPreview ? 'max-w-full h-full p-0' : 'max-w-5xl h-[70vh] sm:h-[85vh] p-4'} perspective-2000 z-10`}>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, rotateX: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: 1, 
+                  rotateX: 0,
+                  rotateY: isFlipped ? 180 : 0 
+                }}
+                exit={{ opacity: 0, scale: 0.9, rotateX: -20 }}
+                transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                className={`relative w-full h-full preserve-3d ${showFullPreview ? 'rounded-none' : ''}`}
+              >
+                {/* Close Button - Outside Card for better UX */}
+                <button 
+                  onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }}
+                  className={`absolute ${showFullPreview ? 'top-4 right-4 bg-black/40' : '-top-12 right-0'} p-2 text-white/50 hover:text-white transition-colors z-[100] rounded-full`}
+                >
+                  <X size={showFullPreview ? 20 : 28} />
+                </button>
 
-                <div className="hidden lg:flex items-center gap-3 bg-[#0d1117] px-4 py-1.5 rounded-md border border-white/5 mx-auto">
-                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                   <span className="text-[10px] font-mono text-green-500/80 uppercase tracking-widest truncate max-w-[300px]">{selectedProjectForPreview.title}</span>
-                </div>
-
-                <div className="flex items-center gap-2 md:gap-4">
-                  <a 
-                    href={selectedProjectForPreview.link} 
-                    target="_blank" 
-                    referrerPolicy="no-referrer"
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-md text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5"
-                  >
-                    <Maximize2 size={12} className="shrink-0" /> <span className="hidden xs:inline">Visit</span>
-                  </a>
-                  <button 
-                    onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }}
-                    className="p-1.5 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Main Content Pane */}
-              <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-                {/* Desktop Sidebar / Mobile Tab Bar Container */}
-                <div className="w-full md:w-64 bg-[#161b22] border-t md:border-t-0 md:border-r border-white/5 flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto shrink-0 py-2 md:py-4 order-2 md:order-1 scrollbar-hide">
-                  <div className="px-4 md:px-6 md:mb-6 flex flex-row md:flex-col gap-1 w-full">
-                    <div className="hidden md:block text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-4 opacity-50">Exploration</div>
-                    {[
-                      { id: 'live', name: 'Live_stream.exe', mobileName: 'Live Preview', icon: <Activity size={14} className="text-red-400" /> },
-                      { id: 'details', name: 'README.md', mobileName: 'Documentation', icon: <FileCode size={14} className="text-blue-400" /> },
-                      { id: 'stack', name: 'package.json', mobileName: 'Tech Stack', icon: <Package size={14} className="text-amber-400" /> },
-                    ].map((tab) => (
-                      <button 
-                        aria-label="View Project"
-                        key={tab.id}
-                        onClick={() => {
-                          if (tab.id === 'live') setShowFullPreview(true);
-                          else setShowFullPreview(false);
-                        }}
-                        className={`flex items-center gap-2 md:gap-3 px-3 py-2 md:py-2 rounded-lg text-[10px] md:text-xs font-mono transition-all group whitespace-nowrap shrink-0 ${
-                          (showFullPreview && tab.id === 'live') || (!showFullPreview && tab.id === 'details')
-                            ? 'bg-white/10 text-white md:bg-white/5' 
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        <span className="opacity-70 group-hover:opacity-100 shrink-0">{tab.icon}</span>
-                        <span className="hidden md:inline">{tab.name}</span>
-                        <span className="md:hidden">{tab.mobileName}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="hidden md:flex px-6 mt-auto py-6 border-t border-white/5 flex-col">
-                    <div className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 opacity-50">Deployed State</div>
-                    <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-400">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                      Production stable
-                    </div>
-                    <div className="mt-4 p-3 bg-black/40 rounded-lg border border-white/5 shadow-inner">
-                      <div className="text-[8px] font-mono text-amber-500/60 mb-2 whitespace-nowrap overflow-hidden">
-                        <span className="animate-pulse">{'>'}</span> status_check
+                {/* FRONT SIDE: LIVE PREVIEW */}
+                <div 
+                  className={`absolute inset-0 backface-hidden bg-[#0d1117] ${showFullPreview ? 'rounded-none' : 'rounded-3xl border border-white/10 shadow-2xl'} overflow-hidden flex flex-col`}
+                  style={{ backfaceVisibility: 'hidden' }}
+                >
+                  {/* Card Header */}
+                  <div className="h-14 bg-[#161b22] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
                       </div>
-                      <div className="text-[9px] font-mono text-zinc-500 italic uppercase leading-tight">All systems operative. Neural paths clear.</div>
+                      <div className="h-4 w-[1px] bg-white/10 mx-2" />
+                      <div className="flex items-center gap-2 text-zinc-400 font-mono text-[10px] uppercase tracking-widest">
+                        <Activity size={12} className="text-amber-500" />
+                        <span>Live_Instance.sh</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setShowFullPreview(!showFullPreview)}
+                        className="p-2 text-zinc-400 hover:text-white transition-colors"
+                        title={showFullPreview ? "Minimize" : "Full Screen"}
+                      >
+                        {showFullPreview ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                      </button>
+                      <button 
+                        onClick={() => setIsFlipped(true)}
+                        className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5 flex items-center gap-2"
+                      >
+                        <Settings size={12} /> View Details
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Canvas Viewport */}
+                  <div className="flex-1 relative bg-black">
+                    <AnimatePresence>
+                      {isIframeLoading && (
+                        <motion.div 
+                          initial={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 z-20 bg-[#0d1117] flex flex-col items-center justify-center p-6 text-center"
+                        >
+                          <div className="w-10 h-10 border-2 border-white/5 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+                          <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.4em]">Booting_System...</div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <iframe 
+                      key={activePreviewUrl}
+                      src={activePreviewUrl || ''} 
+                      onLoad={() => setIsIframeLoading(false)}
+                      className="w-full h-full border-none pointer-events-auto bg-white"
+                      title="Project Live View"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    />
+                    
+                    {/* Perspective Label Overlay */}
+                    <div className="absolute bottom-6 left-6 p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5 pointer-events-none">
+                       <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Visual Architecture</div>
+                       <div className="text-[11px] text-white/70 font-mono italic">Rendering stable stream at 60fps</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Main Viewport */}
-                <div className="flex-1 flex flex-col bg-[#0d1117] overflow-hidden order-1 md:order-2">
-                  <div className="flex-1 relative flex flex-col overflow-hidden">
-                    {/* Live Iframe View */}
-                    <div className={`relative flex-1 bg-black overflow-hidden transition-all duration-700 ${showFullPreview ? 'opacity-100 z-10' : 'opacity-0 z-0 absolute inset-0 pointer-events-none'}`}>
-                      <AnimatePresence>
-                        {isIframeLoading && (
-                          <motion.div 
-                            initial={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-20 bg-[#0d1117] flex flex-col items-center justify-center p-6 text-center"
-                          >
-                            <div className="relative mb-8">
-                              <div className="w-16 h-16 md:w-20 md:h-20 border-4 border-white/5 border-t-amber-500 rounded-full animate-spin"></div>
-                              <Terminal size={28} className="text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-                            </div>
-                            <div className="space-y-3">
-                              <div className="text-[10px] md:text-[12px] font-mono text-white/80 uppercase tracking-[0.4em] font-bold">Mounting Remote Partition...</div>
-                              <div className="text-[9px] font-mono text-[#A67C00]/60 uppercase tracking-widest break-all max-w-xs mx-auto">{selectedProjectForPreview.link}</div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      
-                      <iframe 
-                        src={activePreviewUrl} 
-                        onLoad={() => setIsIframeLoading(false)}
-                        loading="lazy"
-                        className="w-full h-full border-none pointer-events-auto"
-                        title="Project Terminal"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                      />
-
-                      {/* View Switcher Overlay for Mobile Live View */}
-                      <button 
-                        onClick={() => setShowFullPreview(false)}
-                        className="md:hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-30 px-6 py-3 bg-black/60 backdrop-blur-xl border border-white/20 text-white rounded-full text-[10px] font-bold uppercase tracking-widest shadow-2xl flex items-center gap-2"
-                      >
-                        <FileCode size={14} /> View Documentation
-                      </button>
-
-                      {/* Neon Border Glow */}
-                      <div className="absolute inset-0 border border-amber-500/10 pointer-events-none shadow-[inset_0_0_80px_rgba(216,180,92,0.08)]"></div>
+                {/* BACK SIDE: PROJECT DETAILS */}
+                <div 
+                  className="absolute inset-0 backface-hidden bg-[#161b22] rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+                  style={{ 
+                    backfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)'
+                  }}
+                >
+                  <div className="h-14 bg-[#1c2128] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500">
+                         {getProjectIcon(selectedProjectForPreview.iconType, 16)}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest leading-none">Manifest v2.4.0</span>
+                        <span className="text-xs font-bold text-white leading-tight">{selectedProjectForPreview.title}</span>
+                      </div>
                     </div>
 
-                    {/* README / Details View */}
-                    <div className={`flex-1 overflow-y-auto scrollbar-hide bg-[#0d1117] p-6 sm:p-10 md:p-16 transition-all duration-700 ${!showFullPreview ? 'opacity-100 translate-y-0 z-10' : 'opacity-0 translate-y-20 z-0 absolute inset-0 pointer-events-none'}`}>
-                      <div className="max-w-4xl mx-auto space-y-12 md:space-y-20">
-                        {/* Title & Category Area */}
-                        <div className="border-b border-white/5 pb-10 md:pb-12 pt-4 md:pt-0">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-                             <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20 shrink-0">
-                                {getProjectIcon(selectedProjectForPreview.iconType, 28)}
-                             </div>
-                             <div>
-                                <div className="text-[10px] font-black text-amber-500/80 uppercase tracking-[0.3em] font-mono mb-1">{selectedProjectForPreview.category}</div>
-                                <h2 className="text-2xl md:text-5xl font-light text-white leading-tight" style={{ fontFamily: "'Georgia', serif" }}>{selectedProjectForPreview.title}</h2>
-                             </div>
+                    <button 
+                      onClick={() => setIsFlipped(false)}
+                      className="px-4 py-1.5 bg-amber-500 text-black font-bold rounded-lg text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                    >
+                      <Activity size={12} /> Return to Live
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-8 md:p-12 scrollbar-hide">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                      <div className="lg:col-span-7 space-y-10">
+                        <section className="space-y-4">
+                          <div className="text-amber-500 font-mono text-[9px] uppercase tracking-[0.4em]">Overview</div>
+                          <h3 className="text-2xl md:text-4xl font-light text-white leading-tight" style={{ fontFamily: "'Georgia', serif" }}>
+                            Mechanical & <span className="italic">Architectural</span> Vision
+                          </h3>
+                          <div className="markdown-body text-zinc-400 text-sm md:text-base leading-relaxed font-light">
+                            <ReactMarkdown>{selectedProjectForPreview.fullDetails?.overview || ''}</ReactMarkdown>
                           </div>
-                          <p className="text-zinc-400 text-base md:text-lg font-light leading-relaxed max-w-3xl">{selectedProjectForPreview.desc}</p>
-                          
-                          <div className="mt-8 flex flex-wrap gap-4">
-                            <button 
-                              onClick={() => setShowFullPreview(true)}
-                              className="px-6 py-3 bg-amber-500 text-black font-bold rounded-xl hover:bg-amber-400 transition-all text-[10px] uppercase tracking-widest flex items-center gap-2"
-                            >
-                              <Activity size={14} /> Launch Live Demo
-                            </button>
+                        </section>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                           <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Key Attributes</div>
+                             <ul className="space-y-3">
+                               {selectedProjectForPreview.fullDetails?.features?.slice(0, 4).map((f, i) => (
+                                 <li key={i} className="text-xs text-zinc-400 flex gap-3">
+                                   <div className="w-1 h-1 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                   {f}
+                                 </li>
+                               ))}
+                             </ul>
+                           </div>
+                           <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Deployment Stack</div>
+                             <div className="flex flex-wrap gap-2">
+                               {selectedProjectForPreview.fullDetails?.techStack?.map((tech, i) => (
+                                 <span key={i} className="px-2.5 py-1 bg-black/20 text-[10px] font-mono text-zinc-400 rounded-md border border-white/5">
+                                   {tech.name}
+                                 </span>
+                               ))}
+                             </div>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="lg:col-span-5 space-y-8">
+                         <div className="bg-black/20 rounded-2xl p-6 border border-white/5 space-y-6">
+                            <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-white/5 pb-4">Specifications</div>
+                            <div className="space-y-4">
+                              {[
+                                { l: 'Project Category', v: selectedProjectForPreview.category },
+                                { l: 'License Type', v: selectedProjectForPreview.fullDetails?.license || 'Proprietary' },
+                                { l: 'Current Status', v: 'Active Node', c: 'text-emerald-500' },
+                                { l: 'Engine Version', v: 'v4.2.1-stable' }
+                              ].map((spec, i) => (
+                                <div key={i} className="flex justify-between items-center text-[11px] font-mono">
+                                   <span className="text-zinc-500">{spec.l}</span>
+                                   <span className={spec.c || "text-zinc-300"}>{spec.v}</span>
+                                </div>
+                              ))}
+                            </div>
+                         </div>
+
+                         <div className="bg-amber-500/5 rounded-2xl p-6 border border-amber-500/10">
+                            <div className="flex items-center gap-3 mb-4">
+                              <Shield size={16} className="text-amber-500" />
+                              <span className="text-[10px] font-bold text-white uppercase tracking-widest">Integrity Protocol</span>
+                            </div>
+                            <p className="text-[11px] text-zinc-400 leading-relaxed italic">
+                              "Every solution we deliver is sthira (stable), śubhra (clean), and samanvita (well-integrated)."
+                            </p>
+                         </div>
+
+                         <div className="flex flex-col gap-3">
                             <a 
                               href={selectedProjectForPreview.link}
                               target="_blank"
-                              referrerPolicy="no-referrer"
-                              className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all text-[10px] font-bold uppercase tracking-widest border border-white/5 flex items-center gap-2"
+                              rel="noopener noreferrer"
+                              className="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all border border-white/10 flex items-center justify-center gap-3"
                             >
-                              <Maximize2 size={14} /> Remote Link
+                              <Maximize2 size={14} /> Global Node Access
                             </a>
-                          </div>
-                        </div>
-
-                        {/* Project Details Content */}
-                        {selectedProjectForPreview.fullDetails && (
-                          <div className="space-y-12 md:space-y-20">
-                            {/* Detailed Markdown Section */}
-                            {selectedProjectForPreview.fullDetails.overview && (
-                              <section className="prose prose-sm md:prose-base prose-invert prose-amber max-w-none prose-p:font-light prose-headings:font-light">
-                                <ReactMarkdown>
-                                  {selectedProjectForPreview.fullDetails.overview}
-                                </ReactMarkdown>
-                              </section>
-                            )}
-
-                            {/* Technical Specs Bento Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                              <div className="group p-6 md:p-8 bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl hover:border-amber-500/30 transition-all duration-500 shadow-xl">
-                                <h4 className="flex items-center gap-3 text-[10px] font-bold text-white uppercase tracking-[0.3em] mb-6">
-                                  <Zap size={14} className="text-amber-500" /> Core Features
-                                </h4>
-                                <ul className="space-y-4">
-                                  {selectedProjectForPreview.fullDetails.features.map((f, idx) => (
-                                    <li key={idx} className="flex gap-4 text-xs text-zinc-400 font-light group-hover:text-zinc-300">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500/40 mt-1.5 shrink-0" />
-                                      {f}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-
-                              <div className="group p-6 md:p-8 bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl hover:border-blue-500/30 transition-all duration-500 shadow-xl">
-                                <h4 className="flex items-center gap-3 text-[10px] font-bold text-white uppercase tracking-[0.3em] mb-6">
-                                  <Package size={14} className="text-blue-500" /> Tech Stack
-                                </h4>
-                                <div className="space-y-5">
-                                  {selectedProjectForPreview.fullDetails.techStack.map((tech, idx) => (
-                                    <div key={idx} className="space-y-1">
-                                      <div className="text-xs font-bold text-zinc-300">{tech.name}</div>
-                                      <div className="text-[10px] text-zinc-500 font-light uppercase tracking-wider">{tech.role}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="sm:col-span-2 group p-6 md:p-8 bg-[#161b22] border border-white/5 rounded-2xl md:rounded-3xl hover:border-purple-500/30 transition-all duration-500 shadow-xl">
-                                <h4 className="flex items-center gap-3 text-[10px] font-bold text-white uppercase tracking-[0.3em] mb-6">
-                                  <Code2 size={14} className="text-purple-500" /> Project Structure
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                                  {selectedProjectForPreview.fullDetails.structure.map((item, idx) => (
-                                    <div key={idx} className="flex gap-4">
-                                      <div className="w-8 h-8 bg-black/40 rounded-lg flex items-center justify-center text-zinc-500 shrink-0 border border-white/5">
-                                        <Code size={14} />
-                                      </div>
-                                      <div>
-                                        <div className="text-xs font-mono text-zinc-300 mb-1">{item.name}</div>
-                                        <div className="text-[10px] text-zinc-500 font-light italic truncate max-w-[200px] sm:max-w-none">{item.desc}</div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* License Info */}
-                            <div className="p-6 md:p-10 bg-black/30 border border-white/5 rounded-2xl md:rounded-3xl flex flex-col md:flex-row items-center justify-between gap-8 md:gap-6 shadow-2xl">
-                              <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center shrink-0">
-                                  <Shield size={22} className="text-zinc-500" />
-                                </div>
-                                <div>
-                                  <div className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1 font-mono">Distribution License</div>
-                                  <div className="text-xs text-white/50">{selectedProjectForPreview.fullDetails.license}</div>
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => setShowFullPreview(true)}
-                                className="w-full md:w-auto px-10 py-5 bg-white text-black font-bold rounded-2xl hover:bg-amber-100 transition-all text-[11px] uppercase tracking-widest shadow-[0_20px_40px_-15px_rgba(255,255,255,0.1)] active:scale-95"
-                              >
-                                Launch Experience
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Footer Spacer */}
-                        <div className="h-20" />
+                            <button 
+                              onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }}
+                              className="w-full py-4 text-zinc-500 hover:text-white text-[9px] font-bold uppercase tracking-widest transition-colors"
+                            >
+                              Terminate Session
+                            </button>
+                         </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Terminal Footer Indicator */}
-                  <div className="h-10 bg-[#0d1117] border-t border-white/5 px-4 md:px-6 flex items-center justify-between shrink-0 select-none">
-                    <div className="flex items-center gap-3 md:gap-4 text-[9px] font-mono text-zinc-600 uppercase tracking-widest overflow-hidden">
-                       <div className="flex items-center gap-1.5 shrink-0">
-                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                         master*
-                       </div>
-                       <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                         <span className="opacity-40">UTF-8</span>
-                       </div>
-                       <div className="flex items-center gap-1.5 shrink-0">
-                         <Activity size={10} />
-                         <span className="animate-pulse">Active</span>
-                       </div>
-                    </div>
-                    <div className="text-[9px] font-mono text-zinc-700 whitespace-nowrap">
-                       UTC+{new Date().getTimezoneOffset() / -60} — Terminal v2.0
-                    </div>
-                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>
@@ -3009,7 +2841,7 @@ export default function App() {
                      type="submit"
                      className="w-full py-4 bg-[#D8B45C] text-white font-bold rounded-xl hover:bg-[#C49B3C] transition-all duration-300 text-[10px] md:text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-lg shadow-amber-600/20"
                    >
-                     Send Message <ArrowRight size={14} />
+                     {isSubmitting ? "Sending..." : "Send Message"} <ArrowRight size={14} className={isSubmitting ? "animate-pulse" : ""} />
                    </button>
                    </motion.form>
                  )}

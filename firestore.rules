@@ -1,40 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
+    // 1. Master Gate: Default deny
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-    function isSignedIn() { return request.auth != null; }
-    function isAdmin() { return isSignedIn() && request.auth.token.email == "nishkalya@gmail.com"; } // Adjust as needed
-
-    // Message validation
-    function isValidMessage(data) {
-      return data.name is string && data.name.size() <= 100 &&
-             data.email is string && data.email.size() <= 100 &&
-             data.message is string && data.message.size() <= 5000 &&
-             data.status in ['unread', 'read', 'archived'] &&
-             data.createdAt is timestamp &&
-             data.get('company', '') is string && data.get('company', '').size() <= 200 &&
-             data.get('service', '') is string && data.get('service', '').size() <= 100;
+    // 3. Primitives
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    match /messages/{messageId} {
-      allow create: if isValidMessage(request.resource.data) && request.resource.data.status == 'unread';
-      allow read, update, delete: if isAdmin();
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
     }
 
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 2. Validation Blueprints
+    function isValidProject(data) {
+      return data.title is string && data.title.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.desc is string && data.desc.size() <= 1000 &&
+             data.iconType in ['message', 'eye', 'layout', 'chart'] &&
+             (data.link == null || (data.link is string && data.link.size() <= 1000)) &&
+             (data.isActive == null || data.isActive is bool);
+    }
+
+    // 4. Collections
     match /projects/{projectId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if resource.data.isActive == true || isAdmin();
+      allow create: if isAdmin() && isValidProject(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin() && isValidProject(request.resource.data) && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
     }
 
-    match /config/{configId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow get: if isSignedIn() && request.auth.uid == adminId;
+      allow create: if isSignedIn() && request.auth.token.email == 'nishkalya@gmail.com' && request.auth.uid == adminId;
     }
   }
 }
