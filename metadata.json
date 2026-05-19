@@ -1,0 +1,8 @@
+{
+  "name": "Nishkalya Studio",
+  "description": "Nishkalya Studio: An AI-first digital studio specializing in architecture, design intelligence, and human-AI synergy. Delivering reliable development and swift execution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

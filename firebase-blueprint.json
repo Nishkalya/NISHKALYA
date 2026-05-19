@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "Message": {
+      "title": "Contact Message",
+      "description": "A message submitted via the contact form",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the sender"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email of the sender"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject line"
+        },
+        "message": {
+          "type": "string",
+          "description": "The message body"
+        },
+        "company": {
+          "type": "string",
+          "description": "Company name"
+        },
+        "service": {
+          "type": "string",
+          "description": "Selected service"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was sent"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["unread", "read", "archived"],
+          "description": "Status of the message"
+        }
+      },
+      "required": ["name", "email", "message", "createdAt", "status"]
+    },
+    "Project": {
+      "title": "Portfolio Project",
+      "description": "A project in the portfolio gallery",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "desc": { "type": "string" },
+        "iconType": { "type": "string", "enum": ["message", "eye", "layout", "chart"] },
+        "link": { "type": "string" },
+        "fullDetails": { "type": "object" },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "category", "desc", "iconType"]
+    },
+    "WebsiteConfig": {
+      "title": "Website Configuration",
+      "description": "Global content and configuration for the website",
+      "type": "object",
+      "properties": {
+        "hero": { "type": "object" },
+        "about": { "type": "object" },
+        "services": { "type": "array" }
+      }
+    }
+  },
+  "firestore": {
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Collection of contact form submissions"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Dynamic portfolio projects"
+    },
+    "/config/website": {
+      "schema": "WebsiteConfig",
+      "description": "Global website content"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { return isSignedIn() && request.auth.token.email == "nishkalya@gmail.com"; } // Adjust as needed
+
+    // Message validation
+    function isValidMessage(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.message is string && data.message.size() <= 5000 &&
+             data.status in ['unread', 'read', 'archived'] &&
+             data.createdAt is timestamp &&
+             data.get('company', '') is string && data.get('company', '').size() <= 200 &&
+             data.get('service', '') is string && data.get('service', '').size() <= 100;
+    }
+
+    match /messages/{messageId} {
+      allow create: if isValidMessage(request.resource.data) && request.resource.data.status == 'unread';
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
