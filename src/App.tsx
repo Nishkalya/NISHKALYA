@@ -646,8 +646,20 @@ export default function App() {
       console.log("Login successful:", result.user.email);
     } catch (error: any) {
       console.error("Login failed:", error);
+      
+      // Provide actionable feedback for the common "domain not authorized" error
       if (error.code === 'auth/popup-blocked') {
         alert("Pop-up blocked! Please allow pop-ups for this site or try again.");
+      } else if (error.message?.includes('The requested action is invalid') || error.code === 'auth/unauthorized-domain') {
+        const domain = window.location.hostname;
+        alert(
+          `Domain Not Authorized!\n\n` +
+          `Firebase is blocking the login because this domain (${domain}) is not authorized.\n\n` +
+          `If you are the developer:\n` +
+          `1. Go to Firebase Console > Authentication > Settings\n` +
+          `2. Add "${domain}" to Authorized Domains.\n\n` +
+          `If you are using the AI Studio preview, this may be a temporary environment issue.`
+        );
       } else {
         alert("Login failed: " + (error.message || "Unknown error"));
       }
