@@ -6,63 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
-import { 
-  User as UserIcon,
-  Cpu, 
-  Layout, 
-  Lightbulb, 
-  Linkedin, 
-  Twitter, 
-  Dribbble, 
-  ArrowRight, 
-  Zap, 
-  Eye, 
-  BarChart3, 
-  Globe, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  MessageSquare,
-  Search,
-  Share2,
-  ChevronRight,
-  Star,
-  Github,
-  AlertCircle,
-  CheckCircle,
-  X,
-  Menu,
-  Edit2,
-  Trash2,
-  Plus,
-  Shield,
-  Code,
-  Settings,
-  LogIn,
-  LogOut,
-  Lock,
-  MoreVertical,
-  Clock,
-  Check,
-  Archive,
-  Trash,
-  Terminal,
-  Code2,
-  FileCode,
-  Package,
-  Box,
-  Activity,
-  Maximize2,
-  Minimize2,
-  Square,
-  Columns2,
-  Monitor,
-  Smartphone,
-  PanelLeftClose,
-  List,
-  FileJson,
-  Compass
-} from 'lucide-react';
+import { User as UserIcon, Cpu, LayoutGrid as Layout, Lightbulb, Linkedin, Twitter, Dribbble, ArrowRight, Zap, Eye, ChartBar as BarChart3, Globe, Mail, Phone, MapPin, MessageSquare, Search, Share2, ChevronRight, Star, Github, CircleAlert as AlertCircle, CircleCheck as CheckCircle, X, Menu, CreditCard as Edit2, Trash2, Plus, Shield, Code, Settings, LogIn, LogOut, Lock, MoveVertical as MoreVertical, Clock, Check, Archive, Trash, Terminal, Code as Code2, FileCode, Package, Box, Activity, Maximize2, Minimize2, Square, Columns2, Monitor, Smartphone, PanelLeftClose, List, FileJson, Compass } from 'lucide-react';
 import { 
   collection, 
   addDoc, 
@@ -1539,18 +1483,12 @@ export default function App() {
       {/* Navigation */}
       <nav className={`fixed left-0 right-0 z-50 bg-white/40 backdrop-blur-md border-b border-zinc-200/50 transition-all duration-300 ${currentUser?.email === 'nishkalya@gmail.com' ? 'top-8' : 'top-0'}`}>
         <div className="flex items-center justify-between px-6 md:px-12 py-5 w-full max-w-7xl mx-auto">
-          <div 
-            className="flex items-center space-x-2 group cursor-pointer" 
+          <div
+            className="flex items-center space-x-2 group cursor-pointer"
             onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             role="button"
             aria-label="Go to home"
           >
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center transform rotate-12 group-hover:rotate-0 transition-transform duration-500 shadow-lg"
-              style={{ backgroundColor: 'var(--color-primary)', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-            >
-              <span className="text-white font-bold text-lg">N</span>
-            </div>
             <span className="text-xl font-bold tracking-tight text-zinc-900 uppercase">Nishkalya</span>
           </div>
           <div className="hidden sm:flex space-x-8 text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex-wrap justify-center">
@@ -2880,9 +2818,6 @@ export default function App() {
           <div className="flex flex-col md:flex-row justify-between items-start gap-12 md:gap-10 mb-16 md:mb-20">
             <div className="max-w-xs">
               <div className="flex items-center space-x-2 mb-6 cursor-pointer group" onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                <div className="w-6 h-6 bg-[#D8B45C] rounded flex items-center justify-center transform rotate-12 group-hover:rotate-0 transition-transform duration-500 shadow-lg shadow-amber-600/20">
-                  <span className="text-white font-bold text-xs">N</span>
-                </div>
                 <span className="text-lg font-bold tracking-tight text-zinc-900">NISHKALYA</span>
               </div>
               <p className="text-zinc-600 text-sm font-light leading-relaxed mb-6">We craft next-generation products at the intersection of AI and stunning design. Built for impact, designed for the future.</p>
