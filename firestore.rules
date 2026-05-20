@@ -6,39 +6,32 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // 3. Primitives
+    // 2. Primitives
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isEmailVerified() {
-      return request.auth.token.email_verified == true;
-    }
-
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'nishkalya@gmail.com'
+      );
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    // 3. Collections
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // 2. Validation Blueprints
-    function isValidProject(data) {
-      return data.title is string && data.title.size() <= 200 &&
-             data.category is string && data.category.size() <= 100 &&
-             data.desc is string && data.desc.size() <= 1000 &&
-             data.iconType in ['message', 'eye', 'layout', 'chart'] &&
-             (data.link == null || (data.link is string && data.link.size() <= 1000)) &&
-             (data.isActive == null || data.isActive is bool);
-    }
-
-    // 4. Collections
     match /projects/{projectId} {
-      allow read: if resource.data.isActive == true || isAdmin();
-      allow create: if isAdmin() && isValidProject(request.resource.data) && request.resource.data.createdAt == request.time;
-      allow update: if isAdmin() && isValidProject(request.resource.data) && request.resource.data.updatedAt == request.time;
-      allow delete: if isAdmin();
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
 
     match /admins/{adminId} {

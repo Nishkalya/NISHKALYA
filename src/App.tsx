@@ -80,6 +80,7 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged, 
   signOut,
   User 
@@ -370,7 +371,29 @@ export default function App() {
       console.log("Email login successful");
       setCurrentView('admin'); // Ensure we switch to admin view on success
     } catch (error: any) {
-      console.error("Email login failed:", error);
+      console.error("Email login failed, trying seamless signUp fallback:", error);
+      
+      // If the email is the admin bootstrap email, try to auto-create their account if auth fails
+      if (loginEmail === 'nishkalya@gmail.com') {
+        try {
+          console.log("Attempting seamless account creation / auth setup for admin...");
+          await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
+          console.log("Seamless admin account created & signed in successfully");
+          setCurrentView('admin');
+          return;
+        } catch (createErr: any) {
+          console.error("Seamless registration failed:", createErr);
+          if (createErr.code === 'auth/email-already-in-use') {
+             // email is already in use, which means password was actually incorrect
+             alert("Incorrect password for admin account. Please enter the correct password.");
+             return;
+          } else if (createErr.code === 'auth/operation-not-allowed') {
+             setLoginError('setup-required');
+             return;
+          }
+        }
+      }
+
       if (error.code === 'auth/operation-not-allowed') {
         setLoginError('setup-required');
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -1342,7 +1365,7 @@ export default function App() {
     );
   };
 
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS.map((p: any, idx) => ({ id: p.id || String(idx), ...p })) as any);
 
   const [projectModal, setProjectModal] = useState<{
     isOpen: boolean;
