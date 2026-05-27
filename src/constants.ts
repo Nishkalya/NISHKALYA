@@ -3,7 +3,7 @@ import { Project } from './services/projectService';
 export const DEFAULT_CONFIG = {
   hero: {
     badge: "Architecting the Future",
-    heading: "Design. Code. <span class=\"text-[#A67C00] italic\">Evolve.</span>",
+    heading: "Design. Code. <span class=\"text-[#58a6ff] italic\">Evolve.</span>",
     subheading: "A multidisciplinary studio focusing on high-fidelity user experiences and next-generation AI integrations.",
     stats: [
       { label: "Products Shipped", value: "24+" },
@@ -13,12 +13,12 @@ export const DEFAULT_CONFIG = {
     ]
   },
   colors: {
-    primary: "#D8B45C",
-    secondary: "#A67C00"
+    primary: "#58a6ff",
+    secondary: "#2f81f7"
   },
   about: {
     badge: "The Architect",
-    heading: "Bridging the gap between <span class=\"text-[#A67C00]\">Vision</span> and Execution.",
+    heading: "Bridging the gap between <span class=\"text-[#58a6ff]\">Vision</span> and Execution.",
     skills: ["AI Strategy", "React Mastery", "System Design", "Product Engineering", "UI/UX Architecture"],
     paragraphs: [
       "With over a decade of experience across the full digital stack, I specialize in building systems that aren't just functional, but emotionally resonant. My approach combines the rigor of engineering with the nuance of high-end design.",

@@ -1,42 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500;600;700&family=JetBrains+Mono:wght@100;300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
   body {
-    @apply antialiased selection:bg-violet-500/30 selection:text-white;
-    background: linear-gradient(
-      90deg,
-      #F5EEDC 0%,
-      #EFE3C2 45%,
-      #EAD9A4 70%,
-      #D8B45C 100%
-    );
+    @apply antialiased text-[#c9d1d9] selection:bg-[#58a6ff]/30 selection:text-white bg-[#0d1117];
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(88, 166, 255, 0.06) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(35, 134, 54, 0.04) 0px, transparent 50%),
+      radial-gradient(at 50% 0%, rgba(139, 148, 158, 0.05) 0px, transparent 40%),
+      linear-gradient(rgba(22, 27, 34, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 27, 34, 0.1) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 20px 20px, 20px 20px;
     background-attachment: fixed;
     min-height: 100vh;
   }
 }
 
 .markdown-body {
-  @apply text-zinc-400 font-light leading-relaxed;
+  @apply text-[#8b949e] font-normal leading-relaxed;
 }
 
 .markdown-body h1 {
-  @apply text-2xl md:text-3xl text-white font-light mb-6 mt-8 uppercase tracking-tight;
-  font-family: "Georgia", serif;
+  @apply text-xl md:text-2xl text-white font-semibold mb-6 mt-8 tracking-tight border-b border-[#30363d] pb-2;
 }
 
 .markdown-body h2 {
-  @apply text-xl md:text-2xl text-white font-light mb-4 mt-8 uppercase tracking-tight;
-  font-family: "Georgia", serif;
+  @apply text-lg md:text-xl text-white font-semibold mb-4 mt-8 tracking-tight;
 }
 
 .markdown-body h3 {
-  @apply text-lg text-white font-medium mb-3 mt-6 uppercase tracking-widest text-[10px];
+  @apply text-sm text-[#8b949e] font-semibold mb-3 mt-6 uppercase tracking-wider;
 }
 
 .markdown-body p {
@@ -44,28 +42,28 @@
 }
 
 .markdown-body ul {
-  @apply space-y-2 mb-6 list-none;
+  @apply space-y-2 mb-6 list-none pl-0;
 }
 
 .markdown-body li {
-  @apply flex gap-3 text-sm;
+  @apply flex gap-3 text-sm items-start;
 }
 
 .markdown-body li::before {
-  content: "→";
-  @apply text-violet-500 font-bold shrink-0;
+  content: "✓";
+  @apply text-[#238636] font-bold shrink-0;
 }
 
 .markdown-body code {
-  @apply font-mono text-[0.8em] bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-violet-400;
+  @apply font-mono text-[0.85em] bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 rounded text-[#58a6ff];
 }
 
 .markdown-body pre {
-  @apply bg-black border border-zinc-800 rounded-xl p-5 my-6 overflow-x-auto;
+  @apply bg-[#0d1117] border border-[#30363d] rounded-xl p-5 my-6 overflow-x-auto;
 }
 
 .markdown-body strong {
-  @apply text-white font-bold;
+  @apply text-[#f0f6fc] font-semibold;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -77,15 +75,17 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-zinc-50;
+  background: #161b22;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-zinc-200 rounded-full hover:bg-zinc-300 transition-colors;
+  background: #30363d;
+  @apply rounded-full hover:bg-[#8b949e] transition-colors;
 }
 
 @layer utilities {
@@ -97,5 +97,17 @@
   }
   .backface-hidden {
     backface-visibility: hidden;
+  }
+  .admin-glow {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .admin-glow:hover {
+    border-color: rgba(88, 166, 255, 0.5) !important;
+    box-shadow: 0 0 16px rgba(88, 166, 255, 0.25) !important;
+  }
+  .admin-glow:focus, .admin-glow:focus-within {
+    border-color: #58a6ff !important;
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.35) !important;
+    outline: none;
   }
 }
