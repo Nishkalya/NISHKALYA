@@ -1,0 +1,6 @@
+# www.robotstxt.org
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+Sitemap: https://nishkalya.studio/sitemap.xml

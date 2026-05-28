@@ -88,6 +88,7 @@ import {
 import { db, auth } from './lib/firebase';
 import { Project, projectService } from './services/projectService';
 import { DEFAULT_CONFIG, DEFAULT_PROJECTS } from './constants';
+import { MotionHeading } from './components/MotionHeading';
 import firebaseConfig from '../firebase-applet-config.json';
 
 
@@ -182,6 +183,64 @@ export default function App() {
     console.error('Firestore Error:', JSON.stringify(errInfo));
     // We don't necessarily want to throw and crash the UI, but we log it for the AI to see in logs
   };
+
+  useEffect(() => {
+    // Dynamic meta elements updates for rich SEO compliance
+    try {
+      const origin = window.location.origin || "https://nishkalya.studio";
+      if (currentView === 'home') {
+        document.title = "Nishkalya Studio — AI-First Digital Excellence";
+        const descMeta = document.querySelector('meta[name="description"]');
+        if (descMeta) {
+          descMeta.setAttribute('content', "Nishkalya Studio: Delivering pure creation and precise craftsmanship in AI product development and UI/UX design.");
+        }
+        
+        // Update Open Graph tags for social crawlers dynamically
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', "Nishkalya Studio — AI-First Digital Excellence");
+        const ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute('content', "Pure creation, precise craftsmanship. Discover our next-generation digital products and services.");
+        const ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute('content', origin + "/");
+        
+        // Canonical Link updates
+        let canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (!canonicalLink) {
+          canonicalLink = document.createElement('link');
+          canonicalLink.setAttribute('rel', 'canonical');
+          document.head.appendChild(canonicalLink);
+        }
+        canonicalLink.setAttribute('href', origin + "/");
+        
+      } else if (currentView === 'projects') {
+        document.title = "Explore Our Works | Nishkalya Studio";
+        const descMeta = document.querySelector('meta[name="description"]');
+        if (descMeta) {
+          descMeta.setAttribute('content', "Curated elite portfolio of specialized applications, SaaS, and custom LLM / UI solutions by Nishkalya Studio.");
+        }
+        
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', "Elite Portfolio — Curated Works of Nishkalya");
+        const ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute('content', "Explore our live production showcase of custom AI models, SaaS ecosystems, and pixel-perfect design interfaces.");
+        const ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute('content', origin + "?view=projects");
+        
+        let canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (!canonicalLink) {
+          canonicalLink = document.createElement('link');
+          canonicalLink.setAttribute('rel', 'canonical');
+          document.head.appendChild(canonicalLink);
+        }
+        canonicalLink.setAttribute('href', origin + "?view=projects");
+        
+      } else if (currentView === 'admin') {
+        document.title = "Management Console | Nishkalya Studio";
+      }
+    } catch (e) {
+      console.warn("Meta updates bypassed (probably SSG style execution).", e);
+    }
+  }, [currentView, websiteConfig]);
 
   useEffect(() => {
     // Real-time config listener
@@ -1600,6 +1659,8 @@ export default function App() {
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="sm:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 text-[#8b949e] hover:text-white transition-colors"
+              aria-label="Toggle mobile navigation menu"
+              aria-expanded={isMobileMenuOpen}
             >
               <div className={`w-6 h-0.5 bg-current transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
               <div className={`w-6 h-0.5 bg-current transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></div>
@@ -1636,7 +1697,8 @@ export default function App() {
       </nav>
 
       {/* Main Content Area */}
-      <AnimatePresence mode="wait">
+      <main id="main-content" className="flex-grow">
+        <AnimatePresence mode="wait">
         {currentView === 'admin' ? (
           <motion.div
             key="admin"
@@ -1677,12 +1739,11 @@ export default function App() {
                   </span>
                 </motion.div>
                 
-                <motion.h1 
-                  variants={itemVariants}
+                <h1 
                   className="text-3xl sm:text-6xl md:text-8xl font-extrabold leading-[1.2] md:leading-[1.1] text-white mb-6 md:mb-8 tracking-tight px-4 md:px-0" 
                 >
-                  <span dangerouslySetInnerHTML={{ __html: websiteConfig?.hero?.heading }} />
-                </motion.h1>
+                  <MotionHeading html={websiteConfig?.hero?.heading} />
+                </h1>
                 
                 <motion.p 
                   variants={itemVariants}
@@ -1695,12 +1756,14 @@ export default function App() {
                   <button 
                     onClick={() => setCurrentView('projects')}
                     className="w-full sm:w-auto px-6 py-3.5 bg-[#238636] hover:bg-[#2eaa44] border border-[#2ea44f] text-white font-semibold rounded-lg transition-all duration-300 text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#238636]/10 group"
+                    aria-label="View our portfolio projects and work showcase"
                   >
                     View Our Work <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                   <button 
                     onClick={() => scrollToSection('contact')}
                     className="w-full sm:w-auto px-6 py-3.5 bg-[#21262d] border border-[#30363d] text-[#c9d1d9] font-semibold rounded-lg hover:bg-[#30363d] hover:border-[#8b949e] transition-all duration-300 text-xs"
+                    aria-label="Scroll to the contact section to submit a project inquiry"
                   >
                     Start a Project
                   </button>
@@ -1737,7 +1800,7 @@ export default function App() {
                     {websiteConfig?.about?.badge}
                   </div>
                   <h2 className="text-4xl md:text-5xl font-extrabold leading-tight text-white mb-6 md:mb-8">
-                    <span dangerouslySetInnerHTML={{ __html: websiteConfig?.about?.heading }} />
+                    <MotionHeading html={websiteConfig?.about?.heading} delay={0.1} whileInView={true} />
                   </h2>
                   
                   <div className="space-y-6 mb-10">
@@ -1767,6 +1830,8 @@ export default function App() {
                     <button 
                       onClick={() => setShowFullAbout(!showFullAbout)}
                       className="text-[11px] font-semibold text-[#58a6ff] hover:text-[#79c0ff] transition-colors flex items-center gap-1.5 group/btn"
+                      aria-label={showFullAbout ? "Read less about our corporate history and profile" : "Read more about our corporate history and profile"}
+                      aria-expanded={showFullAbout}
                     >
                       {showFullAbout ? 'Read Less' : 'Read More'}
                       <motion.span
@@ -1814,7 +1879,7 @@ export default function App() {
                 <div className="text-center mb-16 md:mb-20">
                   <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">What We Do</div>
                   <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">
-                    Services Built for <span className="italic text-[#58a6ff]">Tomorrow</span>
+                    <MotionHeading html="Services Built for <span class='italic text-[#58a6ff]'>Tomorrow</span>" whileInView={true} />
                   </h2>
                   <p className="text-[#8b949e] max-w-2xl mx-auto text-sm md:text-base font-light">From AI strategy to shipped product, we cover every layer of the modern digital stack.</p>
                 </div>
@@ -1851,13 +1916,13 @@ export default function App() {
                 <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
                   Begin your project
                 </div>
-                <motion.h2 
+                <motion.h1 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="text-4xl md:text-6xl font-extrabold text-white"
                 >
                   Pure <span className="italic text-[#58a6ff]">Innovation.</span>
-                </motion.h2>
+                </motion.h1>
               </div>
               <motion.div 
                 initial={{ opacity: 0 }}
@@ -2440,6 +2505,7 @@ export default function App() {
                 <button 
                   onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }}
                   className={`absolute ${showFullPreview ? 'top-4 right-4 bg-black/40' : '-top-12 right-0'} p-2 text-white/50 hover:text-white transition-colors z-[100] rounded-full`}
+                  aria-label="Close project preview overlay"
                 >
                   <X size={showFullPreview ? 20 : 28} />
                 </button>
@@ -2469,6 +2535,7 @@ export default function App() {
                         onClick={() => setShowFullPreview(!showFullPreview)}
                         className="p-2 text-zinc-400 hover:text-white transition-colors"
                         title={showFullPreview ? "Minimize" : "Full Screen"}
+                        aria-label={showFullPreview ? "Minimize preview window" : "Maximize preview window to full screen"}
                       >
                         {showFullPreview ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                       </button>
@@ -2642,7 +2709,7 @@ export default function App() {
             <div className="text-center mb-16 md:mb-20">
               <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">How we work</div>
               <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">
-                Simple approach. <span className="italic text-[#58a6ff]">Dependable results.</span>
+                <MotionHeading html="Simple approach. <span class='italic text-[#58a6ff]'>Dependable results.</span>" whileInView={true} />
               </h2>
               <p className="text-[#8b949e] text-sm md:text-base font-light max-w-2xl mx-auto">Four focused phases to take you from idea to impact.</p>
             </div>
@@ -2678,7 +2745,7 @@ export default function App() {
               <div>
                 <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">The Ecosystem</div>
                 <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-8">
-                  Built on a Foundation of <span className="italic text-[#58a6ff]">World-Class</span> Technology
+                  <MotionHeading html="Built on a Foundation of <span class='italic text-[#58a6ff]'>World-Class</span> Technology" whileInView={true} />
                 </h2>
                 <p className="text-[#8b949e] mb-10 max-w-md text-sm md:text-base font-light leading-relaxed">
                   We leverage the most advanced frameworks and AI models to ensure your product is scalable, secure, and future-proof from day one.
@@ -2736,7 +2803,7 @@ export default function App() {
             >
               <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Begin your project</div>
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-6 md:mb-8 leading-tight">
-                Ready to build something <span className="italic text-[#58a6ff]">remarkable?</span>
+                <MotionHeading html="Ready to build something <span class='italic text-[#58a6ff]'>remarkable?</span>" whileInView={true} />
               </h2>
               <p className="text-[#8b949e] mb-10 md:mb-12 max-w-md text-sm md:text-base font-light">From your first digital step to a fully realized intelligent product — Nishkalya delivers reliable development, swift execution, and sustained growth.</p>
               
@@ -2896,6 +2963,7 @@ export default function App() {
           </div>
         </section>
       )}
+      </main>
 
       {/* Footer */}
       <footer className="pt-20 md:pt-24 pb-10 md:pb-12 px-6 md:px-12 border-t border-[#30363d] bg-[#0d1117]">
