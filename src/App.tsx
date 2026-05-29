@@ -95,6 +95,8 @@ import { MotionHeading } from './components/MotionHeading';
 import firebaseConfig from '../firebase-applet-config.json';
 import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
 import AdminPerformanceDashboard from './components/AdminPerformanceDashboard';
+import { ProjectCard } from './components/ProjectCard';
+import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelper';
 
 
 
@@ -200,79 +202,61 @@ export default function App() {
       const origin = window.location.origin || "https://nishkalya.studio";
       
       if (selectedProjectForPreview) {
-        // High premium direct individual SEO tags
-        document.title = `${selectedProjectForPreview.title} — Elite Craftsmanship | Nishkalya Studio`;
-        
-        const descMeta = document.querySelector('meta[name="description"]');
-        if (descMeta) {
-          descMeta.setAttribute('content', selectedProjectForPreview.desc || `Technical details and custom implementation breakdown of ${selectedProjectForPreview.title} developed by Nishkalya Studio.`);
+        // Delegate indexing, keyword matching, and JSON-LD schema generation
+        updateDynamicProjectSEO(selectedProjectForPreview, origin);
+      } else {
+        // Clear project-specific active keywords or JSON-LD scripts
+        clearDynamicProjectSEO();
+
+        if (currentView === 'home') {
+          document.title = "Nishkalya Studio — AI-First Digital Excellence";
+          const descMeta = document.querySelector('meta[name="description"]');
+          if (descMeta) {
+            descMeta.setAttribute('content', "Nishkalya Studio: Delivering pure creation and precise craftsmanship in AI product development and UI/UX design.");
+          }
+          
+          // Update Open Graph tags for social crawlers dynamically
+          const ogTitle = document.querySelector('meta[property="og:title"]');
+          if (ogTitle) ogTitle.setAttribute('content', "Nishkalya Studio — AI-First Digital Excellence");
+          const ogDesc = document.querySelector('meta[property="og:description"]');
+          if (ogDesc) ogDesc.setAttribute('content', "Pure creation, precise craftsmanship. Discover our next-generation digital products and services.");
+          const ogUrl = document.querySelector('meta[property="og:url"]');
+          if (ogUrl) ogUrl.setAttribute('content', origin + "/");
+          
+          // Canonical Link updates
+          let canonicalLink = document.querySelector('link[rel="canonical"]');
+          if (!canonicalLink) {
+            canonicalLink = document.createElement('link');
+            canonicalLink.setAttribute('rel', 'canonical');
+            document.head.appendChild(canonicalLink);
+          }
+          canonicalLink.setAttribute('href', origin + "/");
+          
+        } else if (currentView === 'projects') {
+          document.title = "Explore Our Works | Nishkalya Studio";
+          const descMeta = document.querySelector('meta[name="description"]');
+          if (descMeta) {
+            descMeta.setAttribute('content', "Curated elite portfolio of specialized applications, SaaS, and custom LLM / UI solutions by Nishkalya Studio.");
+          }
+          
+          const ogTitle = document.querySelector('meta[property="og:title"]');
+          if (ogTitle) ogTitle.setAttribute('content', "Elite Portfolio — Curated Works of Nishkalya");
+          const ogDesc = document.querySelector('meta[property="og:description"]');
+          if (ogDesc) ogDesc.setAttribute('content', "Explore our live production showcase of custom AI models, SaaS ecosystems, and pixel-perfect design interfaces.");
+          const ogUrl = document.querySelector('meta[property="og:url"]');
+          if (ogUrl) ogUrl.setAttribute('content', origin + "?view=projects");
+          
+          let canonicalLink = document.querySelector('link[rel="canonical"]');
+          if (!canonicalLink) {
+            canonicalLink = document.createElement('link');
+            canonicalLink.setAttribute('rel', 'canonical');
+            document.head.appendChild(canonicalLink);
+          }
+          canonicalLink.setAttribute('href', origin + "?view=projects");
+          
+        } else if (currentView === 'admin') {
+          document.title = "Management Console | Nishkalya Studio";
         }
-        
-        const ogTitle = document.querySelector('meta[property="og:title"]');
-        if (ogTitle) ogTitle.setAttribute('content', `${selectedProjectForPreview.title} — Technical Showcase`);
-        
-        const ogDesc = document.querySelector('meta[property="og:description"]');
-        if (ogDesc) ogDesc.setAttribute('content', selectedProjectForPreview.desc || `Explore the pixel-perfect design and architecture of ${selectedProjectForPreview.title}.`);
-        
-        const ogUrl = document.querySelector('meta[property="og:url"]');
-        if (ogUrl) ogUrl.setAttribute('content', `${origin}?project=${selectedProjectForPreview.id}`);
-        
-        let canonicalLink = document.querySelector('link[rel="canonical"]');
-        if (!canonicalLink) {
-          canonicalLink = document.createElement('link');
-          canonicalLink.setAttribute('rel', 'canonical');
-          document.head.appendChild(canonicalLink);
-        }
-        canonicalLink.setAttribute('href', `${origin}?project=${selectedProjectForPreview.id}`);
-        
-      } else if (currentView === 'home') {
-        document.title = "Nishkalya Studio — AI-First Digital Excellence";
-        const descMeta = document.querySelector('meta[name="description"]');
-        if (descMeta) {
-          descMeta.setAttribute('content', "Nishkalya Studio: Delivering pure creation and precise craftsmanship in AI product development and UI/UX design.");
-        }
-        
-        // Update Open Graph tags for social crawlers dynamically
-        const ogTitle = document.querySelector('meta[property="og:title"]');
-        if (ogTitle) ogTitle.setAttribute('content', "Nishkalya Studio — AI-First Digital Excellence");
-        const ogDesc = document.querySelector('meta[property="og:description"]');
-        if (ogDesc) ogDesc.setAttribute('content', "Pure creation, precise craftsmanship. Discover our next-generation digital products and services.");
-        const ogUrl = document.querySelector('meta[property="og:url"]');
-        if (ogUrl) ogUrl.setAttribute('content', origin + "/");
-        
-        // Canonical Link updates
-        let canonicalLink = document.querySelector('link[rel="canonical"]');
-        if (!canonicalLink) {
-          canonicalLink = document.createElement('link');
-          canonicalLink.setAttribute('rel', 'canonical');
-          document.head.appendChild(canonicalLink);
-        }
-        canonicalLink.setAttribute('href', origin + "/");
-        
-      } else if (currentView === 'projects') {
-        document.title = "Explore Our Works | Nishkalya Studio";
-        const descMeta = document.querySelector('meta[name="description"]');
-        if (descMeta) {
-          descMeta.setAttribute('content', "Curated elite portfolio of specialized applications, SaaS, and custom LLM / UI solutions by Nishkalya Studio.");
-        }
-        
-        const ogTitle = document.querySelector('meta[property="og:title"]');
-        if (ogTitle) ogTitle.setAttribute('content', "Elite Portfolio — Curated Works of Nishkalya");
-        const ogDesc = document.querySelector('meta[property="og:description"]');
-        if (ogDesc) ogDesc.setAttribute('content', "Explore our live production showcase of custom AI models, SaaS ecosystems, and pixel-perfect design interfaces.");
-        const ogUrl = document.querySelector('meta[property="og:url"]');
-        if (ogUrl) ogUrl.setAttribute('content', origin + "?view=projects");
-        
-        let canonicalLink = document.querySelector('link[rel="canonical"]');
-        if (!canonicalLink) {
-          canonicalLink = document.createElement('link');
-          canonicalLink.setAttribute('rel', 'canonical');
-          document.head.appendChild(canonicalLink);
-        }
-        canonicalLink.setAttribute('href', origin + "?view=projects");
-        
-      } else if (currentView === 'admin') {
-        document.title = "Management Console | Nishkalya Studio";
       }
     } catch (e) {
       console.warn("Meta updates bypassed (probably SSG style execution).", e);
@@ -350,6 +334,24 @@ export default function App() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
+
+  useEffect(() => {
+    const handleOpenProject = (e: Event) => {
+      const customEvent = e as CustomEvent<{ projectId: string }>;
+      if (customEvent.detail && customEvent.detail.projectId) {
+        const match = projects.find(p => p.id === customEvent.detail.projectId);
+        if (match) {
+          setSelectedProjectForPreview(match);
+          if (match.link) {
+            setActivePreviewUrl(match.link);
+          }
+          setCurrentView('projects');
+        }
+      }
+    };
+    window.addEventListener('open-project-preview', handleOpenProject);
+    return () => window.removeEventListener('open-project-preview', handleOpenProject);
+  }, [projects]);
 
   useEffect(() => {
     try {
@@ -2252,14 +2254,11 @@ export default function App() {
                 </div>
               ) : (
                 projects.map((project, i) => (
-                  <motion.div 
+                  <ProjectCard 
                     key={project.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="group cursor-pointer relative"
-                    onMouseEnter={() => setHoveredProject(project)}
-                    onMouseLeave={() => setHoveredProject(null)}
+                    project={project}
+                    index={i}
+                    setHoveredProject={setHoveredProject}
                     onClick={() => {
                       if (project.link) {
                         setSelectedProjectForPreview(project);
@@ -2269,34 +2268,7 @@ export default function App() {
                         setShowFullPreview(false);
                       }
                     }}
-                  >
-                    <div className="aspect-[4/5] bg-[#161b22] border border-[#30363d] rounded-3xl mb-6 flex items-center justify-center group-hover:border-[#58a6ff]/50 hover:shadow-[0_0_20px_rgba(88,166,255,0.15)] transition-all overflow-hidden relative">
-                      {project.link ? (
-                        <div className="absolute inset-0 z-0 overflow-hidden">
-                          <iframe 
-                            src={project.link} 
-                            className="w-[100%] h-[100%] border-none opacity-40 group-hover:opacity-100 transition-all duration-1000 pointer-events-none scale-[1.1] group-hover:scale-100 bg-[#0d1117]"
-                            title={project.title}
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/50 to-transparent group-hover:opacity-20 transition-opacity duration-500"></div>
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 bg-[#58a6ff]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      )}
-                      
-                      <div className="absolute bottom-8 left-8 right-8 z-20 transform group-hover:-translate-y-2 transition-transform duration-500">
-                        <div className="text-[9px] font-bold text-[#58a6ff] uppercase tracking-widest mb-2">{project.category}</div>
-                        <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-tight leading-tight">{project.title}</h3>
-                        <div className="w-10 h-0.5 bg-[#58a6ff] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
-                      </div>
-  
-                      {/* Desktop Hover Icon */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-20 transition-all duration-1000 transform group-hover:scale-[2] pointer-events-none">
-                        {getProjectIcon(project.iconType, 120)}
-                      </div>
-                    </div>
-                  </motion.div>
+                  />
                 ))
               )}
             </div>

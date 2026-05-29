@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
 import { testimonialService, Testimonial } from '../services/testimonialService';
+import { projectService } from '../services/projectService';
 
 export const TestimonialSection: React.FC = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [projectsList, setProjectsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
@@ -23,6 +25,14 @@ export const TestimonialSection: React.FC = () => {
     return () => {
       unsubscribe();
     };
+  }, []);
+
+  // Subscribe to project data to dynamically sync case study tags
+  useEffect(() => {
+    const unsubscribe = projectService.subscribeToProjects((items) => {
+      setProjectsList(items);
+    }, true);
+    return () => unsubscribe();
   }, []);
 
   // Autoplay effect
@@ -75,6 +85,31 @@ export const TestimonialSection: React.FC = () => {
     avatarUrl: '',
     rating: 5
   };
+
+  const findMatchingProject = (t: Testimonial) => {
+    if (!t || !projectsList.length) return null;
+    const companyLower = (t.company || '').toLowerCase();
+    const quoteLower = t.quote.toLowerCase();
+    const authorLower = t.author.toLowerCase();
+    
+    return projectsList.find(proj => {
+      const titleLower = proj.title.toLowerCase();
+      
+      if (companyLower && (titleLower.includes(companyLower) || companyLower.includes(titleLower))) return true;
+      if (authorLower.includes('rostova') && titleLower.includes('orion')) return true;
+      if (authorLower.includes('thorne') && titleLower.includes('orion')) return true;
+      if (authorLower.includes('sterling') && titleLower.includes('flux')) return true;
+      if (quoteLower.includes('nlp') || quoteLower.includes('llm')) {
+        if (titleLower.includes('orion')) return true;
+      }
+      if (quoteLower.includes('vision') || quoteLower.includes('city') || quoteLower.includes('dashboard')) {
+        if (titleLower.includes('flux')) return true;
+      }
+      return false;
+    }) || null;
+  };
+
+  const matchingProject = findMatchingProject(currentTestimonial);
 
   // Framer Motion slide variants for beautiful organic carousel motion
   const slideVariants: any = {
@@ -163,7 +198,7 @@ export const TestimonialSection: React.FC = () => {
               </div>
             </div>
           ) : (
-            <AnimatePresence initial={false} custom={direction} mode="wait">
+             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
                 key={currentTestimonial.id}
                 custom={direction}
@@ -171,12 +206,35 @@ export const TestimonialSection: React.FC = () => {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="w-full max-w-4xl text-center flex flex-col items-center justify-center p-6 md:p-10 border border-[#30363d] bg-[#161b22]/40 rounded-3xl relative backdrop-blur-md"
+                className="w-full max-w-4xl text-center flex flex-col items-center justify-center p-8 md:p-14 border border-[#30363d] bg-gradient-to-b from-[#161b22]/80 to-[#0d1117]/80 hover:from-[#1c2128]/95 hover:to-[#0d1117]/95 hover:border-[#58a6ff]/45 hover:shadow-[0_0_40px_rgba(88,166,255,0.08)] rounded-[2.5rem] relative backdrop-blur-xl transition-all duration-500 ease-out group/testimonial shadow-2xl"
               >
                 {/* Giant Elegant Quote Icon */}
                 <div className="absolute -top-6 left-12 p-3 bg-[#0d1117] border border-[#30363d] rounded-full text-[#58a6ff] shadow-xl">
                   <Quote size={24} className="fill-current" />
                 </div>
+
+                {/* Dynamic Project/Case Study Match Integration */}
+                {matchingProject && (
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('open-project-preview', {
+                        detail: { projectId: matchingProject.id }
+                      }));
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-full bg-[#58a6ff]/10 hover:bg-[#58a6ff]/20 border border-[#58a6ff]/25 hover:border-[#58a6ff]/55 text-[#58a6ff] text-[10px] font-bold font-mono uppercase tracking-wider transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer shadow-lg shadow-[#58a6ff]/5 hover:shadow-[#58a6ff]/12 z-20 group/badge"
+                    title={`Click to preview case study: ${matchingProject.title}`}
+                    id={`testimonial-project-badge-${matchingProject.id}`}
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#58a6ff] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#58a6ff]"></span>
+                    </span>
+                    <span>Interactive Case Study:</span>
+                    <span className="text-white underline decoration-dotted underline-offset-2 decoration-[#58a6ff]/60 group-hover/badge:decoration-white transition-colors">
+                      {matchingProject.title.split(' — ')[0]}
+                    </span>
+                  </button>
+                )}
 
                 {/* Gold Ratings */}
                 <div className="flex gap-1 mb-8" aria-label={`Rated ${currentTestimonial.rating || 5} out of 5 stars`}>
@@ -186,7 +244,7 @@ export const TestimonialSection: React.FC = () => {
                 </div>
 
                 {/* Main Testimonial Test in Gorgeous Editorial Sans Heading */}
-                <blockquote className="text-lg sm:text-2xl font-normal text-white leading-relaxed tracking-tight max-w-3xl mb-10 font-sans">
+                <blockquote className="text-xl sm:text-2xl md:text-3xl font-light text-white leading-relaxed tracking-tight max-w-4xl mb-10 font-sans">
                   &ldquo;{currentTestimonial.quote}&rdquo;
                 </blockquote>
 
@@ -197,10 +255,10 @@ export const TestimonialSection: React.FC = () => {
                       src={currentTestimonial.avatarUrl} 
                       alt={currentTestimonial.author}
                       referrerPolicy="no-referrer"
-                      className="w-12 h-12 rounded-full border border-[#30363d] object-cover"
+                      className="w-12 h-12 rounded-full border border-[#30363d] object-cover transition-transform duration-500 group-hover/testimonial:scale-110"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full border border-[#30363d] bg-[#21262d] flex items-center justify-center text-white font-mono text-sm">
+                    <div className="w-12 h-12 rounded-full border border-[#30363d] bg-[#21262d] flex items-center justify-center text-white font-mono text-sm transition-transform duration-500 group-hover/testimonial:scale-110">
                       {currentTestimonial.author.charAt(0)}
                     </div>
                   )}
