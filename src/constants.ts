@@ -3,8 +3,8 @@ import { Project } from './services/projectService';
 export const DEFAULT_CONFIG = {
   hero: {
     badge: "Architecting the Future",
-    heading: "Nishkalya Studio",
-    subheading: "AI-First Digital Agency building next-generation intelligent applications and premium user experiences. We transform businesses with cutting-edge AI, LLM integration, and world-class design.",
+    heading: "Design. Code. <span class=\"text-[#58a6ff] italic\">Evolve.</span>",
+    subheading: "A multidisciplinary studio focusing on high-fidelity user experiences and next-generation AI integrations.",
     stats: [
       { label: "Products Shipped", value: "24+" },
       { label: "Lines of Code", value: "2.1M" },

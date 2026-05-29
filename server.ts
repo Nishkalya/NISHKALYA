@@ -3,8 +3,6 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 
-const CANONICAL_DOMAIN = "nishkalya.studio";
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -12,31 +10,11 @@ async function startServer() {
   // Helper to dynamically resolve the request's origin (including protocol and host name)
   const getBaseUrl = (req: express.Request) => {
     const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-    const host = req.headers.host || req.hostname || CANONICAL_DOMAIN;
+    const host = req.headers.host || req.hostname || 'nishkalya.studio';
     return `${protocol}://${host}`;
   };
 
-  // Redirect non-canonical domains to canonical domain (SEO)
-  app.use((req, res, next) => {
-    const host = req.headers.host || '';
-    const isCanonical = host === CANONICAL_DOMAIN || host === `www.${CANONICAL_DOMAIN}`;
-    const isLocalDev = host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('0.0.0.0');
-
-    if (!isCanonical && !isLocalDev && process.env.NODE_ENV === 'production') {
-      const redirectUrl = `https://${CANONICAL_DOMAIN}${req.originalUrl}`;
-      return res.redirect(301, redirectUrl);
-    }
-    next();
-  });
-
-  // Add X-Robots-Tag and Link canonical header for SEO
-  app.use((req, res, next) => {
-    res.header('X-Robots-Tag', 'index, follow');
-    res.header('Link', `<https://${CANONICAL_DOMAIN}/>; rel="canonical"`);
-    next();
-  });
-
-  // Serve Dynamic Sitemap
+  // Serve Dynamic sitemap.xml
   app.get("/sitemap.xml", (req, res) => {
     const baseUrl = getBaseUrl(req);
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -58,26 +36,11 @@ async function startServer() {
     res.send(sitemap.trim());
   });
 
-  // Dynamic Robots.txt - Block non-canonical domains like bolt.host
+  // Serve Dynamic robots.txt
   app.get("/robots.txt", (req, res) => {
-    const host = req.headers.host || '';
-    const isCanonical = host === CANONICAL_DOMAIN || host === `www.${CANONICAL_DOMAIN}`;
-    const isLocalDev = host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('0.0.0.0');
-
-    if (!isCanonical && !isLocalDev && process.env.NODE_ENV === 'production') {
-      // Block all crawlers on non-canonical domains (like bolt.host)
-      res.header("Content-Type", "text/plain");
-      res.send(`# Non-canonical domain - blocking crawlers
-User-agent: *
-Disallow: /
-`);
-      return;
-    }
-
-    // Allow crawlers on canonical/domain
     const baseUrl = getBaseUrl(req);
     const robots = `# www.robotstxt.org
-# Allow all crawlers on canonical domain
+# Allow all crawlers
 User-agent: *
 Allow: /
 
@@ -87,43 +50,70 @@ Sitemap: ${baseUrl}/sitemap.xml
     res.send(robots.trim());
   });
 
-  // Dynamic Site Verification to support any validation process
+  // Google Site Verification dynamic mapping
   app.get("/google8d65cfd211e5d4d2.html", (_req, res) => {
     res.header("Content-Type", "text/html");
     res.send("google-site-verification: google8d65cfd211e5d4d2.html");
   });
 
+  let vite: any;
   if (process.env.NODE_ENV !== "production") {
-    // Vite Dev Server middleware mode
-    const vite = await createViteServer({
+    vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom", // Use custom to control the index.html routing
     });
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    
-    // Serve static assets without auto-serving index.html
+    // Serve static files safely without auto-triggering index.html
     app.use(express.static(distPath, { index: false }));
-    
-    // Serve dynamic parsed index.html
-    app.all('*', (req, res) => {
-      const baseUrl = getBaseUrl(req);
-      const htmlPath = path.join(distPath, 'index.html');
-      
-      if (fs.existsSync(htmlPath)) {
-        let html = fs.readFileSync(htmlPath, 'utf-8');
-        // Dynamically replace hardcoded studio URLs with the request's actual host mapping
-        html = html.replace(/https:\/\/nishkalya\.studio/g, baseUrl);
-        res.send(html);
-      } else {
-        res.status(404).send('Not Found');
-      }
-    });
   }
 
+  // Fallback for HTML request / page routes
+  app.all("*", async (req, res, next) => {
+    const isHtmlRequest = req.method === 'GET' && (req.headers.accept?.includes('text/html') || Object.keys(req.query).length === 0);
+    
+    // Skip if it looks like an asset/file request
+    if (req.path.includes('.') && !req.path.endsWith('.html')) {
+       return next();
+    }
+
+    try {
+      let html = "";
+      const baseUrl = getBaseUrl(req);
+
+      if (process.env.NODE_ENV !== "production") {
+        const rawHtmlPath = path.resolve(process.cwd(), 'index.html');
+        if (fs.existsSync(rawHtmlPath)) {
+          html = fs.readFileSync(rawHtmlPath, 'utf8');
+          // Let Vite rewrite scripts etc.
+          html = await vite.transformIndexHtml(req.originalUrl, html);
+        } else {
+          return res.status(404).send("index.html not found");
+        }
+      } else {
+        const distHtmlPath = path.join(process.cwd(), 'dist', 'index.html');
+        if (fs.existsSync(distHtmlPath)) {
+          html = fs.readFileSync(distHtmlPath, 'utf8');
+        } else {
+          return res.status(404).send("Production asset index.html not found");
+        }
+      }
+
+      // Dynamic Replacement of ALL instances of nishkalya.studio to whichever host/origin is serving the request
+      html = html.replace(/https:\/\/nishkalya\.studio/g, baseUrl);
+
+      res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
+    } catch (e) {
+      if (process.env.NODE_ENV !== "production" && vite) {
+        vite.ssrFixStacktrace(e);
+      }
+      next(e);
+    }
+  });
+
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Server] Full-stack engine running on http://0.0.0.0:${PORT}`);
+    console.log(`[Server] Dynamic full-stack engine running on http://0.0.0.0:${PORT}`);
   });
 }
 

@@ -29,6 +29,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /performance_logs/{logId} {
+      allow create: if true;
+      allow read, delete: if isAdmin();
+    }
+
     match /messages/{messageId} {
       allow create: if true;
       allow read, update, delete: if isAdmin();

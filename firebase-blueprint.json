@@ -56,6 +56,36 @@
         "role": { "type": "string", "enum": ["admin"] }
       },
       "required": ["email", "role"]
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "A client testimonial quote",
+      "type": "object",
+      "properties": {
+        "quote": { "type": "string", "description": "The testimonial text quote" },
+        "author": { "type": "string", "description": "Name of the client who gave the testimonial" },
+        "title": { "type": "string", "description": "Title or role of the client (e.g., CEO, Product Manager)" },
+        "company": { "type": "string", "description": "Company name of the client" },
+        "avatarUrl": { "type": "string", "description": "URL to the user's avatar image" },
+        "rating": { "type": "number", "description": "Rating out of 5 stars" },
+        "isActive": { "type": "boolean", "description": "Whether the testimonial is verified and active to display on the slider" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["quote", "author", "title"]
+    },
+    "PerformanceLog": {
+      "title": "PerformanceLog",
+      "description": "A client/page performance network monitoring log",
+      "type": "object",
+      "properties": {
+        "page": { "type": "string", "description": "Name of the page or route being tracked" },
+        "loadTimeMs": { "type": "number", "description": "Measured page load speed or render response duration in ms" },
+        "userAgent": { "type": "string", "description": "User agent of the browser" },
+        "type": { "type": "string", "enum": ["pageload", "transition"], "description": "The type of load action" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["page", "loadTimeMs", "userAgent", "type"]
     }
   },
   "firestore": {
@@ -66,6 +96,14 @@
     "admins": {
       "schema": "Admin",
       "description": "Collection of admin users"
+    },
+    "testimonials": {
+      "schema": "Testimonial",
+      "description": "Collection of client testimonials"
+    },
+    "performance_logs": {
+      "schema": "PerformanceLog",
+      "description": "Collection of browser client page load speed measurements logged asynchronously"
     }
   }
 }

@@ -23,6 +23,7 @@ import {
   Phone, 
   MapPin, 
   MessageSquare,
+  Quote,
   Search,
   Share2,
   ChevronRight,
@@ -88,8 +89,12 @@ import {
 import { db, auth } from './lib/firebase';
 import { Project, projectService } from './services/projectService';
 import { DEFAULT_CONFIG, DEFAULT_PROJECTS } from './constants';
+import { testimonialService, Testimonial } from './services/testimonialService';
+import { TestimonialSection } from './components/TestimonialSection';
 import { MotionHeading } from './components/MotionHeading';
 import firebaseConfig from '../firebase-applet-config.json';
+import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
+import AdminPerformanceDashboard from './components/AdminPerformanceDashboard';
 
 
 
@@ -167,7 +172,12 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin'>('home');
   const [websiteConfig, setWebsiteConfig] = useState<any>(DEFAULT_CONFIG);
   const [isConfigLoading, setIsConfigLoading] = useState(true);
-  const [adminTab, setAdminTab] = useState<'messages' | 'content'>('messages');
+  const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance'>('messages');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isProjectsLoading, setIsProjectsLoading] = useState(true);
+
+  // Activate page load and spa route transition performance telemetry
+  usePerformanceMonitor(currentView);
 
   const handleFirestoreError = (error: any, operationType: string, path: string) => {
     const errInfo = {
@@ -188,7 +198,34 @@ export default function App() {
     // Dynamic meta elements updates for rich SEO compliance
     try {
       const origin = window.location.origin || "https://nishkalya.studio";
-      if (currentView === 'home') {
+      
+      if (selectedProjectForPreview) {
+        // High premium direct individual SEO tags
+        document.title = `${selectedProjectForPreview.title} — Elite Craftsmanship | Nishkalya Studio`;
+        
+        const descMeta = document.querySelector('meta[name="description"]');
+        if (descMeta) {
+          descMeta.setAttribute('content', selectedProjectForPreview.desc || `Technical details and custom implementation breakdown of ${selectedProjectForPreview.title} developed by Nishkalya Studio.`);
+        }
+        
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', `${selectedProjectForPreview.title} — Technical Showcase`);
+        
+        const ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute('content', selectedProjectForPreview.desc || `Explore the pixel-perfect design and architecture of ${selectedProjectForPreview.title}.`);
+        
+        const ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute('content', `${origin}?project=${selectedProjectForPreview.id}`);
+        
+        let canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (!canonicalLink) {
+          canonicalLink = document.createElement('link');
+          canonicalLink.setAttribute('rel', 'canonical');
+          document.head.appendChild(canonicalLink);
+        }
+        canonicalLink.setAttribute('href', `${origin}?project=${selectedProjectForPreview.id}`);
+        
+      } else if (currentView === 'home') {
         document.title = "Nishkalya Studio — AI-First Digital Excellence";
         const descMeta = document.querySelector('meta[name="description"]');
         if (descMeta) {
@@ -240,7 +277,7 @@ export default function App() {
     } catch (e) {
       console.warn("Meta updates bypassed (probably SSG style execution).", e);
     }
-  }, [currentView, websiteConfig]);
+  }, [currentView, websiteConfig, selectedProjectForPreview]);
 
   useEffect(() => {
     // Real-time config listener
@@ -273,10 +310,15 @@ export default function App() {
             // Use provided ID if available, otherwise it's just a seed
             await setDoc(doc(db, 'projects', id || String(idx)), { ...rest, order: idx }).catch(err => handleFirestoreError(err, 'write', 'projects/' + (id || idx)));
           });
+        } else {
+          // If genuinely empty and we are not seeding, fallback to DEFAULT_PROJECTS to make sure standard portfolio loads smoothly
+          setProjects(DEFAULT_PROJECTS.map((p: any, idx) => ({ id: p.id || String(idx), ...p })) as any);
         }
       }
+      setIsProjectsLoading(false);
     }, (error) => {
       handleFirestoreError(error, 'list', 'projects');
+      setIsProjectsLoading(false);
     });
 
     return () => {
@@ -308,6 +350,77 @@ export default function App() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      let changed = false;
+      
+      if (selectedProjectForPreview) {
+        if (params.get('project') !== selectedProjectForPreview.id) {
+          params.set('project', selectedProjectForPreview.id);
+          changed = true;
+        }
+        if (params.get('view') !== 'projects') {
+          params.set('view', 'projects');
+          changed = true;
+        }
+      } else {
+        if (params.has('project')) {
+          params.delete('project');
+          changed = true;
+        }
+        // Sync general view parameter as well if relevant
+        if (currentView !== 'home') {
+          if (params.get('view') !== currentView) {
+            params.set('view', currentView);
+            changed = true;
+          }
+        } else {
+          if (params.has('view')) {
+            params.delete('view');
+            changed = true;
+          }
+        }
+      }
+      
+      if (changed) {
+        const queryStr = params.toString();
+        const newUrl = queryStr ? `${window.location.pathname}?${queryStr}` : window.location.pathname;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+      }
+    } catch (e) {
+      console.warn("URL query param synchronization bypassed.", e);
+    }
+  }, [selectedProjectForPreview, currentView]);
+
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProjectForPreview) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get('project');
+        const viewOverride = params.get('view');
+        
+        if (projectId) {
+          const match = projects.find(p => p.id === projectId);
+          if (match) {
+            setSelectedProjectForPreview(match);
+            if (match.link) {
+              setActivePreviewUrl(match.link);
+            }
+          }
+        }
+        
+        if (viewOverride === 'projects' && currentView !== 'projects') {
+          setCurrentView('projects');
+        } else if (viewOverride === 'admin' && currentView !== 'admin') {
+          setCurrentView('admin');
+        }
+      } catch (e) {
+        console.error("Failed to parse initial deep links", e);
+      }
+    }
+  }, [projects, isProjectsLoading]);
 
   useEffect(() => {
     try {
@@ -615,8 +728,8 @@ export default function App() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <div className="text-[#58a6ff] text-[10px] font-bold uppercase tracking-[0.4em] mb-4 font-mono">Command Center</div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white">
-              {adminTab === 'messages' ? 'Inquiry Dashboard' : 'Website Editor'}
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white font-sans">
+              {adminTab === 'messages' ? 'Inquiry Dashboard' : adminTab === 'content' ? 'Website Editor' : 'Performance Analytics'}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -642,6 +755,12 @@ export default function App() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'content' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
               >
                 <Edit2 size={12} /> Content
+              </button>
+              <button 
+                onClick={() => setAdminTab('performance')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'performance' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
+              >
+                <Activity size={12} /> Performance
               </button>
             </div>
             <button 
@@ -758,7 +877,7 @@ export default function App() {
               )}
             </div>
           </div>
-        ) : (
+        ) : adminTab === 'content' ? (
           <div className="space-y-8">
             {/* Website Content Management */}
             <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 md:p-8 shadow-sm">
@@ -1154,24 +1273,107 @@ export default function App() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                {projects.map((project, i) => (
-                  <div key={project.id} className="group flex items-center gap-4 p-4 bg-[#0d1117] border border-[#30363d] rounded-xl admin-glow">
-                    <div className="w-12 h-12 bg-[#21262d] border border-[#30363d] rounded-lg flex items-center justify-center text-[#58a6ff] shrink-0">
-                      {getProjectIcon(project.iconType, 20)}
+                {isProjectsLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={`admin-project-skeleton-${i}`} className="flex items-center gap-4 p-4 bg-[#0d1117]/50 border border-[#30363d]/50 rounded-xl animate-pulse">
+                      <div className="w-12 h-12 bg-[#21262d] border border-[#30363d]/40 rounded-lg shrink-0" />
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="h-2 w-16 bg-[#30363d]/60 rounded" />
+                        <div className="h-4 w-32 bg-[#30363d]/60 rounded" />
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#21262d]" />
+                        <div className="w-8 h-8 rounded-lg bg-[#21262d]" />
+                      </div>
                     </div>
+                  ))
+                ) : projects.length === 0 ? (
+                  <div className="col-span-2 py-8 text-center text-xs text-[#8b949e]">
+                    No projects found in collection.
+                  </div>
+                ) : (
+                  projects.map((project, i) => (
+                    <div key={project.id} className="group flex items-center gap-4 p-4 bg-[#0d1117] border border-[#30363d] rounded-xl admin-glow">
+                      <div className="w-12 h-12 bg-[#21262d] border border-[#30363d] rounded-lg flex items-center justify-center text-[#58a6ff] shrink-0">
+                        {getProjectIcon(project.iconType, 20)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[8px] font-bold text-[#8b949e] uppercase tracking-[0.2em] mb-0.5 font-mono">{project.category}</div>
+                        <h4 className="text-sm font-bold text-white truncate">{project.title}</h4>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                         <button onClick={() => handleEditProject(project)} className="p-1.5 text-[#8b949e] hover:text-[#58a6ff] hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Edit2 size={14} /></button>
+                         <button onClick={(e) => handleDeleteProject(e, project.id)} className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Client Testimonials Management */}
+            <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 md:p-8 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#58a6ff]/10 border border-[#30363d] rounded-xl flex items-center justify-center text-[#58a6ff]">
+                    <MessageSquare size={22} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Client Testimonials</h3>
+                    <p className="text-xs text-[#8b949e] font-light">Manage customer quotes and reviews shown on the landing page.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleAddTestimonial}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center shrink-0"
+                >
+                  <Plus size={14} /> New Testimonial
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {adminTestimonials.map((item) => (
+                  <div key={item.id} className="group flex items-start gap-4 p-4 bg-[#0d1117] border border-[#30363d] rounded-xl admin-glow">
+                    {item.avatarUrl ? (
+                      <img 
+                        src={item.avatarUrl} 
+                        alt={item.author}
+                        referrerPolicy="no-referrer"
+                        className="w-10 h-10 rounded-full border border-[#30363d] object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border border-[#30363d] bg-[#21262d] flex items-center justify-center text-[#58a6ff] shrink-0 font-mono text-xs">
+                        {item.author.charAt(0)}
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-[8px] font-bold text-[#8b949e] uppercase tracking-[0.2em] mb-0.5 font-mono">{project.category}</div>
-                      <h4 className="text-sm font-bold text-white truncate">{project.title}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <cite className="not-italic text-xs font-bold text-white">{item.author}</cite>
+                        <span className="text-[10px] text-[#8b949e] font-light">· {item.company || item.title}</span>
+                      </div>
+                      <p className="text-[#8b949e] text-xs line-clamp-2 leading-relaxed mb-2">"{item.quote}"</p>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: item.rating || 5 }).map((_, rIdx) => (
+                          <Star key={rIdx} size={10} className="text-amber-400 fill-amber-400" />
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                       <button onClick={() => handleEditProject(project)} className="p-1.5 text-[#8b949e] hover:text-[#58a6ff] hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Edit2 size={14} /></button>
-                       <button onClick={(e) => handleDeleteProject(e, project.id)} className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Trash2 size={14} /></button>
+                    <div className="flex items-center gap-1.5 shrink-0 self-center">
+                       <button onClick={() => handleEditTestimonial(item)} className="p-1.5 text-[#8b949e] hover:text-[#58a6ff] hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Edit2 size={12} /></button>
+                       <button onClick={(e) => handleDeleteTestimonial(e, item.id)} className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Trash2 size={12} /></button>
                     </div>
                   </div>
                 ))}
+                {adminTestimonials.length === 0 && (
+                  <div className="md:col-span-2 py-8 text-center text-xs text-[#8b949e] border border-dashed border-[#30363d] rounded-xl">
+                    No testimonials found. Click "New Testimonial" or wait for default seeding.
+                  </div>
+                )}
               </div>
             </div>
           </div>
+        ) : (
+          <AdminPerformanceDashboard />
         )}
       </div>
     );
@@ -1454,8 +1656,6 @@ export default function App() {
     );
   };
 
-  const [projects, setProjects] = useState<Project[]>(DEFAULT_PROJECTS.map((p: any, idx) => ({ id: p.id || String(idx), ...p })) as any);
-
   const [projectModal, setProjectModal] = useState<{
     isOpen: boolean;
     mode: 'add' | 'edit';
@@ -1465,6 +1665,62 @@ export default function App() {
     mode: 'add',
     project: null
   });
+
+  const [adminTestimonials, setAdminTestimonials] = useState<Testimonial[]>([]);
+  const [testimonialModal, setTestimonialModal] = useState<{
+    isOpen: boolean;
+    mode: 'add' | 'edit';
+    testimonial: Testimonial | null;
+  }>({
+    isOpen: false,
+    mode: 'add',
+    testimonial: null
+  });
+  const [testimonialToDelete, setTestimonialToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const unsubscribe = testimonialService.subscribeToTestimonials((items) => {
+      setAdminTestimonials(items);
+      if (items.length === 0 && currentUser?.email === 'nishkalya@gmail.com') {
+        testimonialService.seedDefaultTestimonials();
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [isAdmin, currentUser]);
+
+  const handleAddTestimonial = () => {
+    setTestimonialModal({
+      isOpen: true,
+      mode: 'add',
+      testimonial: {
+        id: '',
+        quote: '',
+        author: '',
+        title: '',
+        company: '',
+        avatarUrl: '',
+        rating: 5,
+        isActive: true
+      }
+    });
+  };
+
+  const handleEditTestimonial = (item: Testimonial) => {
+    setTestimonialModal({
+      isOpen: true,
+      mode: 'edit',
+      testimonial: { ...item }
+    });
+  };
+
+  const handleDeleteTestimonial = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTestimonialToDelete(id);
+  };
 
   const getProjectIcon = (type: string, size = 40) => {
     switch (type) {
@@ -1550,6 +1806,40 @@ export default function App() {
       setProjectModal({ isOpen: false, mode: 'add', project: null });
     } catch (err) {
       console.error("Failed to save project", err);
+    } finally {
+      setIsActionPending(false);
+    }
+  };
+
+  const confirmDeleteTestimonial = async () => {
+    if (testimonialToDelete) {
+      setIsActionPending(true);
+      try {
+        await testimonialService.deleteTestimonial(testimonialToDelete);
+        setTestimonialToDelete(null);
+      } catch (err) {
+        console.error("Failed to delete testimonial", err);
+      } finally {
+        setIsActionPending(false);
+      }
+    }
+  };
+
+  const saveTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testimonialModal.testimonial) return;
+
+    setIsActionPending(true);
+    try {
+      const { id, createdAt, updatedAt, ...rest } = testimonialModal.testimonial;
+      if (testimonialModal.mode === 'add') {
+        await testimonialService.addTestimonial(rest);
+      } else {
+        await testimonialService.updateTestimonial(id, rest);
+      }
+      setTestimonialModal({ isOpen: false, mode: 'add', testimonial: null });
+    } catch (err) {
+      console.error("Failed to save testimonial", err);
     } finally {
       setIsActionPending(false);
     }
@@ -1935,53 +2225,80 @@ export default function App() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {projects.map((project, i) => (
-                <motion.div 
-                  key={project.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="group cursor-pointer relative"
-                  onMouseEnter={() => setHoveredProject(project)}
-                  onMouseLeave={() => setHoveredProject(null)}
-                  onClick={() => {
-                    if (project.link) {
-                      setSelectedProjectForPreview(project);
-                      setIsFlipped(false);
-                      setActivePreviewUrl(project.link);
-                      setIsIframeLoading(true);
-                      setShowFullPreview(false);
-                    }
-                  }}
-                >
-                  <div className="aspect-[4/5] bg-[#161b22] border border-[#30363d] rounded-3xl mb-6 flex items-center justify-center group-hover:border-[#58a6ff]/50 hover:shadow-[0_0_20px_rgba(88,166,255,0.15)] transition-all overflow-hidden relative">
-                    {project.link ? (
-                      <div className="absolute inset-0 z-0 overflow-hidden">
-                        <iframe 
-                          src={project.link} 
-                          className="w-[100%] h-[100%] border-none opacity-40 group-hover:opacity-100 transition-all duration-1000 pointer-events-none scale-[1.1] group-hover:scale-100 bg-[#0d1117]"
-                          title={project.title}
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/50 to-transparent group-hover:opacity-20 transition-opacity duration-500"></div>
-                      </div>
-                    ) : (
-                      <div className="absolute inset-0 bg-[#58a6ff]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    )}
-                    
-                    <div className="absolute bottom-8 left-8 right-8 z-20 transform group-hover:-translate-y-2 transition-transform duration-500">
-                      <div className="text-[9px] font-bold text-[#58a6ff] uppercase tracking-widest mb-2">{project.category}</div>
-                      <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-tight leading-tight">{project.title}</h3>
-                      <div className="w-10 h-0.5 bg-[#58a6ff] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
+              {isProjectsLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div 
+                    key={`project-skeleton-${i}`}
+                    className="aspect-[4/5] bg-[#161b22]/40 border border-[#30363d]/50 rounded-3xl p-8 flex flex-col justify-end relative overflow-hidden animate-pulse"
+                  >
+                    {/* Subtle decorative placeholder background */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/85 to-transparent z-0"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-[#30363d]/40 rounded-2xl flex items-center justify-center border border-[#30363d]/30 text-zinc-700">
+                      <Activity size={24} />
                     </div>
-
-                    {/* Desktop Hover Icon */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-20 transition-all duration-1000 transform group-hover:scale-[2] pointer-events-none">
-                      {getProjectIcon(project.iconType, 120)}
+                    
+                    <div className="relative z-10 space-y-3">
+                      {/* Category banner */}
+                      <div className="h-3 w-1/3 bg-[#30363d]/60 rounded-md" />
+                      {/* Title banner */}
+                      <div className="h-6 w-3/4 bg-[#30363d]/60 rounded-md" />
                     </div>
                   </div>
-                </motion.div>
-              ))}
+                ))
+              ) : projects.length === 0 ? (
+                <div className="col-span-full py-20 text-center">
+                  <Activity className="text-zinc-600 mx-auto mb-4" size={32} />
+                  <p className="text-[#8b949e] text-sm">No innovative showcase items recorded yet.</p>
+                </div>
+              ) : (
+                projects.map((project, i) => (
+                  <motion.div 
+                    key={project.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="group cursor-pointer relative"
+                    onMouseEnter={() => setHoveredProject(project)}
+                    onMouseLeave={() => setHoveredProject(null)}
+                    onClick={() => {
+                      if (project.link) {
+                        setSelectedProjectForPreview(project);
+                        setIsFlipped(false);
+                        setActivePreviewUrl(project.link);
+                        setIsIframeLoading(true);
+                        setShowFullPreview(false);
+                      }
+                    }}
+                  >
+                    <div className="aspect-[4/5] bg-[#161b22] border border-[#30363d] rounded-3xl mb-6 flex items-center justify-center group-hover:border-[#58a6ff]/50 hover:shadow-[0_0_20px_rgba(88,166,255,0.15)] transition-all overflow-hidden relative">
+                      {project.link ? (
+                        <div className="absolute inset-0 z-0 overflow-hidden">
+                          <iframe 
+                            src={project.link} 
+                            className="w-[100%] h-[100%] border-none opacity-40 group-hover:opacity-100 transition-all duration-1000 pointer-events-none scale-[1.1] group-hover:scale-100 bg-[#0d1117]"
+                            title={project.title}
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/50 to-transparent group-hover:opacity-20 transition-opacity duration-500"></div>
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-[#58a6ff]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      )}
+                      
+                      <div className="absolute bottom-8 left-8 right-8 z-20 transform group-hover:-translate-y-2 transition-transform duration-500">
+                        <div className="text-[9px] font-bold text-[#58a6ff] uppercase tracking-widest mb-2">{project.category}</div>
+                        <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-tight leading-tight">{project.title}</h3>
+                        <div className="w-10 h-0.5 bg-[#58a6ff] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
+                      </div>
+  
+                      {/* Desktop Hover Icon */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-20 transition-all duration-1000 transform group-hover:scale-[2] pointer-events-none">
+                        {getProjectIcon(project.iconType, 120)}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </motion.div>
         )}
@@ -2408,6 +2725,224 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Testimonial Management Modal */}
+      <AnimatePresence>
+        {testimonialModal.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setTestimonialModal({ ...testimonialModal, isOpen: false })}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-xl bg-[#0a0a0c] border border-zinc-800 rounded-3xl p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh] scrollbar-hide text-left"
+            >
+              <button 
+                onClick={() => setTestimonialModal({ ...testimonialModal, isOpen: false })}
+                className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-[#58a6ff]/10 border border-[#30363d] flex items-center justify-center text-[#58a6ff]">
+                  <Quote size={18} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white font-sans">
+                    {testimonialModal.mode === 'add' ? 'Add Testimonial' : 'Edit Testimonial'}
+                  </h3>
+                  <p className="text-xs text-[#8b949e]">Record customized reviews and feedback elements.</p>
+                </div>
+              </div>
+
+              <form onSubmit={saveTestimonial} className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Quote / Content *</label>
+                  <textarea 
+                    rows={4}
+                    required
+                    value={testimonialModal.testimonial?.quote || ''}
+                    onChange={(e) => setTestimonialModal({ 
+                      ...testimonialModal, 
+                      testimonial: { ...testimonialModal.testimonial!, quote: e.target.value } 
+                    })}
+                    placeholder="Enter the client's quote..."
+                    className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Author Name *</label>
+                    <input 
+                      type="text"
+                      required
+                      value={testimonialModal.testimonial?.author || ''}
+                      onChange={(e) => setTestimonialModal({ 
+                        ...testimonialModal, 
+                        testimonial: { ...testimonialModal.testimonial!, author: e.target.value } 
+                      })}
+                      placeholder="e.g. John Doe"
+                      className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Job Title / Role *</label>
+                    <input 
+                      type="text"
+                      required
+                      value={testimonialModal.testimonial?.title || ''}
+                      onChange={(e) => setTestimonialModal({ 
+                        ...testimonialModal, 
+                        testimonial: { ...testimonialModal.testimonial!, title: e.target.value } 
+                      })}
+                      placeholder="e.g. CEO"
+                      className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Company Name</label>
+                    <input 
+                      type="text"
+                      value={testimonialModal.testimonial?.company || ''}
+                      onChange={(e) => setTestimonialModal({ 
+                        ...testimonialModal, 
+                        testimonial: { ...testimonialModal.testimonial!, company: e.target.value } 
+                      })}
+                      placeholder="e.g. Tech Corp"
+                      className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Rating Level (1 - 5 stars)</label>
+                    <div className="flex gap-2.5 pt-1.5">
+                      {[1, 2, 3, 4, 5].map((num) => (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setTestimonialModal({
+                            ...testimonialModal,
+                            testimonial: { ...testimonialModal.testimonial!, rating: num }
+                          })}
+                          className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all ${
+                            (testimonialModal.testimonial?.rating || 5) === num
+                              ? 'border-[#58a6ff] bg-[#58a6ff]/10 text-[#58a6ff]'
+                              : 'border-zinc-800 bg-zinc-900/40 text-zinc-500 hover:border-zinc-700'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Client Avatar Image URL</label>
+                  <input 
+                    type="text"
+                    value={testimonialModal.testimonial?.avatarUrl || ''}
+                    onChange={(e) => setTestimonialModal({ 
+                      ...testimonialModal, 
+                      testimonial: { ...testimonialModal.testimonial!, avatarUrl: e.target.value } 
+                    })}
+                    placeholder="https://images.unsplash.com/... or blank"
+                    className="w-full bg-[#050507] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 py-2">
+                  <input 
+                    type="checkbox"
+                    id="isTestimonialActive"
+                    checked={testimonialModal.testimonial?.isActive !== false}
+                    onChange={(e) => setTestimonialModal({ 
+                      ...testimonialModal, 
+                      testimonial: { ...testimonialModal.testimonial!, isActive: e.target.checked } 
+                    })}
+                    className="w-4 h-4 rounded text-[#58a6ff] accent-[#58a6ff] bg-[#050507] border border-zinc-800 outline-none"
+                  />
+                  <label htmlFor="isTestimonialActive" className="text-xs text-[#c9d1d9] select-none font-medium">Verify and show active on landing page slider</label>
+                </div>
+
+                <div className="pt-4 border-t border-zinc-900 flex gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setTestimonialModal({ ...testimonialModal, isOpen: false })}
+                    className="flex-1 py-4 bg-[#21262d] border border-zinc-800 text-zinc-400 font-bold rounded-xl hover:text-white hover:bg-zinc-805 transition-all text-xs uppercase tracking-widest"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    disabled={isActionPending}
+                    className="flex-1 py-4 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 text-xs uppercase tracking-widest shadow-lg shadow-violet-600/20 disabled:opacity-70 flex items-center justify-center gap-2 admin-glow"
+                  >
+                    {isActionPending && <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
+                    {testimonialModal.mode === 'add' ? 'Create' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Testimonial Delete Confirmation Modal */}
+      <AnimatePresence>
+        {testimonialToDelete && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+              onClick={() => setTestimonialToDelete(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-[#161b22]/95 backdrop-blur-md border border-[#30363d] rounded-2xl p-8 shadow-2xl text-center z-10"
+            >
+              <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mx-auto mb-6 border border-red-500/20">
+                <Trash2 size={28} />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2 font-sans">Delete Testimonial?</h3>
+              <p className="text-[#8b949e] text-xs font-light leading-relaxed mb-6">
+                Are you sure you want to remove this testimonial? This action is irreversible.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setTestimonialToDelete(null)}
+                  disabled={isActionPending}
+                  className="flex-1 py-2.5 bg-[#21262d] border border-[#30363d] text-[#c9d1d9] font-bold rounded-lg hover:text-white hover:bg-[#30363d] transition-all text-[9px] uppercase tracking-widest disabled:opacity-50 font-mono"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeleteTestimonial}
+                  disabled={isActionPending}
+                  className="flex-1 py-2.5 bg-red-600 border border-red-500 text-white font-bold rounded-lg hover:bg-red-500 transition-all text-[9px] uppercase tracking-widest shadow-lg shadow-red-600/10 disabled:opacity-70 flex items-center justify-center gap-2 font-mono"
+                >
+                  {isActionPending && <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full" />}
+                  {isActionPending ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Terminal / VS Code Style Project Preview */}
       {/* Project Hover Preview Pane */}
       <AnimatePresence>
@@ -2791,6 +3326,9 @@ export default function App() {
           </div>
         </section>
       )}
+
+      {/* Testimonials Section */}
+      {currentView === 'home' && <TestimonialSection />}
 
       {/* Contact Section */}
       {currentView === 'home' && (
