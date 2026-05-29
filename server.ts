@@ -3,6 +3,8 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 
+const CANONICAL_DOMAIN = "nishkalya.studio";
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -10,9 +12,29 @@ async function startServer() {
   // Helper to dynamically resolve the request's origin (including protocol and host name)
   const getBaseUrl = (req: express.Request) => {
     const protocol = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
-    const host = req.headers.host || req.hostname || 'nishkalya.studio';
+    const host = req.headers.host || req.hostname || CANONICAL_DOMAIN;
     return `${protocol}://${host}`;
   };
+
+  // Redirect non-canonical domains to canonical domain (SEO)
+  app.use((req, res, next) => {
+    const host = req.headers.host || '';
+    const isCanonical = host === CANONICAL_DOMAIN || host === `www.${CANONICAL_DOMAIN}`;
+    const isLocalDev = host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('0.0.0.0');
+
+    if (!isCanonical && !isLocalDev && process.env.NODE_ENV === 'production') {
+      const redirectUrl = `https://${CANONICAL_DOMAIN}${req.originalUrl}`;
+      return res.redirect(301, redirectUrl);
+    }
+    next();
+  });
+
+  // Add X-Robots-Tag and Link canonical header for SEO
+  app.use((req, res, next) => {
+    res.header('X-Robots-Tag', 'index, follow');
+    res.header('Link', `<https://${CANONICAL_DOMAIN}/>; rel="canonical"`);
+    next();
+  });
 
   // Serve Dynamic Sitemap
   app.get("/sitemap.xml", (req, res) => {
@@ -36,11 +58,26 @@ async function startServer() {
     res.send(sitemap.trim());
   });
 
-  // Serve Dynamic Robots.txt
+  // Dynamic Robots.txt - Block non-canonical domains like bolt.host
   app.get("/robots.txt", (req, res) => {
+    const host = req.headers.host || '';
+    const isCanonical = host === CANONICAL_DOMAIN || host === `www.${CANONICAL_DOMAIN}`;
+    const isLocalDev = host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('0.0.0.0');
+
+    if (!isCanonical && !isLocalDev && process.env.NODE_ENV === 'production') {
+      // Block all crawlers on non-canonical domains (like bolt.host)
+      res.header("Content-Type", "text/plain");
+      res.send(`# Non-canonical domain - blocking crawlers
+User-agent: *
+Disallow: /
+`);
+      return;
+    }
+
+    // Allow crawlers on canonical/domain
     const baseUrl = getBaseUrl(req);
     const robots = `# www.robotstxt.org
-# Allow all crawlers
+# Allow all crawlers on canonical domain
 User-agent: *
 Allow: /
 
