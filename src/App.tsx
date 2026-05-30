@@ -62,7 +62,13 @@ import {
   PanelLeftClose,
   List,
   FileJson,
-  Compass
+  Compass,
+  ExternalLink,
+  Award,
+  Trophy,
+  Palette,
+  Youtube,
+  Link as LinkIcon
 } from 'lucide-react';
 import { 
   collection, 
@@ -96,6 +102,7 @@ import firebaseConfig from '../firebase-applet-config.json';
 import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
 import AdminPerformanceDashboard from './components/AdminPerformanceDashboard';
 import { ProjectCard } from './components/ProjectCard';
+import { PLATFORMS } from './data/platformsData';
 import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelper';
 
 
@@ -177,9 +184,13 @@ export default function App() {
   const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance'>('messages');
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
+  const [activeProfilePlatform, setActiveProfilePlatform] = useState<string>('github');
+  const [adminSelectedPlatformId, setAdminSelectedPlatformId] = useState<string>('github');
 
   // Activate page load and spa route transition performance telemetry
   usePerformanceMonitor(currentView);
+
+  const displayPlatforms = websiteConfig.platforms || PLATFORMS;
 
   const handleFirestoreError = (error: any, operationType: string, path: string) => {
     const errInfo = {
@@ -1251,6 +1262,389 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                {/* Platforms & Profiles Management */}
+                <div className="p-6 md:p-8 bg-[#0d1117] rounded-xl border border-[#30363d] space-y-8">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                      <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#58a6ff] mb-2 flex items-center gap-2 font-mono">
+                        <Compass size={14} /> Platforms & Profiles Editor
+                      </h4>
+                      <p className="text-xs text-[#8b949e]">Configure external channels and showcase modules displayed on your portfolio landing page.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const name = prompt("Enter Platform Name (e.g., GitLab, Medium):");
+                        if (name) {
+                          const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                          const description = prompt("Enter Description:");
+                          const iconType = prompt("Enter Icon Type (e.g., globe, code, link, palette):") || 'link';
+                          const newPlatform = {
+                            id,
+                            name,
+                            iconType,
+                            description: description || '',
+                            items: []
+                          };
+                          updateConfig({
+                            ...websiteConfig,
+                            platforms: [...displayPlatforms, newPlatform]
+                          });
+                          setAdminSelectedPlatformId(id);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center font-sans uppercase tracking-wider shrink-0"
+                    >
+                      <Plus size={12} /> Add Platform Category
+                    </button>
+                  </div>
+
+                  {/* Choose a platform tab to configure */}
+                  <div className="flex flex-wrap gap-2 border-b border-[#30363d]/40 pb-4">
+                    {displayPlatforms.map((p: any) => (
+                      <div key={p.id} className="flex items-center bg-[#161b22] border border-[#30363d] rounded-lg p-1 font-mono">
+                        <button
+                          onClick={() => setAdminSelectedPlatformId(p.id)}
+                          className={`px-3 py-1 text-[10px] rounded-md font-bold uppercase transition-all ${
+                            adminSelectedPlatformId === p.id 
+                              ? 'bg-[#58a6ff]/10 text-[#58a6ff] border border-[#58a6ff]/30'
+                              : 'text-[#8b949e] hover:text-white border border-transparent'
+                          }`}
+                        >
+                          {p.name} ({p.items?.length || 0})
+                        </button>
+                        {displayPlatforms.length > 1 && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete the platform category "${p.name}" and all of its items?`)) {
+                                const refreshed = displayPlatforms.filter((plat: any) => plat.id !== p.id);
+                                updateConfig({ ...websiteConfig, platforms: refreshed });
+                                if (adminSelectedPlatformId === p.id && refreshed.length > 0) {
+                                  setAdminSelectedPlatformId(refreshed[0].id);
+                                }
+                              }
+                            }}
+                            className="p-1 text-[#8b949e] hover:text-red-500 transition-colors ml-1"
+                            title="Delete category"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Edit Details of Selected Platform */}
+                  {(() => {
+                    const activePlatformIdx = displayPlatforms.findIndex((p: any) => p.id === adminSelectedPlatformId);
+                    if (activePlatformIdx === -1) return <p className="text-xs text-[#8b949e] font-mono">Select a platform above to modify its configuration.</p>;
+                    const activePlatform = displayPlatforms[activePlatformIdx];
+
+                    return (
+                      <div className="space-y-6">
+                        <div className="grid md:grid-cols-3 gap-6 bg-[#161b22]/40 p-5 rounded-xl border border-[#30363d]/40">
+                          <div className="space-y-1.5">
+                            <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Category Label</label>
+                            <input
+                              value={activePlatform.name}
+                              onChange={(e) => {
+                                const updated = [...displayPlatforms];
+                                updated[activePlatformIdx] = { ...activePlatform, name: e.target.value };
+                                updateConfig({ ...websiteConfig, platforms: updated });
+                              }}
+                              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none admin-glow"
+                              placeholder="System Category Name"
+                            />
+                          </div>
+                          <div className="space-y-1.5 col-span-2">
+                            <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Icon Asset Key</label>
+                            <select
+                              value={activePlatform.iconType || activePlatform.id}
+                              onChange={(e) => {
+                                const updated = [...displayPlatforms];
+                                updated[activePlatformIdx] = { ...activePlatform, iconType: e.target.value };
+                                updateConfig({ ...websiteConfig, platforms: updated });
+                              }}
+                              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none admin-glow font-mono"
+                            >
+                              <option value="github">GitHub</option>
+                              <option value="linkedin">LinkedIn</option>
+                              <option value="website">Globe / Live Website</option>
+                              <option value="hackerrank">HackerRank / Trophy</option>
+                              <option value="leetcode">LeetCode / Code Terminal</option>
+                              <option value="behance">Behance / Palette</option>
+                              <option value="dribbble">Dribbble / Basketball</option>
+                              <option value="youtube">YouTube / Video</option>
+                              <option value="certificates">Certificates / Award Badge</option>
+                              <option value="other">General Chain / Link</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1.5 md:col-span-3">
+                            <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Brief Section Intent / Description</label>
+                            <input
+                              value={activePlatform.description}
+                              onChange={(e) => {
+                                const updated = [...displayPlatforms];
+                                updated[activePlatformIdx] = { ...activePlatform, description: e.target.value };
+                                updateConfig({ ...websiteConfig, platforms: updated });
+                              }}
+                              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none admin-glow"
+                              placeholder="Provide a micro summary explaining this platform stream..."
+                            />
+                          </div>
+                        </div>
+
+                        {/* Section Profile Items List */}
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center pb-2 border-b border-[#30363d]/30">
+                            <h5 className="text-[10px] font-bold text-white uppercase tracking-widest font-mono">
+                              PROFILE/REPOS ITEMS MATRIX ({activePlatform.items?.length || 0})
+                            </h5>
+                            <button
+                              onClick={() => {
+                                const newItem = {
+                                  id: Math.random().toString(36).substr(2, 9),
+                                  title: 'New Dynamic Showcase Item',
+                                  subtitle: 'Category Node',
+                                  description: 'Brief description detailing the technology, achievements, impact, or outcomes.',
+                                  badges: ['React', 'TypeScript'],
+                                  stats: [{ label: 'Stars', value: '45' }],
+                                  link: 'https://github.com'
+                                };
+                                const updated = [...displayPlatforms];
+                                updated[activePlatformIdx] = {
+                                  ...activePlatform,
+                                  items: [...(activePlatform.items || []), newItem]
+                                };
+                                updateConfig({ ...websiteConfig, platforms: updated });
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#238636]/80 hover:bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-[9px] uppercase tracking-widest font-bold font-mono transition-all"
+                            >
+                              + Add Profile Item
+                            </button>
+                          </div>
+
+                          <div className="grid md:grid-cols-2 gap-4">
+                            {(activePlatform.items || []).map((item: any, i: number) => (
+                              <div key={item.id} className="p-5 bg-[#161b22]/55 border border-[#30363d] rounded-xl space-y-4 relative group admin-glow">
+                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Do you want to delete showcase item "${item.title}"?`)) {
+                                        const refreshedItems = activePlatform.items.filter((itm: any) => itm.id !== item.id);
+                                        const updated = [...displayPlatforms];
+                                        updated[activePlatformIdx] = { ...activePlatform, items: refreshedItems };
+                                        updateConfig({ ...websiteConfig, platforms: updated });
+                                      }
+                                    }}
+                                    className="p-1.5 text-red-500 hover:text-red-400 bg-[#21262d] border border-[#30363d] rounded-lg transition-colors cursor-pointer"
+                                    title="Remove item"
+                                  >
+                                    <Trash size={12} />
+                                  </button>
+                                </div>
+
+                                <div className="space-y-4 pt-4">
+                                  {/* Title & Subtitle */}
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Showcase Title</label>
+                                      <input
+                                        value={item.title}
+                                        onChange={(e) => {
+                                          const updatedItems = [...activePlatform.items];
+                                          updatedItems[i] = { ...item, title: e.target.value };
+                                          const updated = [...displayPlatforms];
+                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                          updateConfig({ ...websiteConfig, platforms: updated });
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
+                                        placeholder="Item Title"
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Role/Subtitle</label>
+                                      <input
+                                        value={item.subtitle || ''}
+                                        onChange={(e) => {
+                                          const updatedItems = [...activePlatform.items];
+                                          updatedItems[i] = { ...item, subtitle: e.target.value };
+                                          const updated = [...displayPlatforms];
+                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                          updateConfig({ ...websiteConfig, platforms: updated });
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
+                                        placeholder="TypeScript · Enterprise Portal"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Web Link and Optional Date */}
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Explore Web Link</label>
+                                      <input
+                                        value={item.link || ''}
+                                        onChange={(e) => {
+                                          const updatedItems = [...activePlatform.items];
+                                          updatedItems[i] = { ...item, link: e.target.value };
+                                          const updated = [...displayPlatforms];
+                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                          updateConfig({ ...websiteConfig, platforms: updated });
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
+                                        placeholder="https://..."
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Display Date / Period</label>
+                                      <input
+                                        value={item.date || ''}
+                                        onChange={(e) => {
+                                          const updatedItems = [...activePlatform.items];
+                                          updatedItems[i] = { ...item, date: e.target.value };
+                                          const updated = [...displayPlatforms];
+                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                          updateConfig({ ...websiteConfig, platforms: updated });
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
+                                        placeholder="May 2026, Issued Jan 2026..."
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Description */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Detailed Summary</label>
+                                    <textarea
+                                      rows={2}
+                                      value={item.description}
+                                      onChange={(e) => {
+                                        const updatedItems = [...activePlatform.items];
+                                        updatedItems[i] = { ...item, description: e.target.value };
+                                        const updated = [...displayPlatforms];
+                                        updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                        updateConfig({ ...websiteConfig, platforms: updated });
+                                      }}
+                                      className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs resize-none outline-none placeholder-[#8b949e]"
+                                      placeholder="Explain the key challenge solved or major accomplishments..."
+                                    />
+                                  </div>
+
+                                  {/* Custom System Tags */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">System Badge Tags</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {item.badges?.map((badge: string, bIdx: number) => (
+                                        <div key={bIdx} className="flex items-center gap-1 px-2.5 py-1 bg-[#0d1117] border border-[#30363d] rounded-full text-[9px] font-bold text-[#58a6ff] font-mono">
+                                          <span>{badge}</span>
+                                          <button
+                                            onClick={() => {
+                                              const newBadges = item.badges.filter((_: any, idx: number) => idx !== bIdx);
+                                              const updatedItems = [...activePlatform.items];
+                                              updatedItems[i] = { ...item, badges: newBadges };
+                                              const updated = [...displayPlatforms];
+                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                              updateConfig({ ...websiteConfig, platforms: updated });
+                                            }}
+                                            className="text-[#8b949e] hover:text-red-500 transition-colors ml-1 cursor-pointer"
+                                          >
+                                            <X size={8} />
+                                          </button>
+                                        </div>
+                                      ))}
+                                      <button
+                                        onClick={() => {
+                                          const tag = prompt("Enter new tag name:");
+                                          if (tag) {
+                                            const newBadges = [...(item.badges || []), tag];
+                                            const updatedItems = [...activePlatform.items];
+                                            updatedItems[i] = { ...item, badges: newBadges };
+                                            const updated = [...displayPlatforms];
+                                            updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                            updateConfig({ ...websiteConfig, platforms: updated });
+                                          }
+                                        }}
+                                        className="px-2 py-1 border border-dashed border-[#30363d] rounded-full text-[9px] text-[#8b949e] hover:text-white font-mono bg-transparent cursor-pointer"
+                                      >
+                                        + Tag
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Operational Metrics/KVs */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Custom Metric Badges / Stats (Key-Values)</label>
+                                    <div className="space-y-2">
+                                      {item.stats?.map((stat: any, sIdx: number) => (
+                                        <div key={sIdx} className="flex gap-2">
+                                          <input
+                                            value={stat.label}
+                                            onChange={(e) => {
+                                              const newStats = [...item.stats];
+                                              newStats[sIdx] = { ...stat, label: e.target.value };
+                                              const updatedItems = [...activePlatform.items];
+                                              updatedItems[i] = { ...item, stats: newStats };
+                                              const updated = [...displayPlatforms];
+                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                              updateConfig({ ...websiteConfig, platforms: updated });
+                                            }}
+                                            className="flex-1 px-2.5 py-1 text-[10px] font-mono bg-[#0d1117] border border-[#30363d] text-zinc-400 rounded-lg outline-none"
+                                            placeholder="Stat Label (e.g. Rating)"
+                                          />
+                                          <input
+                                            value={stat.value}
+                                            onChange={(e) => {
+                                              const newStats = [...item.stats];
+                                              newStats[sIdx] = { ...stat, value: e.target.value };
+                                              const updatedItems = [...activePlatform.items];
+                                              updatedItems[i] = { ...item, stats: newStats };
+                                              const updated = [...displayPlatforms];
+                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                              updateConfig({ ...websiteConfig, platforms: updated });
+                                            }}
+                                            className="flex-1 px-2.5 py-1 text-[10px] font-mono bg-[#0d1117] border border-[#30363d] text-white rounded-lg outline-none"
+                                            placeholder="Value"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const newStats = item.stats.filter((_: any, idx: number) => idx !== sIdx);
+                                              const updatedItems = [...activePlatform.items];
+                                              updatedItems[i] = { ...item, stats: newStats };
+                                              const updated = [...displayPlatforms];
+                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                              updateConfig({ ...websiteConfig, platforms: updated });
+                                            }}
+                                            className="p-1 px-2 text-red-500 hover:text-red-400 bg-[#21262d] border border-[#30363d] rounded-md transition-colors cursor-pointer"
+                                          >
+                                            <X size={10} />
+                                          </button>
+                                        </div>
+                                      ))}
+                                      <button
+                                        onClick={() => {
+                                          const newStats = [...(item.stats || []), { label: 'New Metric', value: '0' }];
+                                          const updatedItems = [...activePlatform.items];
+                                          updatedItems[i] = { ...item, stats: newStats };
+                                          const updated = [...displayPlatforms];
+                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                          updateConfig({ ...websiteConfig, platforms: updated });
+                                        }}
+                                        className="w-full py-1 text-[9px] border border-dashed border-[#30363d] text-[#8b949e] hover:text-white font-mono bg-transparent rounded-lg cursor-pointer animate-pulse"
+                                      >
+                                        + Add Metric Value
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
 
@@ -1731,6 +2125,30 @@ export default function App() {
       case 'layout': return <Layout size={size} className="text-[#58a6ff]/30" />;
       case 'chart': return <BarChart3 size={size} className="text-[#58a6ff]/30" />;
       default: return <Zap size={size} className="text-[#58a6ff]/30" />;
+    }
+  };
+
+  const getPlatformIcon = (iconType: string, size = 18) => {
+    switch (iconType?.toLowerCase()) {
+      case 'github': return <Github size={size} />;
+      case 'linkedin': return <Linkedin size={size} />;
+      case 'website':
+      case 'globe': return <Globe size={size} />;
+      case 'hackerrank':
+      case 'trophy': return <Trophy size={size} />;
+      case 'leetcode':
+      case 'code':
+      case 'code2': return <Code2 size={size} />;
+      case 'behance':
+      case 'palette': return <Palette size={size} />;
+      case 'dribbble': return <Dribbble size={size} />;
+      case 'youtube': return <Youtube size={size} />;
+      case 'certificates':
+      case 'award': return <Award size={size} />;
+      case 'other':
+      case 'other links':
+      case 'link': return <LinkIcon size={size} />;
+      default: return <LinkIcon size={size} />;
     }
   };
 
@@ -2271,6 +2689,184 @@ export default function App() {
                   />
                 ))
               )}
+            </div>
+
+            {/* SECTION 2: PLATFORMS & PROFILES FILTERABLE SHOWCASE */}
+            <div className="mt-32 pt-20 border-t border-[#30363d]/40" id="platforms-profiles-section">
+              <div className="mb-14">
+                <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+                  External Channels
+                </div>
+                <h2 className="text-3xl md:text-5xl font-extrabold text-white uppercase tracking-tight">
+                  Platforms & <span className="italic text-[#58a6ff]">Profiles</span>
+                </h2>
+                <p className="text-[#8b949e] max-w-2xl mt-4 text-sm md:text-base font-light">
+                  Explore verified repositories, industry achievements, media hubs, and professional credentials loaded across international developer ecosystems.
+                </p>
+              </div>
+
+              {/* Navigation Grid of Tabs */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 mb-12">
+                {displayPlatforms.map((platform: any) => {
+                  const isActive = activeProfilePlatform === platform.id;
+                  return (
+                    <button
+                      key={platform.id}
+                      onClick={() => setActiveProfilePlatform(platform.id)}
+                      id={`platform-tab-${platform.id}`}
+                      className={`relative flex flex-col items-start p-4 rounded-xl border transition-all duration-300 text-left overflow-hidden group cursor-pointer ${
+                        isActive
+                          ? 'bg-[#0f1524]/60 border-[#58a6ff]/70 shadow-[0_0_20px_rgba(88,166,255,0.15)] text-white'
+                          : 'bg-[#0d1117]/30 border-[#30363d]/50 hover:border-[#58a6ff]/40 text-[#8b949e] hover:text-white backdrop-blur-sm'
+                      }`}
+                    >
+                      {/* Active glow flare inside tab */}
+                      {isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#58a6ff]/5 to-transparent pointer-events-none" />
+                      )}
+                      
+                      <div className="flex items-center justify-between w-full mb-3 z-10">
+                        <div className={`p-2 rounded-lg transition-transform duration-300 group-hover:scale-110 ${
+                          isActive ? 'bg-[#58a6ff]/10 text-[#58a6ff]' : 'bg-[#161b22]/50 text-zinc-500 group-hover:text-zinc-300'
+                        }`}>
+                          {getPlatformIcon(platform.iconType || platform.id, 18)}
+                        </div>
+                        {/* Counters representation */}
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
+                          isActive 
+                            ? 'bg-[#58a6ff]/20 text-[#58a6ff] border-[#58a6ff]/30' 
+                            : 'bg-[#161b22] text-[#8b949e]/60 border-transparent group-hover:text-zinc-400 group-hover:border-[#30363d]'
+                        }`}>
+                          {platform.items?.length || 0}
+                        </span>
+                      </div>
+
+                      <div className="z-10 mt-1">
+                        <span className="text-[12px] font-bold uppercase tracking-wider block font-sans">
+                          {platform.name}
+                        </span>
+                      </div>
+
+                      {/* Cyberpunk HUD style corner bracket on active tab */}
+                      {isActive && (
+                        <>
+                          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#58a6ff]" />
+                          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#58a6ff]" />
+                          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#58a6ff]" />
+                          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#58a6ff]" />
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Selected Platform Context Detail banner */}
+              <div className="mb-8 p-5 bg-[#0d1117]/45 border border-[#30363d]/40 rounded-2xl flex items-center gap-4">
+                <div className="w-1.5 h-8 bg-[#58a6ff] rounded-r-md" />
+                <p className="text-[#8b949e] text-xs font-mono tracking-wide leading-relaxed uppercase">
+                  ACTIVE MATRIX // {displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.name || ''}: {displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.description || ''}
+                </p>
+              </div>
+
+              {/* Items Grid */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeProfilePlatform}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid md:grid-cols-2 gap-6"
+                >
+                  {(displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.items || []).map((item: any, idx: number) => (
+                    <div
+                      key={item.id}
+                      id={`platform-item-${item.id}`}
+                      className="group relative bg-[#0c1017]/45 backdrop-blur-xl border border-[#30363d]/60 rounded-2xl p-6 hover:border-[#58a6ff]/40 hover:shadow-[0_0_20px_rgba(88,166,255,0.08)] transition-all duration-300 flex flex-col justify-between overflow-hidden"
+                    >
+                      {/* Interactive live-vignette frames inside active item */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_60%,rgba(13,17,23,0.3)_90%,rgba(13,17,23,0.85)_100%)] pointer-events-none z-10 transition-opacity duration-300 group-hover:opacity-75" />
+
+                      {/* Decors */}
+                      <div className="absolute top-0 right-0 w-32 h-12 bg-gradient-to-bl from-[#58a6ff]/5 to-transparent pointer-events-none" />
+
+                      <div>
+                        {/* Header of Item card */}
+                        <div className="flex items-start justify-between mb-3 z-20 relative">
+                          <div className="space-y-1">
+                            <h4 className="text-[15px] font-bold text-white group-hover:text-[#58a6ff] transition-colors duration-300 tracking-tight font-sans uppercase">
+                              {item.title}
+                            </h4>
+                            {item.subtitle && (
+                              <p className="text-[10px] font-mono text-zinc-500 font-medium">
+                                {item.subtitle}
+                              </p>
+                            )}
+                          </div>
+                          {item.date && (
+                            <span className="text-[9px] font-mono text-zinc-500 font-bold px-2 py-0.5 rounded bg-zinc-900/40 border border-zinc-800/30">
+                              {item.date}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Description content */}
+                        <p className="text-[#8b949e] text-xs font-light leading-relaxed mb-5 z-20 relative">
+                          {item.description}
+                        </p>
+                      </div>
+
+                      {/* Footer containing badges, stats, and active real link */}
+                      <div className="border-t border-[#30363d]/40 pt-4 mt-auto flex flex-wrap items-center justify-between gap-3 z-20 relative">
+                        {/* Badges representation for high structural organization (Sthira) */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {item.badges?.map((badge, bIdx) => (
+                            <span
+                              key={bIdx}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900/50 text-[9px] font-mono text-[#8b949e] tracking-tight uppercase border border-zinc-800/60"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-[#30363d]" />
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Stats counters (e.g. Stars, Forks, Uptime, Rating, Solved) */}
+                        <div className="flex items-center gap-4">
+                          {item.stats?.map((stat, sIdx) => (
+                            <div key={sIdx} className="flex flex-col items-start">
+                              <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest leading-none">
+                                {stat.label}
+                              </span>
+                              <span className="text-[11px] font-bold text-white font-mono mt-0.5">
+                                {stat.value}
+                              </span>
+                            </div>
+                          ))}
+
+                          {/* Outer Link */}
+                          {item.link && (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 p-2 rounded-lg bg-[#58a6ff]/5 hover:bg-[#58a6ff]/15 text-[#58a6ff] border border-[#58a6ff]/10 hover:border-[#58a6ff]/35 transition-all duration-200 text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                              aria-label={`View ${item.title}`}
+                            >
+                              <span className="hidden sm:inline">Explore</span>
+                              <ExternalLink size={11} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Active indicator dot */}
+                      <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-zinc-700/60 group-hover:bg-[#58a6ff] transition-colors duration-300" />
+                    </div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
