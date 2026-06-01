@@ -6,7 +6,73 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
-import { User as UserIcon, Cpu, LayoutGrid as Layout, Lightbulb, Linkedin, Twitter, Dribbble, ArrowRight, Zap, Eye, ChartBar as BarChart3, Globe, Mail, Phone, MapPin, MessageSquare, Quote, Search, Share2, ChevronRight, Star, Github, CircleAlert as AlertCircle, CircleCheck as CheckCircle, X, Menu, CreditCard as Edit2, Trash2, Plus, Shield, Code, Settings, LogIn, LogOut, Lock, MoveVertical as MoreVertical, Clock, Check, Archive, Trash, Terminal, Code as Code2, FileCode, Package, Box, Activity, Maximize2, Minimize2, Square, Columns2, Monitor, Smartphone, PanelLeftClose, List, FileJson, Compass, ExternalLink, Award, Trophy, Palette, Youtube, Link as LinkIcon, Moon, Sun, Sparkles } from 'lucide-react';
+import { 
+  User as UserIcon,
+  Cpu, 
+  Layout, 
+  Lightbulb, 
+  Linkedin, 
+  Twitter, 
+  Dribbble, 
+  ArrowRight, 
+  Zap, 
+  Eye, 
+  BarChart3, 
+  Globe, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  MessageSquare,
+  Quote,
+  Search,
+  Share2,
+  ChevronRight,
+  Star,
+  Github,
+  AlertCircle,
+  CheckCircle,
+  X,
+  Menu,
+  Edit2,
+  Trash2,
+  Plus,
+  Shield,
+  Code,
+  Settings,
+  LogIn,
+  LogOut,
+  Lock,
+  MoreVertical,
+  Clock,
+  Check,
+  Archive,
+  Trash,
+  Terminal,
+  Code2,
+  FileCode,
+  Package,
+  Box,
+  Activity,
+  Maximize2,
+  Minimize2,
+  Square,
+  Columns2,
+  Monitor,
+  Smartphone,
+  PanelLeftClose,
+  List,
+  FileJson,
+  Compass,
+  ExternalLink,
+  Award,
+  Trophy,
+  Palette,
+  Youtube,
+  Link as LinkIcon,
+  Moon,
+  Sun,
+  Sparkles
+} from 'lucide-react';
 import { 
   collection, 
   addDoc, 
@@ -575,10 +641,10 @@ export default function App() {
   const AdminDashboard = () => {
     if (!currentUser) {
       return (
-        <div className="min-h-screen flex items-center justify-center pt-20 sm:pt-24 md:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 bg-transparent">
-          <div className="max-w-md w-full text-center space-y-6 sm:space-y-8 p-6 sm:p-10 bg-[#161b22]/90 border border-[#30363d] rounded-2xl shadow-2xl relative z-10">
-            <div className="w-12 sm:w-14 h-12 sm:h-14 bg-[#58a6ff]/10 border border-[#30363d] rounded-2xl flex items-center justify-center text-[#58a6ff] mx-auto transform rotate-12">
-              <Lock size={22} className="sm:w-[26px]" />
+        <div className="min-h-screen flex items-center justify-center pt-32 pb-20 px-6 bg-transparent">
+          <div className="max-w-md w-full text-center space-y-8 p-10 bg-[#161b22]/90 border border-[#30363d] rounded-2xl shadow-2xl relative z-10">
+            <div className="w-14 h-14 bg-[#58a6ff]/10 border border-[#30363d] rounded-2xl flex items-center justify-center text-[#58a6ff] mx-auto transform rotate-12">
+              <Lock size={26} />
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-extrabold text-white font-sans">Admin Access</h2>
@@ -2458,7 +2524,7 @@ export default function App() {
           background-color: #f6f8fa !important;
           color: #1f2328 !important;
         }
-        .theme-white body {
+        body.theme-white {
           background-color: #f6f8fa !important;
           color: #1f2328 !important;
           background-image: 
@@ -2474,8 +2540,10 @@ export default function App() {
         .theme-white .bg-\\[\\#0d1117\\]\\/80 { background-color: rgba(246, 248, 250, 0.8) !important; background-image: none !important; }
         .theme-white .bg-\\[\\#161b22\\] { background-color: #ffffff !important; background-image: none !important; }
         .theme-white .bg-\\[\\#161b22\\]\\/55 { background-color: rgba(255, 255, 255, 0.6) !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/50 { background-color: rgba(255, 255, 255, 0.5) !important; background-image: none !important; }
         .theme-white .bg-\\[\\#161b22\\]\\/30 { background-color: rgba(234, 238, 242, 0.5) !important; background-image: none !important; }
         .theme-white .bg-\\[\\#21262d\\] { background-color: #eaeef2 !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#1f242c\\] { background-color: #eaeef2 !important; }
         .theme-white .bg-\\[\\#040406\\] { background-color: #ffffff !important; background-image: none !important; }
         .theme-white .bg-\\[\\#010409\\] { background-color: #f6f8fa !important; background-image: none !important; }
         .theme-white .bg-black\\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
@@ -2617,7 +2685,7 @@ export default function App() {
           background-color: #030014 !important;
           color: #e2e8f0 !important;
         }
-        .theme-personal body {
+        body.theme-personal {
           background-color: #030014 !important;
           color: #e2e8f0 !important;
           background-image: 
@@ -2632,8 +2700,10 @@ export default function App() {
         .theme-personal .bg-\\[\\#0d1117\\]\\/80 { background-color: rgba(3, 0, 20, 0.8) !important; }
         .theme-personal .bg-\\[\\#161b22\\] { background-color: #0c0721 !important; border-color: #2b1a59 !important; }
         .theme-personal .bg-\\[\\#161b22\\]\\/55 { background-color: rgba(12, 7, 33, 0.55) !important; }
+        .theme-personal .bg-\\[\\#161b22\\]\\/50 { background-color: rgba(12, 7, 33, 0.5) !important; }
         .theme-personal .bg-\\[\\#161b22\\]\\/30 { background-color: rgba(12, 7, 33, 0.3) !important; }
         .theme-personal .bg-\\[\\#21262d\\] { background-color: #170d38 !important; }
+        .theme-personal .bg-\\[\\#1f242c\\] { background-color: #1e1345 !important; }
         .theme-personal .bg-\\[\\#040406\\] { background-color: #02000c !important; }
         .theme-personal .bg-\\[\\#010409\\] { background-color: #07031b !important; }
         .theme-personal .bg-black\\/40 { background-color: rgba(3, 0, 20, 0.4) !important; }
@@ -2747,27 +2817,27 @@ export default function App() {
       <AdminMessageModal message={selectedAdminMessage} onClose={() => setSelectedAdminMessage(null)} />
       
       {/* Ambient Background Accents */}
-      <div className={`fixed top-[-10%] right-[-10%] w-[clamp(400px,80vw,800px)] h-[clamp(400px,80vw,800px)] bg-[#58a6ff]/3 rounded-full blur-[140px] pointer-events-none z-0 ${currentUser?.email === 'nishkalya@gmail.com' ? 'translate-y-8' : ''}`}></div>
-      <div className="fixed bottom-[-10%] left-[-10%] w-[clamp(300px,60vw,600px)] h-[clamp(300px,60vw,600px)] bg-[#238636]/2 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <div className={`fixed top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#58a6ff]/3 rounded-full blur-[140px] pointer-events-none z-0 ${currentUser?.email === 'nishkalya@gmail.com' ? 'translate-y-8' : ''}`}></div>
+      <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#238636]/2 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
       {/* Navigation */}
-      <nav className={`fixed left-0 right-0 z-50 bg-[#0d1117]/80 backdrop-blur-md border-b border-[#30363d] transition-all duration-300 ${currentUser?.email === 'nishkalya@gmail.com' ? 'top-6 sm:top-8 md:top-8' : 'top-0'}`}>
-        <div className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-3 sm:py-4 w-full max-w-7xl mx-auto">
-          <div
-            className="flex items-center space-x-2 group cursor-pointer"
+      <nav className={`fixed left-0 right-0 z-50 bg-[#0d1117]/80 backdrop-blur-md border-b border-[#30363d] transition-all duration-300 ${currentUser?.email === 'nishkalya@gmail.com' ? 'top-8' : 'top-0'}`}>
+        <div className="flex items-center justify-between px-6 md:px-12 py-4 w-full max-w-7xl mx-auto">
+          <div 
+            className="flex items-center space-x-2 group cursor-pointer" 
             onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             role="button"
             aria-label="Go to home"
           >
-            <div
-              className="w-7 sm:w-8 h-7 sm:h-8 rounded-lg flex items-center justify-center transform rotate-12 group-hover:rotate-0 transition-transform duration-500 shadow-md border border-[#30363d]"
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center transform rotate-12 group-hover:rotate-0 transition-transform duration-500 shadow-md border border-[#30363d]"
               style={{ backgroundColor: '#161b22' }}
             >
-              <span className="text-[#58a6ff] font-extrabold text-xs sm:text-sm font-mono">N</span>
+              <span className="text-[#58a6ff] font-extrabold text-sm font-mono">N</span>
             </div>
-            <span className="text-sm sm:text-lg font-bold tracking-tight text-white uppercase font-sans">Nishkalya</span>
+            <span className="text-lg font-bold tracking-tight text-white uppercase font-sans">Nishkalya</span>
           </div>
-          <div className="hidden sm:flex space-x-4 sm:space-x-6 md:space-x-8 text-[10px] sm:text-[11px] font-semibold tracking-[0.05em] text-[#8b949e] uppercase flex-wrap justify-center">
+          <div className="hidden sm:flex space-x-8 text-[11px] font-semibold tracking-[0.05em] text-[#8b949e] uppercase flex-wrap justify-center">
             <button aria-label="Home" onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-white transition-colors ${currentView === 'home' ? 'text-white border-b-2 border-[#58a6ff] pb-1' : ''}`}>Home</button>
             <button aria-label="About" onClick={() => scrollToSection('about')} className="hover:text-white transition-colors pb-1">About</button>
             <button aria-label="Services" onClick={() => scrollToSection('services')} className="hover:text-white transition-colors pb-1">Services</button>
