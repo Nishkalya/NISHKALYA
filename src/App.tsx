@@ -68,7 +68,10 @@ import {
   Trophy,
   Palette,
   Youtube,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Moon,
+  Sun,
+  Sparkles
 } from 'lucide-react';
 import { 
   collection, 
@@ -186,6 +189,23 @@ export default function App() {
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
   const [activeProfilePlatform, setActiveProfilePlatform] = useState<string>('github');
   const [adminSelectedPlatformId, setAdminSelectedPlatformId] = useState<string>('github');
+
+  // Custom Platform states to avoid iframe window.prompt / window.confirm issues:
+  const [showAddPlatformForm, setShowAddPlatformForm] = useState(false);
+  const [newPlatformName, setNewPlatformName] = useState('');
+  const [newPlatformDesc, setNewPlatformDesc] = useState('');
+  const [newPlatformIcon, setNewPlatformIcon] = useState('link');
+  const [platformIdToDelete, setPlatformIdToDelete] = useState<string | null>(null);
+  const [itemIdToDelete, setItemIdToDelete] = useState<string | null>(null);
+  const [activeTagInputItemId, setActiveTagInputItemId] = useState<string | null>(null);
+  const [newTagName, setNewTagName] = useState('');
+  const [serviceIndexToDelete, setServiceIndexToDelete] = useState<number | null>(null);
+  const [themeMode, setThemeMode] = useState<'dark' | 'white' | 'personal'>('dark');
+
+  useEffect(() => {
+    document.body.classList.remove('theme-dark', 'theme-white', 'theme-personal');
+    document.body.classList.add(`theme-${themeMode}`);
+  }, [themeMode]);
 
   // Activate page load and spa route transition performance telemetry
   usePerformanceMonitor(currentView);
@@ -728,7 +748,14 @@ export default function App() {
     const updateConfig = async (newConfig: any) => {
       setIsActionPending(true);
       try {
-        await setDoc(doc(db, 'config', 'website'), newConfig);
+        const sanitizedConfig = { ...newConfig };
+        if (sanitizedConfig.platforms) {
+          sanitizedConfig.platforms = sanitizedConfig.platforms.map((platform: any) => {
+            const { icon, ...rest } = platform;
+            return rest;
+          });
+        }
+        await setDoc(doc(db, 'config', 'website'), sanitizedConfig);
       } catch (err) {
         console.error("Failed to update config", err);
       } finally {
@@ -1129,17 +1156,36 @@ export default function App() {
                   <div className="grid md:grid-cols-2 gap-6">
                     {websiteConfig.services.map((service: any, i: number) => (
                       <div key={i} className="p-6 bg-[#161b22] border border-[#30363d] rounded-xl space-y-4 admin-glow">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-4">
                           <h5 className="text-xs font-bold text-white group-hover:text-[#58a6ff] transition-colors">{service.title}</h5>
-                          <button 
-                            onClick={() => {
-                              const newServices = websiteConfig.services.filter((_: any, idx: number) => idx !== i);
-                              updateConfig({ ...websiteConfig, services: newServices });
-                            }}
-                            className="p-1.5 text-red-500 hover:text-red-400 transition-colors bg-[#21262d] border border-[#30363d] rounded-md admin-glow"
-                          >
-                            <Trash size={12} />
-                          </button>
+                          {serviceIndexToDelete === i ? (
+                            <div className="flex items-center gap-1 bg-[#21262d] border border-red-500/40 rounded-lg p-1 animate-pulse shrink-0">
+                              <button
+                                onClick={() => {
+                                  const newServices = websiteConfig.services.filter((_: any, idx: number) => idx !== i);
+                                  updateConfig({ ...websiteConfig, services: newServices });
+                                  setServiceIndexToDelete(null);
+                                }}
+                                className="px-2 py-0.5 text-[9px] bg-red-600 hover:bg-red-500 text-white rounded font-mono font-bold uppercase transition-colors cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                              <button
+                                onClick={() => setServiceIndexToDelete(null)}
+                                className="px-2 py-0.5 text-[9px] bg-[#30363d] hover:bg-[#8b949e]/20 text-zinc-300 rounded font-mono font-bold uppercase transition-colors cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => setServiceIndexToDelete(i)}
+                              className="p-1.5 text-[#8b949e] hover:text-red-500 bg-[#21262d] border border-[#30363d] rounded-md admin-glow shrink-0 transition-colors cursor-pointer"
+                              title="Delete Service"
+                            >
+                              <Trash size={12} />
+                            </button>
+                          )}
                         </div>
                         <input 
                           value={service.title}
@@ -1272,32 +1318,105 @@ export default function App() {
                       </h4>
                       <p className="text-xs text-[#8b949e]">Configure external channels and showcase modules displayed on your portfolio landing page.</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        const name = prompt("Enter Platform Name (e.g., GitLab, Medium):");
-                        if (name) {
-                          const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                          const description = prompt("Enter Description:");
-                          const iconType = prompt("Enter Icon Type (e.g., globe, code, link, palette):") || 'link';
-                          const newPlatform = {
-                            id,
-                            name,
-                            iconType,
-                            description: description || '',
-                            items: []
-                          };
-                          updateConfig({
-                            ...websiteConfig,
-                            platforms: [...displayPlatforms, newPlatform]
-                          });
-                          setAdminSelectedPlatformId(id);
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center font-sans uppercase tracking-wider shrink-0"
-                    >
-                      <Plus size={12} /> Add Platform Category
-                    </button>
+                    {!showAddPlatformForm && (
+                      <button
+                        onClick={() => {
+                          setShowAddPlatformForm(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center font-sans uppercase tracking-wider shrink-0 cursor-pointer"
+                      >
+                        <Plus size={12} /> Add Platform Category
+                      </button>
+                    )}
                   </div>
+
+                  {showAddPlatformForm && (
+                    <div className="p-5 bg-[#161b22] border border-[#30363d] rounded-xl space-y-4 admin-glow w-full">
+                      <div className="text-xs font-bold text-white uppercase tracking-widest font-mono">Create Platform Category</div>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Platform Name</label>
+                          <input
+                            value={newPlatformName}
+                            onChange={(e) => setNewPlatformName(e.target.value)}
+                            className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none"
+                            placeholder="e.g. GitLab, Medium"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Icon Type</label>
+                          <select
+                            value={newPlatformIcon}
+                            onChange={(e) => setNewPlatformIcon(e.target.value)}
+                            className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none font-mono"
+                          >
+                            <option value="github">GitHub</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="website">Globe / Live Website</option>
+                            <option value="hackerrank">HackerRank / Trophy</option>
+                            <option value="leetcode">LeetCode / Code Terminal</option>
+                            <option value="behance">Behance / Palette</option>
+                            <option value="dribbble">Dribbble / Basketball</option>
+                            <option value="youtube">YouTube / Video</option>
+                            <option value="certificates">Certificates / Award Badge</option>
+                            <option value="other">General Chain / Link</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5 md:col-span-1">
+                          <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">&nbsp;</label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                if (newPlatformName) {
+                                  const id = newPlatformName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                                  const newPlatform = {
+                                    id,
+                                    name: newPlatformName,
+                                    iconType: newPlatformIcon,
+                                    description: newPlatformDesc,
+                                    items: []
+                                  };
+                                  updateConfig({
+                                    ...websiteConfig,
+                                    platforms: [...displayPlatforms, newPlatform]
+                                  });
+                                  setAdminSelectedPlatformId(id);
+                                  setShowAddPlatformForm(false);
+                                  setNewPlatformName('');
+                                  setNewPlatformDesc('');
+                                  setNewPlatformIcon('link');
+                                }
+                              }}
+                              disabled={!newPlatformName}
+                              className="flex-1 py-2 bg-[#238636] border border-[#2ea44f] disabled:opacity-50 text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] transition-colors cursor-pointer"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowAddPlatformForm(false);
+                                setNewPlatformName('');
+                                setNewPlatformDesc('');
+                                setNewPlatformIcon('link');
+                              }}
+                              className="flex-1 py-2 bg-[#21262d] border border-[#30363d] text-[#8b949e] hover:text-white rounded-lg text-xs cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Section Intent / Brief Description</label>
+                        <input
+                          value={newPlatformDesc}
+                          onChange={(e) => setNewPlatformDesc(e.target.value)}
+                          className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none"
+                          placeholder="Provide a general summary describing the items under this tab..."
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Choose a platform tab to configure */}
                   <div className="flex flex-wrap gap-2 border-b border-[#30363d]/40 pb-4">
@@ -1314,21 +1433,41 @@ export default function App() {
                           {p.name} ({p.items?.length || 0})
                         </button>
                         {displayPlatforms.length > 1 && (
-                          <button
-                            onClick={() => {
-                              if (confirm(`Are you sure you want to delete the platform category "${p.name}" and all of its items?`)) {
-                                const refreshed = displayPlatforms.filter((plat: any) => plat.id !== p.id);
-                                updateConfig({ ...websiteConfig, platforms: refreshed });
-                                if (adminSelectedPlatformId === p.id && refreshed.length > 0) {
-                                  setAdminSelectedPlatformId(refreshed[0].id);
-                                }
-                              }
-                            }}
-                            className="p-1 text-[#8b949e] hover:text-red-500 transition-colors ml-1"
-                            title="Delete category"
-                          >
-                            <X size={12} />
-                          </button>
+                          <div className="flex items-center ml-1">
+                            {platformIdToDelete === p.id ? (
+                              <div className="flex items-center gap-1 bg-[#21262d] border border-red-500/30 rounded px-1 animate-pulse">
+                                <button
+                                  onClick={() => {
+                                    const refreshed = displayPlatforms.filter((plat: any) => plat.id !== p.id);
+                                    updateConfig({ ...websiteConfig, platforms: refreshed });
+                                    if (adminSelectedPlatformId === p.id && refreshed.length > 0) {
+                                      setAdminSelectedPlatformId(refreshed[0].id);
+                                    }
+                                    setPlatformIdToDelete(null);
+                                  }}
+                                  className="text-[9px] text-red-500 hover:text-red-400 font-extrabold font-mono uppercase cursor-pointer"
+                                  title="Confirm delete"
+                                >
+                                  Del
+                                </button>
+                                <button
+                                  onClick={() => setPlatformIdToDelete(null)}
+                                  className="text-[9px] text-[#8b949e] hover:text-white font-extrabold font-mono uppercase cursor-pointer"
+                                  title="Cancel delete"
+                                >
+                                  Esc
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setPlatformIdToDelete(p.id)}
+                                className="p-1 text-[#8b949e] hover:text-red-500 transition-colors cursor-pointer"
+                                title="Delete category"
+                              >
+                                <X size={12} />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1338,7 +1477,11 @@ export default function App() {
                   {(() => {
                     const activePlatformIdx = displayPlatforms.findIndex((p: any) => p.id === adminSelectedPlatformId);
                     if (activePlatformIdx === -1) return <p className="text-xs text-[#8b949e] font-mono">Select a platform above to modify its configuration.</p>;
-                    const activePlatform = displayPlatforms[activePlatformIdx];
+                    const rawPlatform = displayPlatforms[activePlatformIdx];
+                    const activePlatform = {
+                      items: [],
+                      ...rawPlatform
+                    };
 
                     return (
                       <div className="space-y-6">
@@ -1428,20 +1571,36 @@ export default function App() {
                             {(activePlatform.items || []).map((item: any, i: number) => (
                               <div key={item.id} className="p-5 bg-[#161b22]/55 border border-[#30363d] rounded-xl space-y-4 relative group admin-glow">
                                 <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-                                  <button
-                                    onClick={() => {
-                                      if (confirm(`Do you want to delete showcase item "${item.title}"?`)) {
-                                        const refreshedItems = activePlatform.items.filter((itm: any) => itm.id !== item.id);
-                                        const updated = [...displayPlatforms];
-                                        updated[activePlatformIdx] = { ...activePlatform, items: refreshedItems };
-                                        updateConfig({ ...websiteConfig, platforms: updated });
-                                      }
-                                    }}
-                                    className="p-1.5 text-red-500 hover:text-red-400 bg-[#21262d] border border-[#30363d] rounded-lg transition-colors cursor-pointer"
-                                    title="Remove item"
-                                  >
-                                    <Trash size={12} />
-                                  </button>
+                                  {itemIdToDelete === item.id ? (
+                                    <div className="flex items-center gap-1 bg-[#21262d] border border-red-500/40 rounded-lg p-1 animate-pulse">
+                                      <button
+                                        onClick={() => {
+                                          const refreshedItems = activePlatform.items.filter((itm: any) => itm.id !== item.id);
+                                          const updated = [...displayPlatforms];
+                                          updated[activePlatformIdx] = { ...activePlatform, items: refreshedItems };
+                                          updateConfig({ ...websiteConfig, platforms: updated });
+                                          setItemIdToDelete(null);
+                                        }}
+                                        className="px-2 py-0.5 text-[9px] bg-red-600 hover:bg-red-500 text-white rounded font-mono font-bold uppercase transition-colors pointer-events-auto cursor-pointer"
+                                      >
+                                        Delete
+                                      </button>
+                                      <button
+                                        onClick={() => setItemIdToDelete(null)}
+                                        className="px-2 py-0.5 text-[9px] bg-[#30363d] hover:bg-[#8b949e]/20 text-zinc-300 rounded font-mono font-bold uppercase transition-colors pointer-events-auto cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setItemIdToDelete(item.id)}
+                                      className="p-1.5 text-[#8b949e] hover:text-red-500 bg-[#21262d] border border-[#30363d] rounded-lg transition-colors cursor-pointer pointer-events-auto"
+                                      title="Remove item"
+                                    >
+                                      <Trash size={12} />
+                                    </button>
+                                  )}
                                 </div>
 
                                 <div className="space-y-4 pt-4">
@@ -1553,22 +1712,68 @@ export default function App() {
                                           </button>
                                         </div>
                                       ))}
-                                      <button
-                                        onClick={() => {
-                                          const tag = prompt("Enter new tag name:");
-                                          if (tag) {
-                                            const newBadges = [...(item.badges || []), tag];
-                                            const updatedItems = [...activePlatform.items];
-                                            updatedItems[i] = { ...item, badges: newBadges };
-                                            const updated = [...displayPlatforms];
-                                            updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                            updateConfig({ ...websiteConfig, platforms: updated });
-                                          }
-                                        }}
-                                        className="px-2 py-1 border border-dashed border-[#30363d] rounded-full text-[9px] text-[#8b949e] hover:text-white font-mono bg-transparent cursor-pointer"
-                                      >
-                                        + Tag
-                                      </button>
+                                      {activeTagInputItemId === item.id ? (
+                                        <div className="flex items-center gap-1">
+                                          <input
+                                            value={newTagName}
+                                            onChange={(e) => setNewTagName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter" && newTagName.trim()) {
+                                                const newBadges = [...(item.badges || []), newTagName.trim()];
+                                                const updatedItems = [...activePlatform.items];
+                                                updatedItems[i] = { ...item, badges: newBadges };
+                                                const updated = [...displayPlatforms];
+                                                updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                                updateConfig({ ...websiteConfig, platforms: updated });
+                                                setNewTagName("");
+                                                setActiveTagInputItemId(null);
+                                              } else if (e.key === "Escape") {
+                                                setActiveTagInputItemId(null);
+                                                setNewTagName("");
+                                              }
+                                            }}
+                                            autoFocus
+                                            className="px-2 py-0.5 text-[9px] font-mono text-white bg-[#0d1117] border border-[#58a6ff]/40 rounded outline-none w-16"
+                                            placeholder="Tag..."
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              if (newTagName.trim()) {
+                                                const newBadges = [...(item.badges || []), newTagName.trim()];
+                                                const updatedItems = [...activePlatform.items];
+                                                updatedItems[i] = { ...item, badges: newBadges };
+                                                const updated = [...displayPlatforms];
+                                                updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
+                                                updateConfig({ ...websiteConfig, platforms: updated });
+                                              }
+                                              setNewTagName("");
+                                              setActiveTagInputItemId(null);
+                                            }}
+                                            className="text-emerald-500 hover:text-emerald-400 font-bold text-xs"
+                                          >
+                                            ✓
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              setActiveTagInputItemId(null);
+                                              setNewTagName("");
+                                            }}
+                                            className="text-red-500 hover:text-red-400 font-bold text-xs font-mono"
+                                          >
+                                            ✕
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setActiveTagInputItemId(item.id);
+                                            setNewTagName("");
+                                          }}
+                                          className="px-2 py-1 border border-dashed border-[#30363d] rounded-full text-[9px] text-[#8b949e] hover:text-white font-mono bg-transparent cursor-pointer"
+                                        >
+                                          + Tag
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
 
@@ -2301,10 +2506,286 @@ export default function App() {
     <div 
       className="min-h-screen bg-transparent text-[#c9d1d9] font-sans selection:bg-[#58a6ff]/30 selection:text-white overflow-x-hidden"
       style={{ 
-        '--color-primary': websiteConfig?.colors?.primary || '#58a6ff',
-        '--color-secondary': websiteConfig?.colors?.secondary || '#2f81f7'
+        '--color-primary': themeMode === 'white' 
+          ? '#0969da' 
+          : themeMode === 'personal'
+            ? '#a05bff'
+            : (websiteConfig?.colors?.primary || '#58a6ff'),
+        '--color-secondary': themeMode === 'white' 
+          ? '#1a7f37' 
+          : themeMode === 'personal'
+            ? '#00f2fe'
+            : (websiteConfig?.colors?.secondary || '#2f81f7')
       } as any}
     >
+      <style>{`
+        /* Overrides for White (Light) Theme */
+        .theme-white {
+          background-color: #f6f8fa !important;
+          color: #1f2328 !important;
+        }
+        .theme-white body {
+          background-color: #f6f8fa !important;
+          color: #1f2328 !important;
+          background-image: 
+            radial-gradient(at 0% 0%, rgba(9, 105, 218, 0.04) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(26, 127, 55, 0.03) 0px, transparent 50%),
+            linear-gradient(rgba(208, 215, 222, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(208, 215, 222, 0.1) 1px, transparent 1px) !important;
+          background-size: 100% 100%, 100% 100%, 20px 20px, 20px 20px !important;
+        }
+
+        /* Generic Container & Box Overrides */
+        .theme-white .bg-\\[\\#0d1117\\] { background-color: #f6f8fa !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#0d1117\\]\\/80 { background-color: rgba(246, 248, 250, 0.8) !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\] { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/55 { background-color: rgba(255, 255, 255, 0.6) !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/30 { background-color: rgba(234, 238, 242, 0.5) !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#21262d\\] { background-color: #eaeef2 !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#040406\\] { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#010409\\] { background-color: #f6f8fa !important; background-image: none !important; }
+        .theme-white .bg-black\\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
+        .theme-white .bg-\\[rgba\\(13\\,17\\,23\\,0\\.7\\)\\] { background-color: rgba(255, 255, 255, 0.7) !important; background-image: none !important; }
+        .theme-white .bg-\\[rgba\\(88\\,166\\,255\\,0\\.03\\)\\] { background-color: rgba(9, 105, 218, 0.03) !important; }
+        
+        /* Gradient mapping for custom dynamic gradient segments */
+        .theme-white .from-\\[\\#161b22\\] { --tw-gradient-from: #ffffff !important; }
+        .theme-white .to-\\[\\#0d1117\\] { --tw-gradient-to: #f6f8fa !important; }
+        .theme-white .to-\\[\\#010409\\] { --tw-gradient-to: #f6f8fa !important; }
+        .theme-white .from-\\[\\#161b22\\]\\/80 { --tw-gradient-from: rgba(255, 255, 255, 0.8) !important; }
+        .theme-white .to-\\[\\#0d1117\\]\\/80 { --tw-gradient-to: rgba(246, 248, 250, 0.8) !important; }
+        
+        /* Border Overrides */
+        .theme-white .border-\\[\\#30363d\\] { border-color: #d0d7de !important; }
+        .theme-white .border-\\[\\#30363d\\]\\/40 { border-color: rgba(209, 213, 219, 0.4) !important; }
+        .theme-white .border-\\[\\#30363d\\]\\/50 { border-color: rgba(209, 213, 219, 0.5) !important; }
+        .theme-white .border-zinc-800 { border-color: #eaeef2 !important; }
+        .theme-white .border-white\\/5 { border-color: rgba(209, 213, 219, 0.5) !important; }
+
+        /* Typography & Text Overrides */
+        .theme-white .text-white { color: #1f2328 !important; }
+        .theme-white .text-\\[\\#c9d1d9\\] { color: #24292f !important; }
+        .theme-white .text-\\[\\#8b949e\\] { color: #57606a !important; }
+        .theme-white .text-zinc-300 { color: #24292f !important; }
+        .theme-white .text-zinc-400 { color: #57606a !important; }
+        .theme-white .text-zinc-500 { color: #6e7781 !important; }
+        .theme-white .text-slate-300 { color: #24292f !important; }
+        .theme-white .text-slate-400 { color: #57606a !important; }
+        .theme-white .text-white\\/60 { color: #4b5563 !important; }
+        .theme-white .text-white\\/20 { color: rgba(31, 35, 40, 0.25) !important; }
+        .theme-white .hover\\:text-white:hover { color: #1f2328 !important; }
+        .theme-white .text-\\[\\#58a6ff\\] { color: #0969da !important; }
+        .theme-white .bg-\\[\\#58a6ff\\]\\/10 { background-color: rgba(9, 105, 218, 0.1) !important; color: #0969da !important; }
+        .theme-white .border-\\[\\#58a6ff\\] { border-color: #0969da !important; }
+        
+        /* Navigation Adjustments */
+        .theme-white nav button { color: #57606a !important; }
+        .theme-white nav button.text-white { color: #1f2328 !important; }
+        .theme-white nav button:hover { color: #1f2328 !important; }
+        .theme-white .admin-glow:hover {
+          border-color: rgba(9, 105, 218, 0.4) !important;
+          box-shadow: 0 0 12px rgba(9, 105, 218, 0.15) !important;
+        }
+
+        /* Inputs & Form Overrides */
+        .theme-white input,
+        .theme-white textarea,
+        .theme-white select {
+          background-color: #ffffff !important;
+          color: #1f2328 !important;
+          border-color: #d0d7de !important;
+        }
+        .theme-white input:focus,
+        .theme-white textarea:focus {
+          border-color: #0969da !important;
+          box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1) !important;
+        }
+        .theme-white ::placeholder {
+          color: #8c959f !important;
+          opacity: 1 !important;
+        }
+
+        /* Project Card & Vignette Adjustments for Light Mode */
+        .theme-white .bg-\\[\\#0c1017\\]\\/45 {
+          background-color: #ffffff !important;
+        }
+        .theme-white .bg-\\[\\#0d1117\\]\\/85 {
+          background-color: rgba(246, 248, 250, 0.9) !important;
+        }
+        .theme-white [id^="project-card-"] .aspect-\\[4\\/5\\] {
+          background-color: #ffffff !important;
+          border-color: #d0d7de !important;
+          box-shadow: 0 4px 16px rgba(140, 149, 159, 0.08) !important;
+        }
+        .theme-white [id^="project-card-"] .aspect-\\[4\\/5\\]:hover {
+          border-color: #0969da !important;
+          box-shadow: 0 8px 24px rgba(9, 105, 218, 0.15) !important;
+        }
+        .theme-white .pointer-events-none.bg-\\[radial-gradient\\(circle_at_center\\,transparent_30\\%\\,rgba\\(13\\,17\\,23\\,0\\.45\\)\\_70\\%\\,rgba\\(13\\,17\\,23\\,0\\.95\\)\\_100\\%\\)\\] {
+          background-image: radial-gradient(circle at center, transparent 30%, rgba(246, 248, 250, 0.45) 70%, rgba(246, 248, 250, 0.95) 100%) !important;
+        }
+        .theme-white .pointer-events-none.group-hover\\:bg-\\[radial-gradient\\(circle_at_center\\,transparent_20\\%\\,rgba\\(13\\,17\\,23\\,0\\.3\\)\\_60\\%\\,rgba\\(13\\,17\\,23\\,0\\.9\\)\\_100\\%\\)\\] {
+          background-image: radial-gradient(circle at center, transparent 20%, rgba(246, 248, 250, 0.3) 60%, rgba(246, 248, 250, 0.9) 100%) !important;
+        }
+        .theme-white .pointer-events-none.bg-gradient-to-b.from-transparent.via-\\[\\#0d1117\\]\\/30.to-\\[\\#030712\\]\\/95 {
+          background-image: linear-gradient(to bottom, transparent, rgba(208, 215, 222, 0.3) 30%, #f6f8fa 95%) !important;
+        }
+        .theme-white [id^="project-card-"] .aspect-\\[4\\/5\\] span.text-white\\/20 {
+          color: rgba(31, 35, 40, 0.15) !important;
+        }
+
+        /* Testimonial Section Adjustments for White Theme */
+        .theme-white .group\/testimonial {
+          background-image: linear-gradient(to bottom, #ffffff, #f6f8fa) !important;
+          border-color: #d0d7de !important;
+          box-shadow: 0 8px 30px rgba(140, 149, 159, 0.12) !important;
+        }
+        .theme-white .group\/testimonial:hover {
+          background-image: linear-gradient(to bottom, #ffffff, #ffffff) !important;
+          border-color: rgba(9, 105, 218, 0.45) !important;
+          box-shadow: 0 12px 40px rgba(9, 105, 218, 0.1) !important;
+        }
+        .theme-white .group\/testimonial .absolute.-top-6.left-12.p-3 {
+          background-color: #ffffff !important;
+          border-color: #d0d7de !important;
+          color: #0969da !important;
+          box-shadow: 0 4px 12px rgba(140, 149, 159, 0.15) !important;
+        }
+        .theme-white .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10 {
+          background-color: rgba(9, 105, 218, 0.08) !important;
+          border-color: rgba(9, 105, 218, 0.2) !important;
+          color: #0969da !important;
+        }
+        .theme-white .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10:hover {
+          background-color: rgba(9, 105, 218, 0.15) !important;
+          border-color: rgba(9, 105, 218, 0.4) !important;
+        }
+        .theme-white .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10 span.text-white {
+          color: #0969da !important;
+        }
+        .theme-white .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10 span.bg-\\[\\#58a6ff\\] {
+          background-color: #0969da !important;
+        }
+        .theme-white .group\/testimonial .rounded-full.bg-\\[\\#21262d\\] {
+          background-color: #eaeef2 !important;
+          border-color: #d0d7de !important;
+          color: #1f2328 !important;
+        }
+        .theme-white button.bg-\\[\\#30363d\\] {
+          background-color: #d0d7de !important;
+        }
+        .theme-white button.bg-\\[\\#30363d\\]:hover {
+          background-color: #8c959f !important;
+        }
+
+        /* Overrides for Cosmic Personal Theme */
+        .theme-personal {
+          background-color: #030014 !important;
+          color: #e2e8f0 !important;
+        }
+        .theme-personal body {
+          background-color: #030014 !important;
+          color: #e2e8f0 !important;
+          background-image: 
+            radial-gradient(at 0% 0%, rgba(130, 80, 223, 0.12) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(208, 38, 243, 0.08) 0px, transparent 50%),
+            radial-gradient(at 50% 50%, rgba(0, 242, 254, 0.05) 0px, transparent 50%),
+            linear-gradient(rgba(37, 28, 84, 0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(37, 28, 84, 0.15) 1px, transparent 1px) !important;
+          background-size: 100% 100%, 100% 100%, 100% 100%, 25px 25px, 25px 25px !important;
+        }
+        .theme-personal .bg-\\[\\#0d1117\\] { background-color: #030014 !important; }
+        .theme-personal .bg-\\[\\#0d1117\\]\\/80 { background-color: rgba(3, 0, 20, 0.8) !important; }
+        .theme-personal .bg-\\[\\#161b22\\] { background-color: #0c0721 !important; border-color: #2b1a59 !important; }
+        .theme-personal .bg-\\[\\#161b22\\]\\/55 { background-color: rgba(12, 7, 33, 0.55) !important; }
+        .theme-personal .bg-\\[\\#161b22\\]\\/30 { background-color: rgba(12, 7, 33, 0.3) !important; }
+        .theme-personal .bg-\\[\\#21262d\\] { background-color: #170d38 !important; }
+        .theme-personal .bg-\\[\\#040406\\] { background-color: #02000c !important; }
+        .theme-personal .bg-\\[\\#010409\\] { background-color: #07031b !important; }
+        .theme-personal .bg-black\\/40 { background-color: rgba(3, 0, 20, 0.4) !important; }
+        .theme-personal .border-\\[\\#30363d\\] { border-color: #2b1a59 !important; }
+        .theme-personal .border-\\[\\#30363d\\]\\/40 { border-color: rgba(43, 26, 89, 0.4) !important; }
+        .theme-personal .border-\\[\\#30363d\\]\\/50 { border-color: rgba(43, 26, 89, 0.5) !important; }
+        .theme-personal .border-zinc-800 { border-color: #382470 !important; }
+        
+        /* Personal Typography Mapping */
+        .theme-personal .text-white { color: #ffffff !important; }
+        .theme-personal .text-\\[\\#c9d1d9\\] { color: #f1e9ff !important; }
+        .theme-personal .text-\\[\\#8b949e\\] { color: #9c8fb9 !important; }
+        .theme-personal .text-zinc-300 { color: #eae3ff !important; }
+        .theme-personal .text-zinc-400 { color: #9c8fb9 !important; }
+        .theme-personal .text-zinc-500 { color: #766994 !important; }
+        .theme-personal .text-slate-300 { color: #eae3ff !important; }
+        .theme-personal .text-slate-400 { color: #9c8fb9 !important; }
+        .theme-personal .text-\\[\\#58a6ff\\] { color: #a05bff !important; }
+        .theme-personal .bg-\\[\\#58a6ff\\]\\/10 { background-color: rgba(160, 91, 255, 0.1) !important; color: #a05bff !important; }
+        .theme-personal .border-\\[\\#58a6ff\\] { border-color: #a05bff !important; }
+        .theme-personal .text-[#58a6ff] { color: #a05bff !important; }
+
+        .theme-personal .admin-glow:hover {
+          border-color: rgba(130, 80, 223, 0.5) !important;
+          box-shadow: 0 0 16px rgba(130, 80, 223, 0.25) !important;
+        }
+
+        /* Inputs & Form Overrides for Personal Theme */
+        .theme-personal input,
+        .theme-personal textarea,
+        .theme-personal select {
+          background-color: #0c0721 !important;
+          color: #f1e9ff !important;
+          border-color: #2b1a59 !important;
+        }
+        .theme-personal input:focus,
+        .theme-personal textarea:focus {
+          border-color: #a05bff !important;
+          box-shadow: 0 0 0 3px rgba(160, 91, 255, 0.2) !important;
+        }
+
+        /* Testimonial Section Adjustments for Personal Theme */
+        .theme-personal .group\/testimonial {
+          background-image: linear-gradient(to bottom, #0c0721, #030014) !important;
+          border-color: #2b1a59 !important;
+          box-shadow: 0 10px 35px rgba(130, 80, 223, 0.1) !important;
+        }
+        .theme-personal .group\/testimonial:hover {
+          background-image: linear-gradient(to bottom, #140c35, #030014) !important;
+          border-color: rgba(130, 80, 223, 0.5) !important;
+          box-shadow: 0 15px 45px rgba(130, 80, 223, 0.2) !important;
+        }
+        .theme-personal .group\/testimonial .absolute.-top-6.left-12.p-3 {
+          background-color: #030014 !important;
+          border-color: #2b1a59 !important;
+          color: #a05bff !important;
+          box-shadow: 0 4px 12px rgba(130, 80, 223, 0.2) !important;
+        }
+        .theme-personal .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10 {
+          background-color: rgba(160, 91, 255, 0.12) !important;
+          border-color: rgba(160, 91, 255, 0.25) !important;
+          color: #a05bff !important;
+        }
+        .theme-personal .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10:hover {
+          background-color: rgba(160, 91, 255, 0.22) !important;
+          border-color: rgba(160, 91, 255, 0.45) !important;
+        }
+        .theme-personal .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10 span.text-white {
+          color: #ffffff !important;
+        }
+        .theme-personal .group\/testimonial button.bg-\\[\\#58a6ff\\]\\/10 span.bg-\\[\\#58a6ff\\] {
+          background-color: #a05bff !important;
+        }
+        .theme-personal .group\/testimonial .rounded-full.bg-\\[\\#21262d\\] {
+          background-color: #170d38 !important;
+          border-color: #2b1a59 !important;
+          color: #ffffff !important;
+        }
+        .theme-personal button.bg-\\[\\#30363d\\] {
+          background-color: #2b1a59 !important;
+          border-color: #382470 !important;
+        }
+        .theme-personal button.bg-\\[\\#30363d\\]:hover {
+          background-color: #382470 !important;
+        }
+      `}</style>
       {currentUser?.email === 'nishkalya@gmail.com' && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-[#161b22] text-white text-[9px] font-bold uppercase tracking-[0.3em] h-8 flex items-center justify-center gap-6 border-b border-[#30363d]">
           <div className="flex items-center gap-2 text-[#58a6ff]">
@@ -2360,6 +2841,47 @@ export default function App() {
             <button aria-label="Contact" onClick={() => scrollToSection('contact')} className="hover:text-white transition-colors pb-1">Contact</button>
           </div>
           <div className="flex items-center gap-4">
+            {/* Theme Mode Toggle (Dark, White, Personal View) */}
+            <div className="relative group">
+              <button
+                onClick={() => {
+                  const nextTheme = themeMode === 'dark' ? 'white' : themeMode === 'white' ? 'personal' : 'dark';
+                  setThemeMode(nextTheme);
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-[#161b22] hover:bg-[#21262d] border border-[#30363d] hover:border-[#8b949e] text-white transition-all cursor-pointer focus:outline-none shadow-md"
+                title={`Theme Mode: ${themeMode === 'dark' ? 'Dark' : themeMode === 'white' ? 'White' : 'Personal'}`}
+              >
+                {themeMode === 'dark' && <Moon size={14} className="text-[#58a6ff]" />}
+                {themeMode === 'white' && <Sun size={14} className="text-amber-500" />}
+                {themeMode === 'personal' && <Sparkles size={14} className="text-purple-400" />}
+              </button>
+
+              {/* Tooltip picker menu */}
+              <div className="absolute right-0 top-10 hidden group-hover:flex flex-col bg-[#161b22] border border-[#30363d] rounded-xl p-1.5 shadow-xl min-w-[124px] z-50">
+                <button
+                  onClick={() => setThemeMode('dark')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] uppercase font-mono font-bold tracking-wider cursor-pointer transition-colors text-left ${themeMode === 'dark' ? 'bg-[#21262d] text-[#58a6ff]' : 'text-zinc-400 hover:text-white hover:bg-[#21262d]/45'}`}
+                >
+                  <Moon size={11} />
+                  Dark
+                </button>
+                <button
+                  onClick={() => setThemeMode('white')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] uppercase font-mono font-bold tracking-wider cursor-pointer transition-colors text-left ${themeMode === 'white' ? 'bg-[#f3f4f6] text-[#0969da]' : 'text-zinc-400 hover:text-white hover:bg-[#21262d]/45'}`}
+                >
+                  <Sun size={11} />
+                  White
+                </button>
+                <button
+                  onClick={() => setThemeMode('personal')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] uppercase font-mono font-bold tracking-wider cursor-pointer transition-colors text-left ${themeMode === 'personal' ? 'bg-[#1e1445] text-purple-400' : 'text-zinc-400 hover:text-white hover:bg-[#21262d]/45'}`}
+                >
+                  <Sparkles size={11} />
+                  Personal
+                </button>
+              </div>
+            </div>
+
             <button 
               onClick={() => scrollToSection('contact')}
               className="hidden sm:block px-4 py-1.5 bg-[#21262d] border border-[#30363d] hover:bg-[#30363d] hover:border-[#8b949e] transition-all text-xs font-semibold rounded-lg text-[#c9d1d9]"
@@ -2417,7 +2939,7 @@ export default function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <AdminDashboard />
+            {AdminDashboard()}
           </motion.div>
         ) : currentView === 'home' ? (
           <motion.div
