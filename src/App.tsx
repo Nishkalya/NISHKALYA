@@ -71,7 +71,8 @@ import {
   Link as LinkIcon,
   Moon,
   Sun,
-  Sparkles
+  Sparkles,
+  Users
 } from 'lucide-react';
 import { 
   collection, 
@@ -107,6 +108,9 @@ import AdminPerformanceDashboard from './components/AdminPerformanceDashboard';
 import { ProjectCard } from './components/ProjectCard';
 import { PLATFORMS } from './data/platformsData';
 import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelper';
+import { marketingUserService } from './services/marketingUserService';
+import MarketingPage from './components/MarketingPage';
+import AdminUserManagement from './components/AdminUserManagement';
 
 
 
@@ -181,10 +185,19 @@ export default function App() {
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [detailsTab, setDetailsTab] = useState<'details' | 'browse'>('details');
-  const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin' | 'marketing'>('home');
   const [websiteConfig, setWebsiteConfig] = useState<any>(DEFAULT_CONFIG);
   const [isConfigLoading, setIsConfigLoading] = useState(true);
-  const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance'>('messages');
+  const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance' | 'users'>('messages');
+  const [marketingUser, setMarketingUser] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('marketing_user_session');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("Failed to parse marketing user session", e);
+      return null;
+    }
+  });
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
   const [activeProfilePlatform, setActiveProfilePlatform] = useState<string>('github');
@@ -204,11 +217,15 @@ export default function App() {
 
   useEffect(() => {
     document.body.classList.remove('theme-dark', 'theme-white', 'theme-personal');
-    document.body.classList.add(`theme-${themeMode}`);
-  }, [themeMode]);
+    if (currentView === 'marketing') {
+      document.body.classList.add('theme-white');
+    } else {
+      document.body.classList.add(`theme-${themeMode}`);
+    }
+  }, [themeMode, currentView]);
 
   // Activate page load and spa route transition performance telemetry
-  usePerformanceMonitor(currentView);
+  usePerformanceMonitor(currentView === 'marketing' ? 'home' : currentView);
 
   const displayPlatforms = websiteConfig.platforms || PLATFORMS;
 
@@ -285,6 +302,8 @@ export default function App() {
           }
           canonicalLink.setAttribute('href', origin + "?view=projects");
           
+        } else if (currentView === 'marketing') {
+          document.title = "Marketing Strategy Matrix | Nishkalya Studio";
         } else if (currentView === 'admin') {
           document.title = "Management Console | Nishkalya Studio";
         }
@@ -454,6 +473,12 @@ export default function App() {
       }
     }
   }, [projects, isProjectsLoading]);
+
+  useEffect(() => {
+    marketingUserService.seedDefaultUser().catch(err => {
+      console.warn("Marketing user seeding bypassed or already initialized.", err);
+    });
+  }, []);
 
   useEffect(() => {
     try {
@@ -769,7 +794,7 @@ export default function App() {
           <div>
             <div className="text-[#58a6ff] text-[10px] font-bold uppercase tracking-[0.4em] mb-4 font-mono">Command Center</div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white font-sans">
-              {adminTab === 'messages' ? 'Inquiry Dashboard' : adminTab === 'content' ? 'Website Editor' : 'Performance Analytics'}
+              {adminTab === 'messages' ? 'Inquiry Dashboard' : adminTab === 'content' ? 'Website Editor' : adminTab === 'performance' ? 'Performance Analytics' : 'User Accounts (Marketing)'}
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -795,6 +820,12 @@ export default function App() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'content' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
               >
                 <Edit2 size={12} /> Content
+              </button>
+              <button 
+                onClick={() => setAdminTab('users')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'users' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
+              >
+                <Users size={12} /> Users
               </button>
               <button 
                 onClick={() => setAdminTab('performance')}
@@ -1973,6 +2004,8 @@ export default function App() {
               </div>
             </div>
           </div>
+        ) : adminTab === 'users' ? (
+          <AdminUserManagement />
         ) : (
           <AdminPerformanceDashboard />
         )}
@@ -2535,27 +2568,100 @@ export default function App() {
           background-size: 100% 100%, 100% 100%, 20px 20px, 20px 20px !important;
         }
 
+        /* Marketing Portal - Light Theme Extensions */
+        .theme-white .bg-\\[\\#161b22\\]\\/90 { background-color: #ffffff !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/70 { background-color: #ffffff !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/60 { background-color: #ffffff !important; border-color: #d0d7de !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/40 { background-color: #ffffff !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/30 { background-color: #f6f8fa !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/20 { background-color: #f6f8fa !important; }
+        .theme-white .bg-\\[\\#0c1017\\] { background-color: #eaeef2 !important; }
+        .theme-white .border-\\[\\#30363d\\]\\/85 { border-color: #d0d7de !important; }
+        .theme-white .border-\\[\\#30363d\\]\\/80 { border-color: #d0d7de !important; }
+        .theme-white .border-\\[\\#30363d\\]\\/60 { border-color: #d0d7de !important; }
+        .theme-white .border-\\[\\#30363d\\]\\/45 { border-color: #d0d7de !important; }
+        .theme-white .border-zinc-850 { border-color: #d0d7de !important; }
+        .theme-white .bg-emerald-900\\/60 { background-color: #dafbe1 !important; color: #1a7f37 !important; border-color: #acf2bd !important; }
+        .theme-white .bg-emerald-900\\/60:hover { background-color: #2ea44f !important; color: white !important; }
+        .theme-white .bg-red-950\\/30 { background-color: #ffebe9 !important; color: #cf222e !important; border-color: #ffd3d0 !important; }
+        .theme-white .bg-red-950\\/30:hover { background-color: #cf222e !important; color: white !important; }
+        .theme-white .text-emerald-400 { color: #1a7f37 !important; }
+        .theme-white .bg-emerald-950\\/20 { background-color: #dafbe1 !important; color: #1a7f37 !important; border-color: #acf2bd !important; }
+        .theme-white .text-zinc-450 { color: #57606a !important; }
+        .theme-white .text-zinc-650 { color: #6e7781 !important; }
+        .theme-white .bg-purple-950\\/40 { background-color: #f5f0ff !important; color: #8250df !important; border-color: #d8b4fe !important; }
+        .theme-white .bg-purple-950\\/40:hover { background-color: #8250df !important; color: white !important; }
+        .theme-white .text-purple-300 { color: #8250df !important; }
+        .theme-white .text-purple-400 { color: #8250df !important; }
+        .theme-white .bg-\\[\\#161b22\\] { background-color: #ffffff !important; }
+        .theme-white .bg-\\[\\#0d1117\\] { background-color: #f6f8fa !important; }
+        .theme-white .text-zinc-100 { color: #1f2328 !important; }
+        .theme-white .text-zinc-200 { color: #1f2328 !important; }
+
+        /* Pipeline Filter Bar Light Theme Override */
+        .theme-white #pipeline-filter-bar {
+          background-color: rgba(255, 255, 255, 0.8) !important;
+          border-color: #d0d7de !important;
+        }
+        .theme-white #pipeline-filter-bar button {
+          background-color: #f6f8fa !important;
+          border-color: #d0d7de !important;
+          color: #57606a !important;
+        }
+        .theme-white #pipeline-filter-bar button:hover {
+          background-color: #eaeef2 !important;
+          color: #1f2328 !important;
+          border-color: #8c959f !important;
+        }
+        .theme-white #pipeline-filter-bar button[id="pipeline-btn-new-query"].bg-\\[\\#1f6feb\\]\\/15,
+        .theme-white #pipeline-filter-bar button[id="pipeline-btn-new-query"].bg-blue-600\\/15 {
+          background-color: #ffffff !important;
+          color: #0969da !important;
+          border-color: #0969da !important;
+          border-width: 2px !important;
+        }
+        .theme-white #pipeline-filter-bar button[id="pipeline-btn-inprocess"].bg-amber-500\\/15 {
+          background-color: #ffffff !important;
+          color: #9a6700 !important;
+          border-color: #9a6700 !important;
+          border-width: 2px !important;
+        }
+        .theme-white #pipeline-filter-bar button[id="pipeline-btn-won"].bg-emerald-500\\/15 {
+          background-color: #ffffff !important;
+          color: #1a7f37 !important;
+          border-color: #1a7f37 !important;
+          border-width: 2px !important;
+        }
+        .theme-white #pipeline-filter-bar button[id="pipeline-btn-lost"].bg-red-500\\/15 {
+          background-color: #ffffff !important;
+          color: #cf222e !important;
+          border-color: #cf222e !important;
+          border-width: 2px !important;
+        }
+
         /* Generic Container & Box Overrides */
-        .theme-white .bg-\\[\\#0d1117\\] { background-color: #f6f8fa !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#0d1117\\]\\/80 { background-color: rgba(246, 248, 250, 0.8) !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#0d1117\\] { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#0d1117\\]\\/80 { background-color: #ffffff !important; background-image: none !important; }
         .theme-white .bg-\\[\\#161b22\\] { background-color: #ffffff !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#161b22\\]\\/55 { background-color: rgba(255, 255, 255, 0.6) !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#161b22\\]\\/50 { background-color: rgba(255, 255, 255, 0.5) !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#161b22\\]\\/30 { background-color: rgba(234, 238, 242, 0.5) !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#21262d\\] { background-color: #eaeef2 !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#1f242c\\] { background-color: #eaeef2 !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/70 { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/55 { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/50 { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/40 { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#161b22\\]\\/30 { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[\\#21262d\\] { background-color: #ffffff !important; background-image: none !important; border: 1px solid #d0d7de !important; }
+        .theme-white .bg-\\[\\#1f242c\\] { background-color: #ffffff !important; border: 1px solid #d0d7de !important; }
         .theme-white .bg-\\[\\#040406\\] { background-color: #ffffff !important; background-image: none !important; }
-        .theme-white .bg-\\[\\#010409\\] { background-color: #f6f8fa !important; background-image: none !important; }
-        .theme-white .bg-black\\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
-        .theme-white .bg-\\[rgba\\(13\\,17\\,23\\,0\\.7\\)\\] { background-color: rgba(255, 255, 255, 0.7) !important; background-image: none !important; }
-        .theme-white .bg-\\[rgba\\(88\\,166\\,255\\,0\\.03\\)\\] { background-color: rgba(9, 105, 218, 0.03) !important; }
+        .theme-white .bg-\\[\\#010409\\] { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-black\\/40 { background-color: rgba(255, 255, 255, 0.95) !important; }
+        .theme-white .bg-\\[rgba\\(13\\,17\\,23\\,0\\.7\\)\\] { background-color: #ffffff !important; background-image: none !important; }
+        .theme-white .bg-\\[rgba\\(88\\,166\\,255\\,0\\.03\\)\\] { background-color: #ffffff !important; }
         
         /* Gradient mapping for custom dynamic gradient segments */
         .theme-white .from-\\[\\#161b22\\] { --tw-gradient-from: #ffffff !important; }
-        .theme-white .to-\\[\\#0d1117\\] { --tw-gradient-to: #f6f8fa !important; }
-        .theme-white .to-\\[\\#010409\\] { --tw-gradient-to: #f6f8fa !important; }
-        .theme-white .from-\\[\\#161b22\\]\\/80 { --tw-gradient-from: rgba(255, 255, 255, 0.8) !important; }
-        .theme-white .to-\\[\\#0d1117\\]\\/80 { --tw-gradient-to: rgba(246, 248, 250, 0.8) !important; }
+        .theme-white .to-\\[\\#0d1117\\] { --tw-gradient-to: #ffffff !important; }
+        .theme-white .to-\\[\\#010409\\] { --tw-gradient-to: #ffffff !important; }
+        .theme-white .from-\\[\\#161b22\\]\\/80 { --tw-gradient-from: #ffffff !important; }
+        .theme-white .to-\\[\\#0d1117\\]\\/80 { --tw-gradient-to: #ffffff !important; }
         
         /* Border Overrides */
         .theme-white .border-\\[\\#30363d\\] { border-color: #d0d7de !important; }
@@ -2842,6 +2948,7 @@ export default function App() {
             <button aria-label="About" onClick={() => scrollToSection('about')} className="hover:text-white transition-colors pb-1">About</button>
             <button aria-label="Services" onClick={() => scrollToSection('services')} className="hover:text-white transition-colors pb-1">Services</button>
             <button aria-label="Projects" onClick={() => { setCurrentView('projects'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-white transition-colors ${currentView === 'projects' ? 'text-white border-b-2 border-[#58a6ff] pb-1' : ''}`}>Projects</button>
+            <button aria-label="Marketing" onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-white transition-colors ${currentView === 'marketing' ? 'text-white border-b-2 border-[#58a6ff] pb-1' : ''}`}>Marketing</button>
             <button aria-label="Contact" onClick={() => scrollToSection('contact')} className="hover:text-white transition-colors pb-1">Contact</button>
           </div>
           <div className="flex items-center gap-4">
@@ -2919,6 +3026,7 @@ export default function App() {
                 <button onClick={() => scrollToSection('about')} className="hover:text-[#58a6ff] py-2">About</button>
                 <button onClick={() => scrollToSection('services')} className="hover:text-[#58a6ff] py-2">Services</button>
                 <button onClick={() => { setCurrentView('projects'); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white py-2">Projects</button>
+                <button onClick={() => { setCurrentView('marketing'); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white py-2">Marketing</button>
                 <button onClick={() => scrollToSection('contact')} className="hover:text-[#58a6ff] py-2">Contact</button>
                 <button 
                   onClick={() => scrollToSection('contact')}
@@ -2944,6 +3052,16 @@ export default function App() {
             transition={{ duration: 0.3 }}
           >
             {AdminDashboard()}
+          </motion.div>
+        ) : currentView === 'marketing' ? (
+          <motion.div
+            key="marketing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <MarketingPage marketingUser={marketingUser} setMarketingUser={setMarketingUser} />
           </motion.div>
         ) : currentView === 'home' ? (
           <motion.div
