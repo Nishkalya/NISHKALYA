@@ -870,11 +870,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
           {/* Header Dashboard panel */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#30363d]/85 pb-6 gap-4">
             <div>
-              <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-1.5 font-mono">
-                Corporate Core — Verified Session
-              </div>
               <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
-                Marketing <span className="italic text-[#58a6ff] font-serif font-medium">Matrix</span>
+                Marketing
               </h1>
               <p className="text-xs text-[#8b949e] mt-1.5 leading-relaxed tracking-wide font-light">
                 Secure Marketer ID: <span className="font-mono text-white font-bold bg-[#161b22] border border-[#30363d] px-2 py-0.5 rounded text-[11px]">{marketingUser.username}</span>
@@ -890,11 +887,11 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
             </button>
           </div>
 
-          {/* New Portal Layout Grid: Sidebar on left, Content Area on right */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          {/* New Portal Layout: Sidebar on left, Content Area on right */}
+          <div className="flex flex-row md:gap-8 gap-4 items-start w-full">
             
             {/* LEFT SIDEBAR MENU PANEL */}
-            <div className="md:col-span-3 space-y-4">
+            <div className="w-48 sm:w-56 md:w-64 shrink-0 space-y-4">
               <div className="bg-[#161b22]/70 border border-[#30363d]/80 rounded-2xl p-4 space-y-3 shadow-xl">
                 <div className="text-[10px] font-mono font-extrabold text-[#8b949e] uppercase tracking-[0.2em] px-3 pb-1 border-b border-[#30363d]/40">
                   Matrix Workspace
@@ -930,18 +927,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                   </button>
                 </nav>
               </div>
-
-              {/* Extra context help block */}
-              <div className="hidden md:block bg-[#161b22]/20 border border-[#30363d]/40 rounded-2xl p-4 text-[11px] text-zinc-500 font-light leading-relaxed font-sans">
-                <p className="flex items-center gap-1.5 text-[#58a6ff] font-mono font-semibold text-[10px] uppercase mb-1.5">
-                  <Sparkles size={12} /> Live telemetry
-                </p>
-                This terminal displays cached corporate inquiries, request threads, and status monitors. Custom updates persist in persistent local registries.
-              </div>
             </div>
 
             {/* RIGHT CONTENT AREA PANEL */}
-            <div className="md:col-span-9 space-y-6">
+            <div className="flex-1 min-w-0 space-y-6">
               
               {activeModule === 'queries' && (
                 <>
