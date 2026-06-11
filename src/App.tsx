@@ -42,7 +42,6 @@ import {
   LogIn,
   LogOut,
   Lock,
-  Database,
   MoreVertical,
   Clock,
   Check,
@@ -112,7 +111,6 @@ import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelp
 import { marketingUserService } from './services/marketingUserService';
 import MarketingPage from './components/MarketingPage';
 import AdminUserManagement from './components/AdminUserManagement';
-import ProjectsPortfolioPage from './components/ProjectsPortfolioPage';
 
 
 
@@ -2687,297 +2685,70 @@ export default function App() {
             transition={{ duration: 0.5 }}
           >
             {/* Hero Section */}
-            <section id="hero" className="relative min-h-screen flex items-center justify-center pt-28 pb-16 px-6 md:px-12 lg:px-16 overflow-hidden w-full bg-[#0d1117]">
-              {/* Background layers */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                {/* Grid pattern */}
-                <div 
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, #30363d 1px, transparent 1px), linear-gradient(to bottom, #30363d 1px, transparent 1px)`,
-                    backgroundSize: '40px 40px',
-                  }}
-                />
+            <section className="relative min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6 md:px-12 z-10 w-full max-w-7xl mx-auto text-center">
+              <motion.div 
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="max-w-4xl"
+              >
+                <motion.div 
+                  variants={itemVariants} 
+                  className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full mb-6 md:mb-8 bg-[#161b22] border border-[#30363d]"
+                >
+                  <span 
+                    className="w-2 h-2 rounded-full animate-pulse bg-[#58a6ff]"
+                  ></span>
+                  <span 
+                    className="text-[9px] md:text-[10px] font-semibold text-[#8b949e] uppercase tracking-[0.2em]"
+                  >
+                    {websiteConfig?.hero?.badge}
+                  </span>
+                </motion.div>
                 
-                {/* Glowing gradient blobs */}
-                <div className="absolute top-[10%] left-[5%] w-[450px] h-[450px] bg-blue-500/10 rounded-full blur-[130px] animate-pulse pointer-events-none" style={{ animationDuration: '8s' }} />
-                <div className="absolute bottom-[10%] right-[5%] w-[550px] h-[550px] bg-indigo-500/10 rounded-full blur-[160px] animate-pulse pointer-events-none" style={{ animationDuration: '12s' }} />
-                <div className="absolute top-[30%] right-[25%] w-[350px] h-[350px] bg-purple-500/5 rounded-full blur-[110px] pointer-events-none" />
-
-                {/* Subtle particles */}
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <motion.div
-                    key={`particle-${i}`}
-                    className="absolute w-1 h-1 bg-blue-400 rounded-full opacity-30"
-                    initial={{ 
-                      x: `${Math.random() * 100}%`, 
-                      y: `${Math.random() * 100}%`,
-                      scale: Math.random() * 0.8 + 0.2 
-                    }}
-                    animate={{
-                      y: ["-10%", "110%"],
-                      opacity: [0, 0.4, 0]
-                    }}
-                    transition={{
-                      duration: Math.random() * 10 + 15,
-                      repeat: Infinity,
-                      ease: "linear",
-                      delay: Math.random() * -15
-                    }}
-                  />
-                ))}
-              </div>
-
-              <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-                {/* Left Side: Copy & Actions (60% Desktop equivalent) */}
-                <motion.div 
-                  initial="hidden"
-                  animate="visible"
-                  variants={containerVariants}
-                  className="lg:col-span-7 text-left flex flex-col items-start z-10"
+                <h1 
+                  className="text-3xl sm:text-6xl md:text-8xl font-extrabold leading-[1.2] md:leading-[1.1] text-white mb-6 md:mb-8 tracking-tight px-4 md:px-0" 
                 >
-                  {/* Small Badge */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full mb-6 bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full animate-ping bg-blue-400" />
-                    <span className="text-[10px] sm:text-xs font-bold text-blue-400 uppercase tracking-widest font-mono">
-                      AI • Software • Automation • Growth
-                    </span>
-                  </motion.div>
-
-                  {/* Main Heading */}
-                  <motion.h1 
-                    variants={itemVariants}
-                    className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-white mb-6 max-w-[650px] font-sans"
-                  >
-                    Build Smarter.<br />
-                    Automate Faster.<br />
-                    <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                      Scale Without Limits.
-                    </span>
-                  </motion.h1>
-
-                  {/* Subheading */}
-                  <motion.p 
-                    variants={itemVariants}
-                    className="text-base sm:text-lg text-[#8b949e] max-w-xl font-light leading-relaxed mb-8"
-                  >
-                    Nishkalya helps businesses build websites, AI agents, ERP systems, automation workflows, and custom software that saves time and drives growth.
-                  </motion.p>
-
-                  {/* CTA Buttons */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="flex flex-wrap items-center gap-4 mb-10 w-full sm:w-auto"
-                  >
-                    <button 
-                      onClick={() => scrollToSection('contact')}
-                      className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all duration-300 text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 group hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                      aria-label="Start Your Project"
-                    >
-                      <Sparkles size={14} className="text-blue-200" />
-                      <span>Start Your Project</span>
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <button 
-                      onClick={() => setCurrentView('projects')}
-                      className="px-6 py-3.5 bg-[#161b22] border border-[#30363d] text-[#c9d1d9] font-semibold rounded-xl hover:bg-[#21262d] hover:border-[#8b949e] transition-all duration-300 text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                      aria-label="View Portfolio"
-                    >
-                      <span>View Portfolio</span>
-                    </button>
-                  </motion.div>
-
-                  {/* Trust Indicators */}
-                  <motion.div 
-                    variants={itemVariants}
-                    className="grid grid-cols-2 gap-4 w-full max-w-lg border-t border-[#30363d]/50 pt-8"
-                  >
-                    {[
-                      { text: "120+ Projects Delivered" },
-                      { text: "98% Client Satisfaction" },
-                      { text: "40+ AI Solutions" },
-                      { text: "5-Star Rating" },
-                    ].map((indicator, i) => (
-                      <div key={i} className="flex items-center space-x-2.5 text-xs sm:text-sm text-[#8b949e] group">
-                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20 transition-all border border-blue-500/15 shrink-0">
-                          <Check size={11} className="stroke-[3]" />
-                        </span>
-                        <span className="font-medium text-gray-300 tracking-wide">{indicator.text}</span>
-                      </div>
-                    ))}
-                  </motion.div>
-                </motion.div>
-
-                {/* Right Side: Showcase Dashboard Mockup (40% Desktop equivalent) */}
-                <motion.div 
-                  initial={{ opacity: 0, x: 40, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                  className="lg:col-span-5 relative w-full flex items-center justify-center pt-16 lg:pt-0 px-4 sm:px-8 lg:px-0"
+                  <MotionHeading html={websiteConfig?.hero?.heading} />
+                </h1>
+                
+                <motion.p 
+                  variants={itemVariants}
+                  className="text-base md:text-lg text-[#8b949e] max-w-2xl mx-auto leading-relaxed font-light mb-10 md:mb-12 px-2 md:px-0"
                 >
-                  {/* Outer mockup console representing window frame */}
-                  <div className="relative w-full aspect-[4/3] max-w-[480px] min-h-[320px] sm:min-h-[380px] rounded-2xl border border-slate-700/50 bg-[#0d1117]/85 backdrop-blur-md shadow-2xl overflow-hidden p-4 flex flex-col justify-between select-none">
-                    
-                    {/* Top Browser controls header */}
-                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3 shrink-0">
-                      <div className="flex items-center space-x-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
-                      </div>
-                      <div className="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-[#161b22] border border-slate-800 text-[10px] text-slate-400 font-mono w-44 truncate justify-center">
-                        <Lock className="w-2.5 h-2.5 mr-1 text-slate-500" />
-                        <span>nishkalya.com/dashboard</span>
-                      </div>
-                      <div className="w-8" />
-                    </div>
-
-                    {/* Dashboard Grid Content */}
-                    <div className="grid grid-cols-2 gap-3 flex-grow overflow-hidden select-none pb-1">
-                      
-                      {/* Card 1: Revenue Chart widget */}
-                      <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex flex-col justify-between overflow-hidden relative">
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Core Revenue</span>
-                            <span className="text-[10px] text-emerald-400 font-bold font-mono">+28%</span>
-                          </div>
-                          <div className="text-sm font-extrabold text-white font-mono">$142,480</div>
-                        </div>
-                        
-                        {/* Visual Mini bar chart/sparkline */}
-                        <div className="flex items-end space-x-1 h-12 pt-2">
-                          {[35, 45, 30, 60, 40, 75, 40, 65, 80].map((h, i) => (
-                            <div key={i} className="flex-grow bg-blue-500/20 hover:bg-blue-500 rounded-[2px] transition-all" style={{ height: `${h}%` }} />
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Card 2: AI Automation Workflow Widget */}
-                      <div className="p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 flex flex-col justify-between relative overflow-hidden">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">Agent Workflow</span>
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                        </div>
-                        
-                        {/* Minimal node connector representations */}
-                        <div className="space-y-1.5 py-1 flex-grow flex flex-col justify-center">
-                          <div className="flex items-center justify-between text-[9px] bg-blue-500/10 text-blue-300 border border-blue-500/20 rounded p-1 font-mono">
-                            <span>Trigger: API Event</span>
-                            <span className="font-bold">OK</span>
-                          </div>
-                          <div className="h-2 w-0.5 bg-blue-500/30 mx-auto" />
-                          <div className="flex items-center justify-between text-[9px] bg-purple-500/10 text-purple-300 border border-purple-500/20 rounded p-1 font-mono">
-                            <span>LLM Tool Integration</span>
-                            <span className="text-emerald-400 font-bold">Active</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card 3: Website Preview widget */}
-                      <div className="col-span-2 p-3 rounded-xl bg-slate-900/30 border border-slate-800/80 flex items-center justify-between gap-3 overflow-hidden">
-                        <div className="flex-grow text-left">
-                          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono block mb-1">Live Website Mock</span>
-                          <h4 className="text-xs font-bold text-white mb-1">E-Commerce Webapp</h4>
-                          <p className="text-[10px] text-slate-400 font-light truncate">Sleek checkout, real-time sync with stripe payment...</p>
-                        </div>
-                        <div className="w-24 shrink-0 aspect-video rounded-md border border-slate-800 bg-slate-950 p-1 flex flex-col justify-between overflow-hidden">
-                          {/* Header */}
-                          <div className="flex items-center justify-between border-b border-slate-900/80 pb-0.5">
-                            <span className="w-3 h-1 bg-slate-800 rounded-[1px]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                          </div>
-                          {/* Main */}
-                          <div className="space-y-1 my-1">
-                            <div className="h-1 w-full bg-slate-800 rounded-[1px]" />
-                            <div className="h-1.5 w-2/3 bg-blue-500/40 rounded-[1px]" />
-                          </div>
-                          {/* Grid cards */}
-                          <div className="grid grid-cols-2 gap-1">
-                            <div className="h-2 bg-slate-900 border border-slate-800/60 rounded-[1px]" />
-                            <div className="h-2 bg-slate-900 border border-slate-800/60 rounded-[1px]" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card 4: ERP Dashboard Widgets & Analytics */}
-                      <div className="col-span-2 p-3 rounded-xl bg-slate-900/40 border border-slate-800/80 grid grid-cols-3 gap-2">
-                        <div className="p-2 rounded bg-slate-950/50 border border-slate-850 flex flex-col justify-between max-h-[75px]">
-                          <span className="text-[8px] text-slate-500 font-mono tracking-wider block">INVENTORY</span>
-                          <span className="text-[11px] font-extrabold text-[#c9d1d9] font-mono leading-none">1,241 <span className="text-[7px] text-emerald-400 block font-normal mt-0.5 font-sans">Synced ✓</span></span>
-                        </div>
-                        <div className="p-2 rounded bg-slate-950/50 border border-slate-850 flex flex-col justify-between max-h-[75px]">
-                          <span className="text-[8px] text-slate-500 font-mono tracking-wider block">DELIVERIES</span>
-                          <span className="text-[11px] font-extrabold text-[#c9d1d9] font-mono leading-none">98.4% <span className="text-[7px] text-indigo-400 block font-normal mt-0.5 font-sans">Target Met</span></span>
-                        </div>
-                        <div className="p-2 rounded bg-slate-950/50 border border-slate-850 flex flex-col justify-between max-h-[75px]">
-                          <span className="text-[8px] text-slate-500 font-mono tracking-wider block">SYS STATUS</span>
-                          <span className="text-[11px] font-extrabold text-emerald-400 font-mono leading-none">HEALTHY <span className="text-[7px] text-slate-400 block font-normal mt-0.5 font-sans">99.9% Uptime</span></span>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Floating glassmorphism cards */}
-                  {/* "AI Agent Active" */}
-                  <motion.div 
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-4 -left-2 sm:-left-6 lg:-left-8 px-3.5 py-2.5 rounded-xl border border-blue-500/30 bg-[#0d1117]/80 backdrop-blur-md shadow-lg flex items-center space-x-2.5 z-20"
+                  {websiteConfig?.hero?.subheading}
+                </motion.p>
+      
+                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-center gap-4 md:gap-5 px-6 sm:px-0">
+                  <button 
+                    onClick={() => setCurrentView('projects')}
+                    className="w-full sm:w-auto px-6 py-3.5 bg-[#238636] hover:bg-[#2eaa44] border border-[#2ea44f] text-white font-semibold rounded-lg transition-all duration-300 text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#238636]/10 group"
+                    aria-label="View our portfolio projects and work showcase"
                   >
-                    <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-blue-500/10 text-blue-400 shrink-0">
-                      <Cpu size={14} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] text-slate-400 leading-none font-mono uppercase tracking-wider">AI Agent Status</p>
-                      <span className="text-[11px] font-bold text-white flex items-center gap-1 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        AI Agent Active
-                      </span>
-                    </div>
-                  </motion.div>
-
-                  {/* "ERP Connected" */}
-                  <motion.div 
-                    animate={{ y: [0, 8, 0] }}
-                    transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                    className="absolute top-[40%] -right-2 sm:-right-4 lg:-right-10 px-3.5 py-2.5 rounded-xl border border-indigo-500/30 bg-[#0d1117]/80 backdrop-blur-md shadow-lg flex items-center space-x-2.5 z-20 hidden sm:flex"
+                    View Our Work <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <button 
+                    onClick={() => scrollToSection('contact')}
+                    className="w-full sm:w-auto px-6 py-3.5 bg-[#21262d] border border-[#30363d] text-[#c9d1d9] font-semibold rounded-lg hover:bg-[#30363d] hover:border-[#8b949e] transition-all duration-300 text-xs"
+                    aria-label="Scroll to the contact section to submit a project inquiry"
                   >
-                    <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
-                      <Database size={14} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] text-slate-400 leading-none font-mono uppercase tracking-wider">Integrations</p>
-                      <span className="text-[11px] font-bold text-white flex items-center gap-1 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                        ERP Connected
-                      </span>
-                    </div>
-                  </motion.div>
-
-                  {/* "Website Live" */}
-                  <motion.div 
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    className="absolute -bottom-4 right-2 sm:right-6 lg:right-4 px-3.5 py-2.5 rounded-xl border border-purple-500/30 bg-[#0d1117]/80 backdrop-blur-md shadow-lg flex items-center space-x-2.5 z-20"
-                  >
-                    <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-purple-500/10 text-purple-400 shrink-0">
-                      <Globe size={14} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] text-slate-400 leading-none font-mono uppercase tracking-wider">Production Site</p>
-                      <span className="text-[11px] font-bold text-white flex items-center gap-1 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Website Live
-                      </span>
-                    </div>
-                  </motion.div>
+                    Start a Project
+                  </button>
                 </motion.div>
-              </div>
+      
+                {/* Stats Bar */}
+                <motion.div 
+                  variants={itemVariants}
+                  className="grid grid-cols-2 md:grid-cols-4 gap-y-10 md:gap-16 mt-20 md:mt-24 py-10 border-y border-[#30363d]/50"
+                >
+                  {websiteConfig?.hero?.stats?.map((stat: any, i: number) => (
+                    <div key={i} className="flex flex-col items-center">
+                      <div className="text-2xl md:text-3xl font-semibold text-white tracking-tighter mb-1 font-mono">{stat.value}</div>
+                      <div className="text-[9px] text-[#8b949e] uppercase tracking-[0.2em] font-medium whitespace-nowrap">{stat.label}</div>
+                    </div>
+                  ))}
+                </motion.div>
+              </motion.div>
             </section>
       
             {/* About Section */}
@@ -3105,8 +2876,255 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
+            className="pt-32 pb-32 px-6 md:px-12 w-full max-w-7xl mx-auto min-h-screen"
           >
-            <ProjectsPortfolioPage />
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-6 md:gap-8">
+              <div>
+                <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+                  Begin your project
+                </div>
+                <motion.h1 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-4xl md:text-6xl font-extrabold text-white"
+                >
+                  Pure <span className="italic text-[#58a6ff]">Innovation.</span>
+                </motion.h1>
+              </div>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-6"
+              >
+                <p className="text-[#8b949e] max-w-md text-sm leading-relaxed">A specialized gallery of our most impactful work in AI, Design, and Engineering.</p>
+              </motion.div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+              {isProjectsLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div 
+                    key={`project-skeleton-${i}`}
+                    className="aspect-[4/5] bg-[#161b22]/40 border border-[#30363d]/50 rounded-3xl p-8 flex flex-col justify-end relative overflow-hidden animate-pulse"
+                  >
+                    {/* Subtle decorative placeholder background */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/85 to-transparent z-0"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-[#30363d]/40 rounded-2xl flex items-center justify-center border border-[#30363d]/30 text-zinc-700">
+                      <Activity size={24} />
+                    </div>
+                    
+                    <div className="relative z-10 space-y-3">
+                      {/* Category banner */}
+                      <div className="h-3 w-1/3 bg-[#30363d]/60 rounded-md" />
+                      {/* Title banner */}
+                      <div className="h-6 w-3/4 bg-[#30363d]/60 rounded-md" />
+                    </div>
+                  </div>
+                ))
+              ) : projects.length === 0 ? (
+                <div className="col-span-full py-20 text-center">
+                  <Activity className="text-zinc-600 mx-auto mb-4" size={32} />
+                  <p className="text-[#8b949e] text-sm">No innovative showcase items recorded yet.</p>
+                </div>
+              ) : (
+                projects.map((project, i) => (
+                  <ProjectCard 
+                    key={project.id}
+                    project={project}
+                    index={i}
+                    setHoveredProject={setHoveredProject}
+                    onClick={() => {
+                      if (project.link) {
+                        setSelectedProjectForPreview(project);
+                        setIsFlipped(false);
+                        setActivePreviewUrl(project.link);
+                        setIsIframeLoading(true);
+                        setShowFullPreview(false);
+                      }
+                    }}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* SECTION 2: PLATFORMS & PROFILES FILTERABLE SHOWCASE */}
+            <div className="mt-32 pt-20 border-t border-[#30363d]/40" id="platforms-profiles-section">
+              <div className="mb-14">
+                <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+                  External Channels
+                </div>
+                <h2 className="text-3xl md:text-5xl font-extrabold text-white uppercase tracking-tight">
+                  Platforms & <span className="italic text-[#58a6ff]">Profiles</span>
+                </h2>
+                <p className="text-[#8b949e] max-w-2xl mt-4 text-sm md:text-base font-light">
+                  Explore verified repositories, industry achievements, media hubs, and professional credentials loaded across international developer ecosystems.
+                </p>
+              </div>
+
+              {/* Navigation Grid of Tabs */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 mb-12">
+                {displayPlatforms.map((platform: any) => {
+                  const isActive = activeProfilePlatform === platform.id;
+                  return (
+                    <button
+                      key={platform.id}
+                      onClick={() => setActiveProfilePlatform(platform.id)}
+                      id={`platform-tab-${platform.id}`}
+                      className={`relative flex flex-col items-start p-4 rounded-xl border transition-all duration-300 text-left overflow-hidden group cursor-pointer ${
+                        isActive
+                          ? 'bg-[#0f1524]/60 border-[#58a6ff]/70 shadow-[0_0_20px_rgba(88,166,255,0.15)] text-white'
+                          : 'bg-[#0d1117]/30 border-[#30363d]/50 hover:border-[#58a6ff]/40 text-[#8b949e] hover:text-white backdrop-blur-sm'
+                      }`}
+                    >
+                      {/* Active glow flare inside tab */}
+                      {isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-tr from-[#58a6ff]/5 to-transparent pointer-events-none" />
+                      )}
+                      
+                      <div className="flex items-center justify-between w-full mb-3 z-10">
+                        <div className={`p-2 rounded-lg transition-transform duration-300 group-hover:scale-110 ${
+                          isActive ? 'bg-[#58a6ff]/10 text-[#58a6ff]' : 'bg-[#161b22]/50 text-zinc-500 group-hover:text-zinc-300'
+                        }`}>
+                          {getPlatformIcon(platform.iconType || platform.id, 18)}
+                        </div>
+                        {/* Counters representation */}
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
+                          isActive 
+                            ? 'bg-[#58a6ff]/20 text-[#58a6ff] border-[#58a6ff]/30' 
+                            : 'bg-[#161b22] text-[#8b949e]/60 border-transparent group-hover:text-zinc-400 group-hover:border-[#30363d]'
+                        }`}>
+                          {platform.items?.length || 0}
+                        </span>
+                      </div>
+
+                      <div className="z-10 mt-1">
+                        <span className="text-[12px] font-bold uppercase tracking-wider block font-sans">
+                          {platform.name}
+                        </span>
+                      </div>
+
+                      {/* Cyberpunk HUD style corner bracket on active tab */}
+                      {isActive && (
+                        <>
+                          <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#58a6ff]" />
+                          <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#58a6ff]" />
+                          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#58a6ff]" />
+                          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#58a6ff]" />
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Selected Platform Context Detail banner */}
+              <div className="mb-8 p-5 bg-[#0d1117]/45 border border-[#30363d]/40 rounded-2xl flex items-center gap-4">
+                <div className="w-1.5 h-8 bg-[#58a6ff] rounded-r-md" />
+                <p className="text-[#8b949e] text-xs font-mono tracking-wide leading-relaxed uppercase">
+                  ACTIVE MATRIX // {displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.name || ''}: {displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.description || ''}
+                </p>
+              </div>
+
+              {/* Items Grid */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeProfilePlatform}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid md:grid-cols-2 gap-6"
+                >
+                  {(displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.items || []).map((item: any, idx: number) => (
+                    <div
+                      key={item.id}
+                      id={`platform-item-${item.id}`}
+                      className="group relative bg-[#0c1017]/45 backdrop-blur-xl border border-[#30363d]/60 rounded-2xl p-6 hover:border-[#58a6ff]/40 hover:shadow-[0_0_20px_rgba(88,166,255,0.08)] transition-all duration-300 flex flex-col justify-between overflow-hidden"
+                    >
+                      {/* Interactive live-vignette frames inside active item */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_60%,rgba(13,17,23,0.3)_90%,rgba(13,17,23,0.85)_100%)] pointer-events-none z-10 transition-opacity duration-300 group-hover:opacity-75" />
+
+                      {/* Decors */}
+                      <div className="absolute top-0 right-0 w-32 h-12 bg-gradient-to-bl from-[#58a6ff]/5 to-transparent pointer-events-none" />
+
+                      <div>
+                        {/* Header of Item card */}
+                        <div className="flex items-start justify-between mb-3 z-20 relative">
+                          <div className="space-y-1">
+                            <h4 className="text-[15px] font-bold text-white group-hover:text-[#58a6ff] transition-colors duration-300 tracking-tight font-sans uppercase">
+                              {item.title}
+                            </h4>
+                            {item.subtitle && (
+                              <p className="text-[10px] font-mono text-zinc-500 font-medium">
+                                {item.subtitle}
+                              </p>
+                            )}
+                          </div>
+                          {item.date && (
+                            <span className="text-[9px] font-mono text-zinc-500 font-bold px-2 py-0.5 rounded bg-zinc-900/40 border border-zinc-800/30">
+                              {item.date}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Description content */}
+                        <p className="text-[#8b949e] text-xs font-light leading-relaxed mb-5 z-20 relative">
+                          {item.description}
+                        </p>
+                      </div>
+
+                      {/* Footer containing badges, stats, and active real link */}
+                      <div className="border-t border-[#30363d]/40 pt-4 mt-auto flex flex-wrap items-center justify-between gap-3 z-20 relative">
+                        {/* Badges representation for high structural organization (Sthira) */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {item.badges?.map((badge, bIdx) => (
+                            <span
+                              key={bIdx}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900/50 text-[9px] font-mono text-[#8b949e] tracking-tight uppercase border border-zinc-800/60"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-[#30363d]" />
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Stats counters (e.g. Stars, Forks, Uptime, Rating, Solved) */}
+                        <div className="flex items-center gap-4">
+                          {item.stats?.map((stat, sIdx) => (
+                            <div key={sIdx} className="flex flex-col items-start">
+                              <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest leading-none">
+                                {stat.label}
+                              </span>
+                              <span className="text-[11px] font-bold text-white font-mono mt-0.5">
+                                {stat.value}
+                              </span>
+                            </div>
+                          ))}
+
+                          {/* Outer Link */}
+                          {item.link && (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 p-2 rounded-lg bg-[#58a6ff]/5 hover:bg-[#58a6ff]/15 text-[#58a6ff] border border-[#58a6ff]/10 hover:border-[#58a6ff]/35 transition-all duration-200 text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                              aria-label={`View ${item.title}`}
+                            >
+                              <span className="hidden sm:inline">Explore</span>
+                              <ExternalLink size={11} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Active indicator dot */}
+                      <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-zinc-700/60 group-hover:bg-[#58a6ff] transition-colors duration-300" />
+                    </div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -4137,6 +4155,9 @@ export default function App() {
           </div>
         </section>
       )}
+
+      {/* Testimonials Section */}
+      {currentView === 'home' && <TestimonialSection />}
 
       {/* Contact Section */}
       {currentView === 'home' && (

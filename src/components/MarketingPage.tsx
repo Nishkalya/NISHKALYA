@@ -356,11 +356,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
             notes: data.notes || ''
           } as InboxTicket;
         });
-        if (msgs.length === 0) {
-          setInboxTickets(DEFAULT_INBOX_TICKETS);
-        } else {
-          setInboxTickets(msgs);
-        }
+        setInboxTickets(msgs);
       }, (error) => {
         console.error('Firestore messages subscribe error:', error);
       });
