@@ -49,12 +49,5 @@ service cloud.firestore {
       allow get: if isSignedIn() && request.auth.uid == adminId;
       allow create: if isSignedIn() && request.auth.token.email == 'nishkalya@gmail.com' && request.auth.uid == adminId;
     }
-
-    match /marketing_users/{userId} {
-      allow get: if true;
-      allow list: if isAdmin();
-      allow create: if (userId == 'Vishal') || isAdmin();
-      allow update, delete: if isAdmin();
-    }
   }
 }

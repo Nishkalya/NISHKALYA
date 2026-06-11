@@ -86,19 +86,6 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["page", "loadTimeMs", "userAgent", "type"]
-    },
-    "MarketingUser": {
-      "title": "MarketingUser",
-      "description": "Custom authenticated user for the Marketing area",
-      "type": "object",
-      "properties": {
-        "username": { "type": "string", "description": "Unique username/userID of the marketer" },
-        "passwordHash": { "type": "string", "description": "Securely hashed password" },
-        "isLocked": { "type": "boolean", "description": "Whether the account is locked" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["username", "passwordHash", "isLocked"]
     }
   },
   "firestore": {
@@ -117,10 +104,6 @@
     "performance_logs": {
       "schema": "PerformanceLog",
       "description": "Collection of browser client page load speed measurements logged asynchronously"
-    },
-    "marketing_users": {
-      "schema": "MarketingUser",
-      "description": "Collection of custom marketing section users managed by admin"
     }
   }
 }

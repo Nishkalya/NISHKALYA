@@ -15,19 +15,6 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
-    build: {
-      cssCodeSplit: true,
-      minify: 'esbuild',
-      assetsInlineLimit: 4096, // Inline small assets under 4kb to reduce HTTP requests
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-libs': ['motion/react', 'lucide-react', 'react-markdown'],
-          },
-        },
-      },
-    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
