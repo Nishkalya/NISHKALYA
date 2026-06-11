@@ -8,17 +8,429 @@
 
 @layer base {
   body {
-    @apply antialiased text-[#c9d1d9] selection:bg-[#58a6ff]/30 selection:text-white bg-[#0d1117];
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(88, 166, 255, 0.06) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(35, 134, 54, 0.04) 0px, transparent 50%),
-      radial-gradient(at 50% 0%, rgba(139, 148, 158, 0.05) 0px, transparent 40%),
-      linear-gradient(rgba(22, 27, 34, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(22, 27, 34, 0.1) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 100% 100%, 20px 20px, 20px 20px;
+    @apply antialiased;
+    background-image: none !important;
+    background-color: var(--bg-main) !important;
+    color: var(--text-secondary) !important;
     background-attachment: fixed;
     min-height: 100vh;
   }
+}
+
+/* ==========================================================
+   UI COLOR REDESIGN: CORPORATE THEME VARIABLES
+   ========================================================== */
+
+:root, .theme-dark, .theme-white, .theme-personal {
+  --bg-main: #0F172A;
+  --bg-panel: #111827;
+  --bg-card: #1E293B;
+  --border-color: #334155;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-label: #94A3B8;
+  --text-muted: #64748B;
+
+  --btn-primary: #3B82F6;
+  --btn-primary-hover: #2563EB;
+  --btn-success: #10B981;
+  --btn-warning: #F59E0B;
+  --btn-danger: #EF4444;
+
+  --status-new: #3B82F6;
+  --status-progress: #F59E0B;
+  --status-won: #10B981;
+  --status-lost: #EF4444;
+
+  --theme-glow: rgba(59, 130, 246, 0.25);
+  --accent-color: #06B6D4;
+}
+
+/* Global Overrides across ALL themes to enforce a professional dark corporate dashboard with excellent readability. */
+
+/* Page Background */
+body, html, #root {
+  background-color: var(--bg-main) !important;
+  color: var(--text-secondary) !important;
+  background-image: none !important;
+}
+
+/* 1. Background Utility Overrides */
+.bg-\[\#0d1117\], 
+.bg-\[\#010409\], 
+.bg-\[\#040406\], 
+.bg-\[\#050507\],
+.bg-black\/40,
+.bg-black\/95,
+.bg-[#0d1117],
+.bg-[#010409],
+.bg-[#040406],
+.bg-[#050507] {
+  background-color: var(--bg-main) !important;
+  background-image: none !important;
+}
+
+/* 2. Secondary Panels Overrides */
+.bg-\[\#161b22\],
+.bg-\[\#161b22\]\/95,
+.bg-\[\#161b22\]\/90,
+.bg-\[\#161b22\]\/80,
+.bg-\[\#161b22\]\/70,
+.bg-\[\#161b22\]\/60,
+.bg-\[\#161b22\]\/55,
+.bg-\[\#161b22\]\/50,
+.bg-\[\#161b22\]\/40,
+.bg-\[\#161b22\]\/30,
+.bg-\[\#161b22\]\/20,
+.bg-\[\#0c1017\],
+.bg-\[\#0c1017\]\/45,
+.bg-\[\#0d1117\]\/80,
+.bg-zinc-900,
+.bg-zinc-950,
+.bg-slate-900,
+.bg-slate-950,
+.bg-gray-900,
+.bg-gray-950,
+.bg-\[rgba\(13\,17\,23\,0\.7\)\],
+.bg-\[rgba\(88\,166\,255\,0\.03\)\],
+.bg-[#161b22],
+.bg-[#0c1017] {
+  background-color: var(--bg-panel) !important;
+  background-image: none !important;
+}
+
+/* 3. Cards & Modals Overrides */
+.bg-\[\#1f242c\],
+.bg-\[\#21262d\],
+.bg-\[\#0d1117\]\/85,
+.bg-[#1f242c],
+.bg-[#21262d],
+.bg-zinc-800,
+.bg-slate-800,
+.bg-gray-800,
+.modal-container,
+.modal-content {
+  background-color: var(--bg-card) !important;
+  background-image: none !important;
+}
+
+/* 4. Borders Overrides */
+.border-\[\#30363d\],
+.border-\[\#30363d\]\/85,
+.border-\[\#30363d\]\/80,
+.border-\[\#30363d\]\/60,
+.border-\[\#30363d\]\/50,
+.border-\[\#30363d\]\/45,
+.border-\[\#30363d\]\/40,
+.border-zinc-700,
+.border-zinc-800,
+.border-zinc-850,
+.border-slate-700,
+.border-slate-800,
+.border-gray-700,
+.border-gray-800,
+.border-[#30363d],
+.border-white\/5,
+.border-white\/10,
+.border-white\/20,
+hr {
+  border-color: var(--border-color) !important;
+}
+
+/* 5. Gimmick Gradients Overrides - Clean corporate backgrounds */
+.from-\[\#161b22\], .from-[#161b22] { --tw-gradient-from: var(--bg-panel) !important; }
+.to-\[\#0d1117\], .to-[#0d1117] { --tw-gradient-to: var(--bg-main) !important; }
+.to-\[\#010409\], .to-[#010409] { --tw-gradient-to: var(--bg-main) !important; }
+.from-\[\#161b22\]\/80 { --tw-gradient-from: var(--bg-panel) !important; }
+.to-\[\#0d1117\]\/80 { --tw-gradient-to: var(--bg-main) !important; }
+
+/* 6. Typography Overrides */
+/* Primary Text */
+.text-white,
+.text-zinc-100,
+.text-zinc-200,
+.text-slate-100,
+.text-slate-200,
+h1, h2, h3, h4, h5, h6,
+strong {
+  color: var(--text-primary) !important;
+}
+
+/* Secondary Text */
+.text-\[\#c9d1d9\],
+.text-zinc-300,
+.text-slate-300,
+.text-slate-350,
+.text-gray-200,
+.text-gray-300,
+p, li {
+  color: var(--text-secondary) !important;
+}
+
+/* Labels */
+.text-\[\#8b949e\],
+.text-zinc-400,
+.text-slate-400,
+.text-gray-400,
+.text-[#8b949e],
+label {
+  color: var(--text-label) !important;
+}
+
+/* Muted Text */
+.text-zinc-500,
+.text-slate-500,
+.text-gray-500,
+.text-white\/60,
+.text-white\/20,
+.text-white\/40,
+.text-zinc-450,
+.text-zinc-650 {
+  color: var(--text-muted) !important;
+}
+
+/* 7. Buttons Overrides */
+/* Primary Button & Hover */
+.bg-\[\#1f6feb\],
+.bg-blue-600,
+.bg-[#1f6feb],
+.bg-blue-500,
+button.text-[#58a6ff] {
+  background-color: var(--btn-primary) !important;
+  color: #FFFFFF !important;
+  border-color: var(--btn-primary) !important;
+  transition: all 0.15s ease-in-out !important;
+}
+.bg-\[\#1f6feb\]:hover,
+.bg-blue-600:hover,
+.bg-[#1f6feb]:hover,
+.bg-blue-500:hover {
+  background-color: var(--btn-primary-hover) !important;
+  border-color: var(--btn-primary-hover) !important;
+}
+
+/* Success Button */
+.bg-emerald-600,
+.bg-\[\#2ea44f\],
+.bg-[#2ea44f] {
+  background-color: var(--btn-success) !important;
+  color: #FFFFFF !important;
+  border-color: var(--btn-success) !important;
+}
+.bg-emerald-600:hover,
+.bg-\[\#2ea44f\]:hover,
+.bg-[#2ea44f]:hover {
+  background-color: var(--btn-success) !important;
+  border-color: var(--btn-success) !important;
+  opacity: 0.9 !important;
+}
+
+/* Warning Button */
+.bg-amber-600,
+.bg-\[\#f59e0b\],
+.bg-[#f59e0b] {
+  background-color: var(--btn-warning) !important;
+  color: #FFFFFF !important;
+  border-color: var(--btn-warning) !important;
+}
+
+/* Danger Button */
+.bg-red-600,
+.bg-red-950\/30,
+.bg-red-700,
+.bg-\[\#cf222e\],
+.bg-[#cf222e] {
+  background-color: var(--btn-danger) !important;
+  color: #FFFFFF !important;
+  border-color: var(--btn-danger) !important;
+}
+.bg-red-650:hover,
+.bg-red-600:hover,
+.bg-red-950\/30:hover,
+.bg-\[\#cf222e\]:hover,
+.bg-[#cf222e]:hover {
+  background-color: var(--btn-danger) !important;
+  border-color: var(--btn-danger) !important;
+  opacity: 0.9 !important;
+}
+
+/* Primary Color mapping for highlights, icons, active navs and interactive elements */
+.text-\[\#58a6ff\],
+.text-blue-500,
+.text-blue-600,
+.text-blue-400,
+.text-[#58a6ff],
+.text-[#0969da],
+.text-[#2563eb],
+span.text-\[\#58a6ff\],
+span.text-[#58a6ff] {
+  color: var(--btn-primary) !important;
+}
+
+.bg-\[\#58a6ff\]\/10,
+.bg-\[\#58a6ff\]\/5,
+.bg-\[\#58a6ff\]\/20,
+.bg-blue-600\/10,
+.bg-blue-600\/15,
+.bg-blue-600\/20,
+.bg-[rgba(59,130,246,0.1)],
+.bg-[rgba(59,130,246,0.15)],
+.bg-[rgba(59,130,246,0.2)] {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.border-\[\#58a6ff\],
+.border-\[\#58a6ff\]\/50,
+.border-\[\#58a6ff\]\/20,
+.border-blue-500,
+.border-blue-630 {
+  border-color: var(--btn-primary) !important;
+}
+
+/* Service Card Subtle Blue Hover Glow Override */
+div[class*="[perspective:1000px]"] .group:hover div[class*="backface-visibility:hidden"],
+div[class*="[perspective:1000px]"]:hover div[class*="[backface-visibility:hidden]"],
+div[class*="[perspective:1000px]"]:hover .absolute {
+  border-color: var(--btn-primary) !important;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.35) !important;
+}
+
+/* 8. Status Colors Overrides */
+/* New Query */
+.bg-blue-950\/20,
+.bg-blue-600\/15,
+.text-blue-400,
+.border-blue-900\/40,
+[id="pipeline-btn-new-query"] {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: var(--status-new) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* In Process */
+.bg-amber-950\/20,
+.bg-amber-500\/15,
+.text-amber-500,
+.border-amber-900\/40,
+[id="pipeline-btn-inprocess"] {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: var(--status-progress) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Won/Completed */
+.bg-emerald-950\/20,
+.bg-emerald-500\/15,
+.text-emerald-400,
+.border-emerald-900\/40,
+[id="pipeline-btn-won"] {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+  color: var(--status-won) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+/* Lost/Rejected */
+.bg-red-500\/15,
+.text-red-450,
+.text-red-400,
+.border-red-900\/40,
+.border-red-900\/30,
+[id="pipeline-btn-lost"] {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: var(--status-lost) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* 9. Sidebar Overrides */
+/* Dark Navy Background, Active Menu Blue Highlight, White Text, Strong Contrast */
+.md\:col-span-3 .bg-\[\#161b22\]\/70,
+.md\:col-span-3 .bg-[#161b22] {
+  background-color: var(--bg-panel) !important;
+  border-color: var(--border-color) !important;
+}
+.md\:col-span-3 nav button {
+  color: var(--text-secondary) !important;
+  border-color: transparent !important;
+}
+.md\:col-span-3 nav button:hover {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+.md\:col-span-3 nav button.bg-\[\#1f6feb\]\/15,
+.md\:col-span-3 nav button.bg-[rgba(31,111,235,0.15)] {
+  background-color: var(--btn-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--btn-primary) !important;
+  box-shadow: 0 4px 12px var(--theme-glow) !important;
+}
+
+/* 10. Tables Redesign */
+/* Dark rows, White Text, Light borders, Alternate Row Hover effect */
+table {
+  background-color: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+}
+thead tr {
+  background-color: var(--bg-main) !important;
+  border-bottom: 2px solid var(--border-color) !important;
+}
+tbody tr {
+  background-color: var(--bg-panel) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+tbody tr:hover {
+  background-color: var(--bg-card) !important;
+}
+td, th {
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* 11. Modals & Forms High Contrast Fields */
+/* Dark backgrounds, white headings, high contrast input fields, bright action buttons */
+.modal-container, 
+.modal-content, 
+.bg-black\/50,
+.bg-black\/60,
+.bg-black\/70,
+.bg-black\/80 {
+  background-color: rgba(10, 15, 28, 0.8) !important; /* backdrop overlay */
+}
+
+/* Modal Inner Core */
+.modal-content-panel,
+div.rounded-3xl.bg-\[\#161b22\],
+div.rounded-2xl.bg-\[\#161b22\],
+div.rounded-xl.bg-\[\#161b22\],
+.bg-\[\#0a0a0c\],
+div.rounded-3xl.bg-\[\#0a0a0c\] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  border-width: 1px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+input, textarea, select {
+  background-color: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--btn-primary) !important;
+  box-shadow: 0 0 0 2px var(--theme-glow) !important;
+  outline: none !important;
+}
+::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Scrollbar customization matching dark navy theme */
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
 }
 
 .markdown-body {
