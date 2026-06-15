@@ -108,6 +108,7 @@ import AdminPerformanceDashboard from './components/AdminPerformanceDashboard';
 import { ProjectCard } from './components/ProjectCard';
 import { PLATFORMS } from './data/platformsData';
 import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelper';
+import { AdminContentEditor } from './components/AdminContentEditor';
 import { marketingUserService } from './services/marketingUserService';
 import MarketingPage from './components/MarketingPage';
 import AdminUserManagement from './components/AdminUserManagement';
@@ -188,6 +189,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin' | 'marketing'>('home');
   const [websiteConfig, setWebsiteConfig] = useState<any>(DEFAULT_CONFIG);
   const [isConfigLoading, setIsConfigLoading] = useState(true);
+  const [localConfig, setLocalConfig] = useState<any>(null);
+  const [isConfigDirty, setIsConfigDirty] = useState(false);
   const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance' | 'users'>('messages');
   const [marketingUser, setMarketingUser] = useState<any>(() => {
     try {
@@ -214,6 +217,7 @@ export default function App() {
   const [newTagName, setNewTagName] = useState('');
   const [serviceIndexToDelete, setServiceIndexToDelete] = useState<number | null>(null);
   const [themeMode, setThemeMode] = useState<'dark' | 'white' | 'personal'>('dark');
+  const [activeContentSection, setActiveContentSection] = useState<'hero' | 'theme' | 'about' | 'services' | 'platforms' | 'projects' | 'testimonials' | 'process' | 'techStack'>('hero');
 
   useEffect(() => {
     document.body.classList.remove('theme-dark', 'theme-white', 'theme-personal');
@@ -357,6 +361,14 @@ export default function App() {
     };
   }, [isAdmin, currentUser]);
 
+  // Handle local draft config synchronization reactive to content tab state
+  useEffect(() => {
+    if (adminTab === 'content' && websiteConfig) {
+      setLocalConfig(JSON.parse(JSON.stringify(websiteConfig)));
+      setIsConfigDirty(false);
+    }
+  }, [adminTab, websiteConfig]);
+
   useEffect(() => {
     if (activePreviewUrl) {
       document.body.style.overflow = 'hidden';
@@ -388,6 +400,7 @@ export default function App() {
         const match = projects.find(p => p.id === customEvent.detail.projectId);
         if (match) {
           setSelectedProjectForPreview(match);
+          setIsFlipped(true);
           if (match.link) {
             setActivePreviewUrl(match.link);
           }
@@ -453,6 +466,7 @@ export default function App() {
           const match = projects.find(p => p.id === projectId);
           if (match) {
             setSelectedProjectForPreview(match);
+            setIsFlipped(true);
             if (match.link) {
               setActivePreviewUrl(match.link);
             }
@@ -784,6 +798,34 @@ export default function App() {
       }
     };
 
+    // Fast, responsive, focus-safe content editor draft states
+    const editorConfig = localConfig || websiteConfig || DEFAULT_CONFIG;
+
+    const updateConfigLocal = (newConfig: any) => {
+      setLocalConfig(newConfig);
+      setIsConfigDirty(true);
+    };
+
+    const handlePublishConfig = async () => {
+      if (!localConfig) return;
+      setIsActionPending(true);
+      try {
+        const sanitizedConfig = JSON.parse(JSON.stringify(localConfig));
+        if (sanitizedConfig.platforms) {
+          sanitizedConfig.platforms = sanitizedConfig.platforms.map((platform: any) => {
+            const { icon, ...rest } = platform;
+            return rest;
+          });
+        }
+        await setDoc(doc(db, 'config', 'website'), sanitizedConfig);
+        setIsConfigDirty(false);
+      } catch (err) {
+        console.error("Failed to update config", err);
+      } finally {
+        setIsActionPending(false);
+      }
+    };
+
     return (
       <div className="pt-32 pb-20 px-6 md:px-12 w-full max-w-7xl mx-auto min-h-screen">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
@@ -945,1061 +987,22 @@ export default function App() {
             </div>
           </div>
         ) : adminTab === 'content' ? (
-          <div className="space-y-8">
-            {/* Website Content Management */}
-            <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 md:p-8 shadow-sm">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 bg-[#58a6ff]/10 border border-[#30363d] rounded-xl flex items-center justify-center text-[#58a6ff]">
-                  <Globe size={22} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Website Content</h3>
-                  <p className="text-xs text-[#8b949e] font-light">Update text across the entire public site.</p>
-                </div>
-              </div>
-
-              <div className="space-y-8">
-                {/* Hero Section Editor */}
-                <div className="p-6 md:p-8 bg-[#0d1117] rounded-xl border border-[#30363d]">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#58a6ff] mb-6 flex items-center gap-2 font-mono">
-                    <Zap size={14} /> Hero Section
-                  </h4>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Badge Text</label>
-                      <input 
-                        value={websiteConfig.hero.badge}
-                        onChange={(e) => updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, badge: e.target.value }})}
-                        className="w-full bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow placeholder-[#8b949e]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Main Heading (HTML allowed)</label>
-                      <input 
-                        value={websiteConfig.hero.heading}
-                        onChange={(e) => updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, heading: e.target.value }})}
-                        className="w-full bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow placeholder-[#8b949e]"
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Subheading</label>
-                      <textarea 
-                        rows={3}
-                        value={websiteConfig.hero.subheading}
-                        onChange={(e) => updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, subheading: e.target.value }})}
-                        className="w-full bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow resize-none placeholder-[#8b949e]"
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-3">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Hero Statistics</label>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        {websiteConfig.hero.stats?.map((stat: any, i: number) => (
-                           <div key={i} className="space-y-2 p-3 bg-[#161b22] border border-[#30363d] rounded-xl relative group admin-glow">
-                            <input 
-                              value={stat.label}
-                              onChange={(e) => {
-                                const newStats = [...websiteConfig.hero.stats];
-                                newStats[i] = { ...stat, label: e.target.value };
-                                updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, stats: newStats }});
-                              }}
-                              placeholder="Label"
-                              className="w-full text-[9px] font-bold uppercase tracking-wider outline-none text-[#58a6ff] bg-transparent font-mono"
-                            />
-                            <input 
-                              value={stat.value}
-                              onChange={(e) => {
-                                const newStats = [...websiteConfig.hero.stats];
-                                newStats[i] = { ...stat, value: e.target.value };
-                                updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, stats: newStats }});
-                              }}
-                              placeholder="Value"
-                              className="w-full text-lg font-extrabold outline-none text-white bg-transparent font-sans"
-                            />
-                            <button 
-                              onClick={() => {
-                                const newStats = websiteConfig.hero.stats.filter((_: any, idx: number) => idx !== i);
-                                updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, stats: newStats }});
-                              }}
-                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#21262d] text-[#8b949e] hover:text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-[#30363d]"
-                            >
-                              <X size={8} />
-                            </button>
-                          </div>
-                        ))}
-                        <button 
-                          onClick={() => {
-                            const newStats = [...(websiteConfig.hero.stats || []), { label: "New Stat", value: "0" }];
-                            updateConfig({ ...websiteConfig, hero: { ...websiteConfig.hero, stats: newStats }});
-                          }}
-                          className="border border-dashed border-[#30363d] rounded-xl flex items-center justify-center text-[#8b949e] hover:text-white p-4 bg-transparent admin-glow"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Theme Configuration */}
-                <div className="p-6 md:p-8 bg-[#0d1117] rounded-xl border border-[#30363d]">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#58a6ff] mb-6 flex items-center gap-2 font-mono">
-                    <Settings size={14} /> Theme & Colors
-                  </h4>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Primary Color (Hex)</label>
-                      <div className="flex gap-4">
-                        <input 
-                          type="color"
-                          value={websiteConfig.colors?.primary || '#58a6ff'}
-                          onChange={(e) => updateConfig({ ...websiteConfig, colors: { ...websiteConfig.colors, primary: e.target.value }})}
-                          className="w-12 h-12 rounded-lg border-none cursor-pointer bg-transparent admin-glow"
-                        />
-                        <input 
-                          value={websiteConfig.colors?.primary || '#58a6ff'}
-                          onChange={(e) => updateConfig({ ...websiteConfig, colors: { ...websiteConfig.colors, primary: e.target.value }})}
-                          className="flex-1 bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Secondary Color (Hex)</label>
-                      <div className="flex gap-4">
-                        <input 
-                          type="color"
-                          value={websiteConfig.colors?.secondary || '#238636'}
-                          onChange={(e) => updateConfig({ ...websiteConfig, colors: { ...websiteConfig.colors, secondary: e.target.value }})}
-                          className="w-12 h-12 rounded-lg border-none cursor-pointer bg-transparent admin-glow"
-                        />
-                        <input 
-                          value={websiteConfig.colors?.secondary || '#238636'}
-                          onChange={(e) => updateConfig({ ...websiteConfig, colors: { ...websiteConfig.colors, secondary: e.target.value }})}
-                          className="flex-1 bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* About Section Editor */}
-                <div className="p-6 md:p-8 bg-[#0d1117] rounded-xl border border-[#30363d]">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#58a6ff] mb-6 flex items-center gap-2 font-mono">
-                    <UserIcon size={14} /> About Section
-                  </h4>
-                  <div className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Badge Text</label>
-                        <input 
-                          value={websiteConfig.about.badge}
-                          onChange={(e) => updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, badge: e.target.value }})}
-                          className="w-full bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow placeholder-[#8b949e]"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Heading (HTML allowed)</label>
-                        <input 
-                          value={websiteConfig.about.heading}
-                          onChange={(e) => updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, heading: e.target.value }})}
-                          className="w-full bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow placeholder-[#8b949e]"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Core Skills (Tags)</label>
-                      <div className="flex flex-wrap gap-2">
-                        {websiteConfig.about.skills?.map((skill: string, i: number) => (
-                          <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-[#161b22] border border-[#30363d] rounded-full text-[10px] font-bold text-[#58a6ff] group font-mono admin-glow">
-                            <span>{skill}</span>
-                            <button 
-                              onClick={() => {
-                                const newSkills = websiteConfig.about.skills.filter((_: any, idx: number) => idx !== i);
-                                updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, skills: newSkills }});
-                              }}
-                              className="text-[#8b949e] hover:text-red-500 transition-colors"
-                            >
-                              <X size={10} />
-                            </button>
-                          </div>
-                        ))}
-                        <button 
-                          onClick={() => {
-                            const skill = prompt("Enter new skill:");
-                            if (skill) {
-                              const newSkills = [...(websiteConfig.about.skills || []), skill];
-                              updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, skills: newSkills }});
-                            }
-                          }}
-                          className="px-3 py-1.5 border border-dashed border-[#30363d] rounded-full text-[10px] text-[#8b949e] hover:text-white font-mono admin-glow bg-transparent"
-                        >
-                          + Add Skill
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] px-1 font-mono">Content Paragraphs (HTML allowed)</label>
-                      <div className="space-y-3">
-                        {websiteConfig.about.paragraphs.map((p: string, i: number) => (
-                          <div key={i} className="relative group">
-                            <textarea 
-                              rows={3}
-                              value={p}
-                              onChange={(e) => {
-                                const newParas = [...websiteConfig.about.paragraphs];
-                                newParas[i] = e.target.value;
-                                updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, paragraphs: newParas }});
-                              }}
-                              className="w-full bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 text-sm text-white outline-none admin-glow resize-none placeholder-[#8b949e]"
-                            />
-                            <button 
-                              onClick={() => {
-                                const newParas = websiteConfig.about.paragraphs.filter((_: any, idx: number) => idx !== i);
-                                updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, paragraphs: newParas }});
-                              }}
-                              className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:text-red-400 transition-opacity bg-[#21262d] border border-[#30363d] rounded-md"
-                            >
-                              <Trash size={12} />
-                            </button>
-                          </div>
-                        ))}
-                        <button 
-                          onClick={() => {
-                            updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, paragraphs: [...websiteConfig.about.paragraphs, "New paragraph content..."] }});
-                          }}
-                          className="w-full py-3 bg-transparent border border-dashed border-[#30363d] text-[#8b949e] hover:text-white rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all font-mono admin-glow"
-                        >
-                          + Add Paragraph
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Services Editor */}
-                <div className="p-6 md:p-8 bg-[#0d1117] rounded-xl border border-[#30363d]">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#58a6ff] mb-6 flex items-center gap-2 font-mono">
-                    <Layout size={14} /> Services Management
-                  </h4>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {websiteConfig.services.map((service: any, i: number) => (
-                      <div key={i} className="p-6 bg-[#161b22] border border-[#30363d] rounded-xl space-y-4 admin-glow">
-                        <div className="flex justify-between items-start gap-4">
-                          <h5 className="text-xs font-bold text-white group-hover:text-[#58a6ff] transition-colors">{service.title}</h5>
-                          {serviceIndexToDelete === i ? (
-                            <div className="flex items-center gap-1 bg-[#21262d] border border-red-500/40 rounded-lg p-1 animate-pulse shrink-0">
-                              <button
-                                onClick={() => {
-                                  const newServices = websiteConfig.services.filter((_: any, idx: number) => idx !== i);
-                                  updateConfig({ ...websiteConfig, services: newServices });
-                                  setServiceIndexToDelete(null);
-                                }}
-                                className="px-2 py-0.5 text-[9px] bg-red-600 hover:bg-red-500 text-white rounded font-mono font-bold uppercase transition-colors cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                              <button
-                                onClick={() => setServiceIndexToDelete(null)}
-                                className="px-2 py-0.5 text-[9px] bg-[#30363d] hover:bg-[#8b949e]/20 text-zinc-300 rounded font-mono font-bold uppercase transition-colors cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button 
-                              onClick={() => setServiceIndexToDelete(i)}
-                              className="p-1.5 text-[#8b949e] hover:text-red-500 bg-[#21262d] border border-[#30363d] rounded-md admin-glow shrink-0 transition-colors cursor-pointer"
-                              title="Delete Service"
-                            >
-                              <Trash size={12} />
-                            </button>
-                          )}
-                        </div>
-                        <input 
-                          value={service.title}
-                          onChange={(e) => {
-                            const newServices = [...websiteConfig.services];
-                            newServices[i] = { ...service, title: e.target.value };
-                            updateConfig({ ...websiteConfig, services: newServices });
-                          }}
-                          className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none admin-glow"
-                          placeholder="Service Title"
-                        />
-                        <textarea 
-                          rows={2}
-                          value={service.desc}
-                          onChange={(e) => {
-                            const newServices = [...websiteConfig.services];
-                            newServices[i] = { ...service, desc: e.target.value };
-                            updateConfig({ ...websiteConfig, services: newServices });
-                          }}
-                          className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs resize-none outline-none admin-glow placeholder-[#8b949e]"
-                          placeholder="Brief description"
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Why It Matters</label>
-                            <textarea 
-                              rows={2}
-                              value={service.why || ''}
-                              onChange={(e) => {
-                                const newServices = [...websiteConfig.services];
-                                newServices[i] = { ...service, why: e.target.value };
-                                updateConfig({ ...websiteConfig, services: newServices });
-                              }}
-                              className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs resize-none outline-none admin-glow placeholder-[#8b949e]"
-                              placeholder="Strategic reason..."
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">What We Do</label>
-                            <textarea 
-                              rows={2}
-                              value={service.what || ''}
-                              onChange={(e) => {
-                                const newServices = [...websiteConfig.services];
-                                newServices[i] = { ...service, what: e.target.value };
-                                updateConfig({ ...websiteConfig, services: newServices });
-                              }}
-                              className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs resize-none outline-none admin-glow placeholder-[#8b949e]"
-                              placeholder="Action statement..."
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Outcome Statement</label>
-                          <input 
-                            value={service.outcome || ''}
-                            onChange={(e) => {
-                              const newServices = [...websiteConfig.services];
-                              newServices[i] = { ...service, outcome: e.target.value };
-                              updateConfig({ ...websiteConfig, services: newServices });
-                            }}
-                            className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none admin-glow placeholder-[#8b949e]"
-                            placeholder="Final result statement..."
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Actionable Items (Details)</label>
-                          <div className="space-y-2">
-                            {service.details?.map((detail: string, dIdx: number) => (
-                              <div key={dIdx} className="flex gap-2">
-                                <input 
-                                  value={detail}
-                                  onChange={(e) => {
-                                    const newDetails = [...service.details];
-                                    newDetails[dIdx] = e.target.value;
-                                    const newServices = [...websiteConfig.services];
-                                    newServices[i] = { ...service, details: newDetails };
-                                    updateConfig({ ...websiteConfig, services: newServices });
-                                  }}
-                                  className="flex-1 px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none admin-glow"
-                                />
-                                <button 
-                                  onClick={() => {
-                                    const newDetails = service.details.filter((_: any, idx: number) => idx !== dIdx);
-                                    const newServices = [...service.details];
-                                    const updatedServices = [...websiteConfig.services];
-                                    updatedServices[i] = { ...service, details: newDetails };
-                                    updateConfig({ ...websiteConfig, services: updatedServices });
-                                  }}
-                                  className="p-1 px-2.5 text-red-500 hover:text-red-400 bg-[#21262d] border border-[#30363d] rounded-md transition-colors admin-glow"
-                                >
-                                  <X size={10} />
-                                </button>
-                              </div>
-                            ))}
-                            <button 
-                              onClick={() => {
-                                const newDetails = [...(service.details || []), "New detail item..."];
-                                const newServices = [...websiteConfig.services];
-                                newServices[i] = { ...service, details: newDetails };
-                                updateConfig({ ...websiteConfig, services: newServices });
-                              }}
-                              className="w-full py-2 border border-dashed border-[#30363d] rounded-lg text-[9px] text-[#8b949e] hover:text-white transition-colors bg-transparent font-mono admin-glow"
-                            >
-                              + Add Detail
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <button 
-                      onClick={() => {
-                        const newService = { title: "New Service", desc: "Service description here", details: [], outcome: "" };
-                        updateConfig({ ...websiteConfig, services: [...websiteConfig.services, newService] });
-                      }}
-                      className="md:col-span-2 py-6 border border-dashed border-[#30363d] text-[#8b949e] hover:text-white hover:bg-[#161b22]/45 rounded-xl flex flex-col items-center justify-center gap-2 transition-all admin-glow"
-                    >
-                      <Plus size={20} />
-                      <span className="text-[9px] font-bold uppercase tracking-widest font-mono">Add New Service</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Platforms & Profiles Management */}
-                <div className="p-6 md:p-8 bg-[#0d1117] rounded-xl border border-[#30363d] space-y-8">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                      <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#58a6ff] mb-2 flex items-center gap-2 font-mono">
-                        <Compass size={14} /> Platforms & Profiles Editor
-                      </h4>
-                      <p className="text-xs text-[#8b949e]">Configure external channels and showcase modules displayed on your portfolio landing page.</p>
-                    </div>
-                    {!showAddPlatformForm && (
-                      <button
-                        onClick={() => {
-                          setShowAddPlatformForm(true);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center font-sans uppercase tracking-wider shrink-0 cursor-pointer"
-                      >
-                        <Plus size={12} /> Add Platform Category
-                      </button>
-                    )}
-                  </div>
-
-                  {showAddPlatformForm && (
-                    <div className="p-5 bg-[#161b22] border border-[#30363d] rounded-xl space-y-4 admin-glow w-full">
-                      <div className="text-xs font-bold text-white uppercase tracking-widest font-mono">Create Platform Category</div>
-                      <div className="grid md:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Platform Name</label>
-                          <input
-                            value={newPlatformName}
-                            onChange={(e) => setNewPlatformName(e.target.value)}
-                            className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none"
-                            placeholder="e.g. GitLab, Medium"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Icon Type</label>
-                          <select
-                            value={newPlatformIcon}
-                            onChange={(e) => setNewPlatformIcon(e.target.value)}
-                            className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none font-mono"
-                          >
-                            <option value="github">GitHub</option>
-                            <option value="linkedin">LinkedIn</option>
-                            <option value="website">Globe / Live Website</option>
-                            <option value="hackerrank">HackerRank / Trophy</option>
-                            <option value="leetcode">LeetCode / Code Terminal</option>
-                            <option value="behance">Behance / Palette</option>
-                            <option value="dribbble">Dribbble / Basketball</option>
-                            <option value="youtube">YouTube / Video</option>
-                            <option value="certificates">Certificates / Award Badge</option>
-                            <option value="other">General Chain / Link</option>
-                          </select>
-                        </div>
-                        <div className="space-y-1.5 md:col-span-1">
-                          <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">&nbsp;</label>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                if (newPlatformName) {
-                                  const id = newPlatformName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                                  const newPlatform = {
-                                    id,
-                                    name: newPlatformName,
-                                    iconType: newPlatformIcon,
-                                    description: newPlatformDesc,
-                                    items: []
-                                  };
-                                  updateConfig({
-                                    ...websiteConfig,
-                                    platforms: [...displayPlatforms, newPlatform]
-                                  });
-                                  setAdminSelectedPlatformId(id);
-                                  setShowAddPlatformForm(false);
-                                  setNewPlatformName('');
-                                  setNewPlatformDesc('');
-                                  setNewPlatformIcon('link');
-                                }
-                              }}
-                              disabled={!newPlatformName}
-                              className="flex-1 py-2 bg-[#238636] border border-[#2ea44f] disabled:opacity-50 text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] transition-colors cursor-pointer"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowAddPlatformForm(false);
-                                setNewPlatformName('');
-                                setNewPlatformDesc('');
-                                setNewPlatformIcon('link');
-                              }}
-                              className="flex-1 py-2 bg-[#21262d] border border-[#30363d] text-[#8b949e] hover:text-white rounded-lg text-xs cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Section Intent / Brief Description</label>
-                        <input
-                          value={newPlatformDesc}
-                          onChange={(e) => setNewPlatformDesc(e.target.value)}
-                          className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none"
-                          placeholder="Provide a general summary describing the items under this tab..."
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Choose a platform tab to configure */}
-                  <div className="flex flex-wrap gap-2 border-b border-[#30363d]/40 pb-4">
-                    {displayPlatforms.map((p: any) => (
-                      <div key={p.id} className="flex items-center bg-[#161b22] border border-[#30363d] rounded-lg p-1 font-mono">
-                        <button
-                          onClick={() => setAdminSelectedPlatformId(p.id)}
-                          className={`px-3 py-1 text-[10px] rounded-md font-bold uppercase transition-all ${
-                            adminSelectedPlatformId === p.id 
-                              ? 'bg-[#58a6ff]/10 text-[#58a6ff] border border-[#58a6ff]/30'
-                              : 'text-[#8b949e] hover:text-white border border-transparent'
-                          }`}
-                        >
-                          {p.name} ({p.items?.length || 0})
-                        </button>
-                        {displayPlatforms.length > 1 && (
-                          <div className="flex items-center ml-1">
-                            {platformIdToDelete === p.id ? (
-                              <div className="flex items-center gap-1 bg-[#21262d] border border-red-500/30 rounded px-1 animate-pulse">
-                                <button
-                                  onClick={() => {
-                                    const refreshed = displayPlatforms.filter((plat: any) => plat.id !== p.id);
-                                    updateConfig({ ...websiteConfig, platforms: refreshed });
-                                    if (adminSelectedPlatformId === p.id && refreshed.length > 0) {
-                                      setAdminSelectedPlatformId(refreshed[0].id);
-                                    }
-                                    setPlatformIdToDelete(null);
-                                  }}
-                                  className="text-[9px] text-red-500 hover:text-red-400 font-extrabold font-mono uppercase cursor-pointer"
-                                  title="Confirm delete"
-                                >
-                                  Del
-                                </button>
-                                <button
-                                  onClick={() => setPlatformIdToDelete(null)}
-                                  className="text-[9px] text-[#8b949e] hover:text-white font-extrabold font-mono uppercase cursor-pointer"
-                                  title="Cancel delete"
-                                >
-                                  Esc
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setPlatformIdToDelete(p.id)}
-                                className="p-1 text-[#8b949e] hover:text-red-500 transition-colors cursor-pointer"
-                                title="Delete category"
-                              >
-                                <X size={12} />
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Edit Details of Selected Platform */}
-                  {(() => {
-                    const activePlatformIdx = displayPlatforms.findIndex((p: any) => p.id === adminSelectedPlatformId);
-                    if (activePlatformIdx === -1) return <p className="text-xs text-[#8b949e] font-mono">Select a platform above to modify its configuration.</p>;
-                    const rawPlatform = displayPlatforms[activePlatformIdx];
-                    const activePlatform = {
-                      items: [],
-                      ...rawPlatform
-                    };
-
-                    return (
-                      <div className="space-y-6">
-                        <div className="grid md:grid-cols-3 gap-6 bg-[#161b22]/40 p-5 rounded-xl border border-[#30363d]/40">
-                          <div className="space-y-1.5">
-                            <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Category Label</label>
-                            <input
-                              value={activePlatform.name}
-                              onChange={(e) => {
-                                const updated = [...displayPlatforms];
-                                updated[activePlatformIdx] = { ...activePlatform, name: e.target.value };
-                                updateConfig({ ...websiteConfig, platforms: updated });
-                              }}
-                              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none admin-glow"
-                              placeholder="System Category Name"
-                            />
-                          </div>
-                          <div className="space-y-1.5 col-span-2">
-                            <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Icon Asset Key</label>
-                            <select
-                              value={activePlatform.iconType || activePlatform.id}
-                              onChange={(e) => {
-                                const updated = [...displayPlatforms];
-                                updated[activePlatformIdx] = { ...activePlatform, iconType: e.target.value };
-                                updateConfig({ ...websiteConfig, platforms: updated });
-                              }}
-                              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none admin-glow font-mono"
-                            >
-                              <option value="github">GitHub</option>
-                              <option value="linkedin">LinkedIn</option>
-                              <option value="website">Globe / Live Website</option>
-                              <option value="hackerrank">HackerRank / Trophy</option>
-                              <option value="leetcode">LeetCode / Code Terminal</option>
-                              <option value="behance">Behance / Palette</option>
-                              <option value="dribbble">Dribbble / Basketball</option>
-                              <option value="youtube">YouTube / Video</option>
-                              <option value="certificates">Certificates / Award Badge</option>
-                              <option value="other">General Chain / Link</option>
-                            </select>
-                          </div>
-                          <div className="space-y-1.5 md:col-span-3">
-                            <label className="block text-[8px] font-extrabold uppercase tracking-widest text-[#8b949e] font-mono">Brief Section Intent / Description</label>
-                            <input
-                              value={activePlatform.description}
-                              onChange={(e) => {
-                                const updated = [...displayPlatforms];
-                                updated[activePlatformIdx] = { ...activePlatform, description: e.target.value };
-                                updateConfig({ ...websiteConfig, platforms: updated });
-                              }}
-                              className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-white outline-none admin-glow"
-                              placeholder="Provide a micro summary explaining this platform stream..."
-                            />
-                          </div>
-                        </div>
-
-                        {/* Section Profile Items List */}
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center pb-2 border-b border-[#30363d]/30">
-                            <h5 className="text-[10px] font-bold text-white uppercase tracking-widest font-mono">
-                              PROFILE/REPOS ITEMS MATRIX ({activePlatform.items?.length || 0})
-                            </h5>
-                            <button
-                              onClick={() => {
-                                const newItem = {
-                                  id: Math.random().toString(36).substr(2, 9),
-                                  title: 'New Dynamic Showcase Item',
-                                  subtitle: 'Category Node',
-                                  description: 'Brief description detailing the technology, achievements, impact, or outcomes.',
-                                  badges: ['React', 'TypeScript'],
-                                  stats: [{ label: 'Stars', value: '45' }],
-                                  link: 'https://github.com'
-                                };
-                                const updated = [...displayPlatforms];
-                                updated[activePlatformIdx] = {
-                                  ...activePlatform,
-                                  items: [...(activePlatform.items || []), newItem]
-                                };
-                                updateConfig({ ...websiteConfig, platforms: updated });
-                              }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#238636]/80 hover:bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-[9px] uppercase tracking-widest font-bold font-mono transition-all"
-                            >
-                              + Add Profile Item
-                            </button>
-                          </div>
-
-                          <div className="grid md:grid-cols-2 gap-4">
-                            {(activePlatform.items || []).map((item: any, i: number) => (
-                              <div key={item.id} className="p-5 bg-[#161b22]/55 border border-[#30363d] rounded-xl space-y-4 relative group admin-glow">
-                                <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-                                  {itemIdToDelete === item.id ? (
-                                    <div className="flex items-center gap-1 bg-[#21262d] border border-red-500/40 rounded-lg p-1 animate-pulse">
-                                      <button
-                                        onClick={() => {
-                                          const refreshedItems = activePlatform.items.filter((itm: any) => itm.id !== item.id);
-                                          const updated = [...displayPlatforms];
-                                          updated[activePlatformIdx] = { ...activePlatform, items: refreshedItems };
-                                          updateConfig({ ...websiteConfig, platforms: updated });
-                                          setItemIdToDelete(null);
-                                        }}
-                                        className="px-2 py-0.5 text-[9px] bg-red-600 hover:bg-red-500 text-white rounded font-mono font-bold uppercase transition-colors pointer-events-auto cursor-pointer"
-                                      >
-                                        Delete
-                                      </button>
-                                      <button
-                                        onClick={() => setItemIdToDelete(null)}
-                                        className="px-2 py-0.5 text-[9px] bg-[#30363d] hover:bg-[#8b949e]/20 text-zinc-300 rounded font-mono font-bold uppercase transition-colors pointer-events-auto cursor-pointer"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => setItemIdToDelete(item.id)}
-                                      className="p-1.5 text-[#8b949e] hover:text-red-500 bg-[#21262d] border border-[#30363d] rounded-lg transition-colors cursor-pointer pointer-events-auto"
-                                      title="Remove item"
-                                    >
-                                      <Trash size={12} />
-                                    </button>
-                                  )}
-                                </div>
-
-                                <div className="space-y-4 pt-4">
-                                  {/* Title & Subtitle */}
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Showcase Title</label>
-                                      <input
-                                        value={item.title}
-                                        onChange={(e) => {
-                                          const updatedItems = [...activePlatform.items];
-                                          updatedItems[i] = { ...item, title: e.target.value };
-                                          const updated = [...displayPlatforms];
-                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                          updateConfig({ ...websiteConfig, platforms: updated });
-                                        }}
-                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
-                                        placeholder="Item Title"
-                                      />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Role/Subtitle</label>
-                                      <input
-                                        value={item.subtitle || ''}
-                                        onChange={(e) => {
-                                          const updatedItems = [...activePlatform.items];
-                                          updatedItems[i] = { ...item, subtitle: e.target.value };
-                                          const updated = [...displayPlatforms];
-                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                          updateConfig({ ...websiteConfig, platforms: updated });
-                                        }}
-                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
-                                        placeholder="TypeScript · Enterprise Portal"
-                                      />
-                                    </div>
-                                  </div>
-
-                                  {/* Web Link and Optional Date */}
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Explore Web Link</label>
-                                      <input
-                                        value={item.link || ''}
-                                        onChange={(e) => {
-                                          const updatedItems = [...activePlatform.items];
-                                          updatedItems[i] = { ...item, link: e.target.value };
-                                          const updated = [...displayPlatforms];
-                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                          updateConfig({ ...websiteConfig, platforms: updated });
-                                        }}
-                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
-                                        placeholder="https://..."
-                                      />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                      <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Display Date / Period</label>
-                                      <input
-                                        value={item.date || ''}
-                                        onChange={(e) => {
-                                          const updatedItems = [...activePlatform.items];
-                                          updatedItems[i] = { ...item, date: e.target.value };
-                                          const updated = [...displayPlatforms];
-                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                          updateConfig({ ...websiteConfig, platforms: updated });
-                                        }}
-                                        className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs outline-none"
-                                        placeholder="May 2026, Issued Jan 2026..."
-                                      />
-                                    </div>
-                                  </div>
-
-                                  {/* Description */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Detailed Summary</label>
-                                    <textarea
-                                      rows={2}
-                                      value={item.description}
-                                      onChange={(e) => {
-                                        const updatedItems = [...activePlatform.items];
-                                        updatedItems[i] = { ...item, description: e.target.value };
-                                        const updated = [...displayPlatforms];
-                                        updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                        updateConfig({ ...websiteConfig, platforms: updated });
-                                      }}
-                                      className="w-full px-3 py-2 bg-[#0d1117] border border-[#30363d] text-white rounded-lg text-xs resize-none outline-none placeholder-[#8b949e]"
-                                      placeholder="Explain the key challenge solved or major accomplishments..."
-                                    />
-                                  </div>
-
-                                  {/* Custom System Tags */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">System Badge Tags</label>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {item.badges?.map((badge: string, bIdx: number) => (
-                                        <div key={bIdx} className="flex items-center gap-1 px-2.5 py-1 bg-[#0d1117] border border-[#30363d] rounded-full text-[9px] font-bold text-[#58a6ff] font-mono">
-                                          <span>{badge}</span>
-                                          <button
-                                            onClick={() => {
-                                              const newBadges = item.badges.filter((_: any, idx: number) => idx !== bIdx);
-                                              const updatedItems = [...activePlatform.items];
-                                              updatedItems[i] = { ...item, badges: newBadges };
-                                              const updated = [...displayPlatforms];
-                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                              updateConfig({ ...websiteConfig, platforms: updated });
-                                            }}
-                                            className="text-[#8b949e] hover:text-red-500 transition-colors ml-1 cursor-pointer"
-                                          >
-                                            <X size={8} />
-                                          </button>
-                                        </div>
-                                      ))}
-                                      {activeTagInputItemId === item.id ? (
-                                        <div className="flex items-center gap-1">
-                                          <input
-                                            value={newTagName}
-                                            onChange={(e) => setNewTagName(e.target.value)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === "Enter" && newTagName.trim()) {
-                                                const newBadges = [...(item.badges || []), newTagName.trim()];
-                                                const updatedItems = [...activePlatform.items];
-                                                updatedItems[i] = { ...item, badges: newBadges };
-                                                const updated = [...displayPlatforms];
-                                                updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                                updateConfig({ ...websiteConfig, platforms: updated });
-                                                setNewTagName("");
-                                                setActiveTagInputItemId(null);
-                                              } else if (e.key === "Escape") {
-                                                setActiveTagInputItemId(null);
-                                                setNewTagName("");
-                                              }
-                                            }}
-                                            autoFocus
-                                            className="px-2 py-0.5 text-[9px] font-mono text-white bg-[#0d1117] border border-[#58a6ff]/40 rounded outline-none w-16"
-                                            placeholder="Tag..."
-                                          />
-                                          <button
-                                            onClick={() => {
-                                              if (newTagName.trim()) {
-                                                const newBadges = [...(item.badges || []), newTagName.trim()];
-                                                const updatedItems = [...activePlatform.items];
-                                                updatedItems[i] = { ...item, badges: newBadges };
-                                                const updated = [...displayPlatforms];
-                                                updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                                updateConfig({ ...websiteConfig, platforms: updated });
-                                              }
-                                              setNewTagName("");
-                                              setActiveTagInputItemId(null);
-                                            }}
-                                            className="text-emerald-500 hover:text-emerald-400 font-bold text-xs"
-                                          >
-                                            ✓
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              setActiveTagInputItemId(null);
-                                              setNewTagName("");
-                                            }}
-                                            className="text-red-500 hover:text-red-400 font-bold text-xs font-mono"
-                                          >
-                                            ✕
-                                          </button>
-                                        </div>
-                                      ) : (
-                                        <button
-                                          onClick={() => {
-                                            setActiveTagInputItemId(item.id);
-                                            setNewTagName("");
-                                          }}
-                                          className="px-2 py-1 border border-dashed border-[#30363d] rounded-full text-[9px] text-[#8b949e] hover:text-white font-mono bg-transparent cursor-pointer"
-                                        >
-                                          + Tag
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Operational Metrics/KVs */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-[8px] font-bold text-[#8b949e] uppercase tracking-widest font-mono">Custom Metric Badges / Stats (Key-Values)</label>
-                                    <div className="space-y-2">
-                                      {item.stats?.map((stat: any, sIdx: number) => (
-                                        <div key={sIdx} className="flex gap-2">
-                                          <input
-                                            value={stat.label}
-                                            onChange={(e) => {
-                                              const newStats = [...item.stats];
-                                              newStats[sIdx] = { ...stat, label: e.target.value };
-                                              const updatedItems = [...activePlatform.items];
-                                              updatedItems[i] = { ...item, stats: newStats };
-                                              const updated = [...displayPlatforms];
-                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                              updateConfig({ ...websiteConfig, platforms: updated });
-                                            }}
-                                            className="flex-1 px-2.5 py-1 text-[10px] font-mono bg-[#0d1117] border border-[#30363d] text-zinc-400 rounded-lg outline-none"
-                                            placeholder="Stat Label (e.g. Rating)"
-                                          />
-                                          <input
-                                            value={stat.value}
-                                            onChange={(e) => {
-                                              const newStats = [...item.stats];
-                                              newStats[sIdx] = { ...stat, value: e.target.value };
-                                              const updatedItems = [...activePlatform.items];
-                                              updatedItems[i] = { ...item, stats: newStats };
-                                              const updated = [...displayPlatforms];
-                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                              updateConfig({ ...websiteConfig, platforms: updated });
-                                            }}
-                                            className="flex-1 px-2.5 py-1 text-[10px] font-mono bg-[#0d1117] border border-[#30363d] text-white rounded-lg outline-none"
-                                            placeholder="Value"
-                                          />
-                                          <button
-                                            onClick={() => {
-                                              const newStats = item.stats.filter((_: any, idx: number) => idx !== sIdx);
-                                              const updatedItems = [...activePlatform.items];
-                                              updatedItems[i] = { ...item, stats: newStats };
-                                              const updated = [...displayPlatforms];
-                                              updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                              updateConfig({ ...websiteConfig, platforms: updated });
-                                            }}
-                                            className="p-1 px-2 text-red-500 hover:text-red-400 bg-[#21262d] border border-[#30363d] rounded-md transition-colors cursor-pointer"
-                                          >
-                                            <X size={10} />
-                                          </button>
-                                        </div>
-                                      ))}
-                                      <button
-                                        onClick={() => {
-                                          const newStats = [...(item.stats || []), { label: 'New Metric', value: '0' }];
-                                          const updatedItems = [...activePlatform.items];
-                                          updatedItems[i] = { ...item, stats: newStats };
-                                          const updated = [...displayPlatforms];
-                                          updated[activePlatformIdx] = { ...activePlatform, items: updatedItems };
-                                          updateConfig({ ...websiteConfig, platforms: updated });
-                                        }}
-                                        className="w-full py-1 text-[9px] border border-dashed border-[#30363d] text-[#8b949e] hover:text-white font-mono bg-transparent rounded-lg cursor-pointer animate-pulse"
-                                      >
-                                        + Add Metric Value
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-
-            {/* Portfolio Projects Management */}
-            <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 md:p-8 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#58a6ff]/10 border border-[#30363d] rounded-xl flex items-center justify-center text-[#58a6ff]">
-                    <Shield size={22} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Portfolio Inventory</h3>
-                    <p className="text-xs text-[#8b949e] font-light">Manage your highlight cases and live demos.</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={handleAddProject}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center shrink-0"
-                >
-                  <Plus size={14} /> New Project
-                </button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {isProjectsLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={`admin-project-skeleton-${i}`} className="flex items-center gap-4 p-4 bg-[#0d1117]/50 border border-[#30363d]/50 rounded-xl animate-pulse">
-                      <div className="w-12 h-12 bg-[#21262d] border border-[#30363d]/40 rounded-lg shrink-0" />
-                      <div className="flex-1 space-y-2 min-w-0">
-                        <div className="h-2 w-16 bg-[#30363d]/60 rounded" />
-                        <div className="h-4 w-32 bg-[#30363d]/60 rounded" />
-                      </div>
-                      <div className="flex gap-1.5 shrink-0">
-                        <div className="w-8 h-8 rounded-lg bg-[#21262d]" />
-                        <div className="w-8 h-8 rounded-lg bg-[#21262d]" />
-                      </div>
-                    </div>
-                  ))
-                ) : projects.length === 0 ? (
-                  <div className="col-span-2 py-8 text-center text-xs text-[#8b949e]">
-                    No projects found in collection.
-                  </div>
-                ) : (
-                  projects.map((project, i) => (
-                    <div key={project.id} className="group flex items-center gap-4 p-4 bg-[#0d1117] border border-[#30363d] rounded-xl admin-glow">
-                      <div className="w-12 h-12 bg-[#21262d] border border-[#30363d] rounded-lg flex items-center justify-center text-[#58a6ff] shrink-0">
-                        {getProjectIcon(project.iconType, 20)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[8px] font-bold text-[#8b949e] uppercase tracking-[0.2em] mb-0.5 font-mono">{project.category}</div>
-                        <h4 className="text-sm font-bold text-white truncate">{project.title}</h4>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                         <button onClick={() => handleEditProject(project)} className="p-1.5 text-[#8b949e] hover:text-[#58a6ff] hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Edit2 size={14} /></button>
-                         <button onClick={(e) => handleDeleteProject(e, project.id)} className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Trash2 size={14} /></button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Client Testimonials Management */}
-            <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 md:p-8 shadow-sm">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#58a6ff]/10 border border-[#30363d] rounded-xl flex items-center justify-center text-[#58a6ff]">
-                    <MessageSquare size={22} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Client Testimonials</h3>
-                    <p className="text-xs text-[#8b949e] font-light">Manage customer quotes and reviews shown on the landing page.</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={handleAddTestimonial}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-[#238636] border border-[#2ea44f] text-white rounded-lg text-xs font-semibold hover:bg-[#2eaa44] admin-glow justify-center shrink-0"
-                >
-                  <Plus size={14} /> New Testimonial
-                </button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {adminTestimonials.map((item) => (
-                  <div key={item.id} className="group flex items-start gap-4 p-4 bg-[#0d1117] border border-[#30363d] rounded-xl admin-glow">
-                    {item.avatarUrl ? (
-                      <img 
-                        src={item.avatarUrl} 
-                        alt={item.author}
-                        referrerPolicy="no-referrer"
-                        className="w-10 h-10 rounded-full border border-[#30363d] object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full border border-[#30363d] bg-[#21262d] flex items-center justify-center text-[#58a6ff] shrink-0 font-mono text-xs">
-                        {item.author.charAt(0)}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <cite className="not-italic text-xs font-bold text-white">{item.author}</cite>
-                        <span className="text-[10px] text-[#8b949e] font-light">· {item.company || item.title}</span>
-                      </div>
-                      <p className="text-[#8b949e] text-xs line-clamp-2 leading-relaxed mb-2">"{item.quote}"</p>
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: item.rating || 5 }).map((_, rIdx) => (
-                          <Star key={rIdx} size={10} className="text-amber-400 fill-amber-400" />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 self-center">
-                       <button onClick={() => handleEditTestimonial(item)} className="p-1.5 text-[#8b949e] hover:text-[#58a6ff] hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Edit2 size={12} /></button>
-                       <button onClick={(e) => handleDeleteTestimonial(e, item.id)} className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-[#21262d] border border-[#30363d] rounded-lg admin-glow"><Trash2 size={12} /></button>
-                    </div>
-                  </div>
-                ))}
-                {adminTestimonials.length === 0 && (
-                  <div className="md:col-span-2 py-8 text-center text-xs text-[#8b949e] border border-dashed border-[#30363d] rounded-xl">
-                    No testimonials found. Click "New Testimonial" or wait for default seeding.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <AdminContentEditor 
+            websiteConfig={editorConfig}
+            updateConfig={updateConfigLocal}
+            isConfigDirty={isConfigDirty}
+            handlePublishConfig={handlePublishConfig}
+            setLocalConfig={setLocalConfig}
+            projects={projects}
+            adminTestimonials={adminTestimonials}
+            handleEditProject={handleEditProject}
+            handleDeleteProject={handleDeleteProject}
+            handleAddTestimonial={handleAddTestimonial}
+            handleEditTestimonial={handleEditTestimonial}
+            handleDeleteTestimonial={handleDeleteTestimonial}
+            activeContentSection={activeContentSection as any || 'hero'}
+            setActiveContentSection={setActiveContentSection}
+          />
         ) : adminTab === 'users' ? (
           <AdminUserManagement />
         ) : (
@@ -2937,7 +1940,7 @@ export default function App() {
                     onClick={() => {
                       if (project.link) {
                         setSelectedProjectForPreview(project);
-                        setIsFlipped(false);
+                        setIsFlipped(true);
                         setActivePreviewUrl(project.link);
                         setIsIframeLoading(true);
                         setShowFullPreview(false);
@@ -4071,24 +3074,28 @@ export default function App() {
         <section id="process" className="py-20 md:py-32 px-6 md:px-12 bg-transparent">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16 md:mb-20">
-              <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">How we work</div>
+              <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+                {websiteConfig.process?.badge || "How we work"}
+              </div>
               <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">
-                <MotionHeading html="Simple approach. <span class='italic text-[#58a6ff]'>Dependable results.</span>" whileInView={true} />
+                <MotionHeading html={websiteConfig.process?.heading || "Simple approach. <span class='italic text-[#58a6ff]'>Dependable results.</span>"} whileInView={true} />
               </h2>
-              <p className="text-[#8b949e] text-sm md:text-base font-light max-w-2xl mx-auto">Four focused phases to take you from idea to impact.</p>
+              <p className="text-[#8b949e] text-sm md:text-base font-light max-w-2xl mx-auto">
+                {websiteConfig.process?.subheading || "Four focused phases to take you from idea to impact."}
+              </p>
             </div>
 
             <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 relative">
                {/* Connector line for desktop */}
               <div className="hidden md:block absolute top-[60px] left-[10%] right-[10%] h-[1px] bg-[#30363d] z-0"></div>
               
-              {[
+              {(websiteConfig.process?.steps || [
                 { step: "01", title: "Understand your vision", desc: "Whether you are beginning your first digital journey or expanding an existing one, we start by listening deeply." },
                 { step: "02", title: "Design with intention", desc: "Every interface decision is deliberate. We merge modern technology with a refined, user-centered philosophy." },
                 { step: "03", title: "Engineer with precision", desc: "Swift execution without shortcuts. Hands-on development across the full stack — reliable, tested, documented." },
                 { step: "04", title: "Sustain and grow", desc: "The relationship doesn't end at launch. We provide long-term maintenance and continued strategic support." }
-              ].map((p, i) => (
-                <div key={i} className="relative z-10 text-center md:text-left">
+              ]).map((p, i) => (
+                <div key={i} className="relative z-10 text-center md:text-left animate-fadeIn">
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-[#161b22] border border-[#30363d] text-white flex items-center justify-center rounded-full mb-6 md:mb-8 mx-auto md:mx-0 shadow-sm font-semibold text-base font-mono">
                     {p.step}
                   </div>
@@ -4107,23 +3114,25 @@ export default function App() {
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div>
-                <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">The Ecosystem</div>
+                <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
+                  {websiteConfig.techStack?.badge || "The Ecosystem"}
+                </div>
                 <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-8">
-                  <MotionHeading html="Built on a Foundation of <span class='italic text-[#58a6ff]'>World-Class</span> Technology" whileInView={true} />
+                  <MotionHeading html={websiteConfig.techStack?.heading || "Built on a Foundation of <span class='italic text-[#58a6ff]'>World-Class</span> Technology"} whileInView={true} />
                 </h2>
                 <p className="text-[#8b949e] mb-10 max-w-md text-sm md:text-base font-light leading-relaxed">
-                  We leverage the most advanced frameworks and AI models to ensure your product is scalable, secure, and future-proof from day one.
+                  {websiteConfig.techStack?.subheading || "We leverage the most advanced frameworks and AI models to ensure your product is scalable, secure, and future-proof from day one."}
                 </p>
                 <div className="grid grid-cols-2 gap-8">
-                  {[
+                  {(websiteConfig.techStack?.items || [
                     { label: "Frontend", value: "React / Next.js / Tailwind" },
                     { label: "Intelligence", value: "OpenAI / Anthropic / PyTorch" },
                     { label: "Infrastructure", value: "Vercel / AWS / GCP" },
                     { label: "Interface", value: "Figma / Framer / Spline" }
-                  ].map((item, i) => (
-                    <div key={i}>
-                      <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 font-mono">{item.label}</div>
-                      <div className="text-[#c9d1d9] text-sm font-light">{item.value}</div>
+                  ]).map((item, i) => (
+                    <div key={i} className="animate-fadeIn">
+                      <div className="text-[10px] font-bold text-[#8b949e] uppercase tracking-widest mb-2 font-mono">{item.label}</div>
+                      <div className="text-white text-sm font-light leading-relaxed">{item.value}</div>
                     </div>
                   ))}
                 </div>

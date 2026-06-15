@@ -29,7 +29,29 @@ export const DEFAULT_CONFIG = {
     { title: "AI Product Development", desc: "Building custom LLM-powered applications from the ground up.", why: "AI is moving from research to product. You need to be first.", what: "We design and build complete AI agents and workflows.", outcome: "A production-ready AI feature that actually solves problems.", details: ["LLM Orchestration", "Vector DB Integration", "Prompt Engineering"] },
     { title: "UI/UX Design Systems", desc: "Creating beautiful, scalable design languages for modern brands.", why: "Consistency is identity. Fragmented UI kills trust.", what: "We build atomic design systems and high-fidelity prototypes.", outcome: "A pixel-perfect UI kit that scales with your growth.", details: ["Atomic Design", "Motion Systems", "Accessibility Audits"] },
     { title: "Web & App Development", desc: "High-performance, secure applications built with cutting-edge tech.", why: "Speed is a feature. Security is a requirement.", what: "Full-stack development using React, Node, and more.", outcome: "A robust, scalable platform that users love to touch.", details: ["React/Next.js", "Cloud Architecture", "API Design"] }
-  ]
+  ],
+  process: {
+    badge: "How we work",
+    heading: "Simple approach. <span class=\"text-[#58a6ff] italic\">Dependable results.</span>",
+    subheading: "Four focused phases to take you from idea to impact.",
+    steps: [
+      { step: "01", title: "Understand your vision", desc: "Whether you are beginning your first digital journey or expanding an existing one, we start by listening deeply." },
+      { step: "02", title: "Design with intention", desc: "Every interface decision is deliberate. We merge modern technology with a refined, user-centered philosophy." },
+      { step: "03", title: "Engineer with precision", desc: "Swift execution without shortcuts. Hands-on development across the full stack — reliable, tested, documented." },
+      { step: "04", title: "Sustain and grow", desc: "The relationship doesn't end at launch. We provide long-term maintenance and continued strategic support." }
+    ]
+  },
+  techStack: {
+    badge: "The Ecosystem",
+    heading: "Built on a Foundation of <span class=\"text-[#58a6ff] italic\">World-Class</span> Technology",
+    subheading: "We leverage the most advanced frameworks and AI models to ensure your product is scalable, secure, and future-proof from day one.",
+    items: [
+      { label: "Frontend", value: "React / Next.js / Tailwind" },
+      { label: "Intelligence", value: "OpenAI / Anthropic / PyTorch" },
+      { label: "Infrastructure", value: "Vercel / AWS / GCP" },
+      { label: "Interface", value: "Figma / Framer / Spline" }
+    ]
+  }
 };
 
 export const DEFAULT_PROJECTS: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>[] = [

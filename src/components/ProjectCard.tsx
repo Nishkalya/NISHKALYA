@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, Eye, Layout, BarChart3, Zap } from 'lucide-react';
+import { Github, ExternalLink, Cpu } from 'lucide-react';
 import { Project } from '../services/projectService';
 
 interface ProjectCardProps {
@@ -16,41 +16,47 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onClick,
   setHoveredProject,
 }) => {
-  const [shouldLoadIframe, setShouldLoadIframe] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  
+  // States for interactive 3D Tilt and custom holographic glint reflection
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [glintX, setGlintX] = useState(50);
+  const [glintY, setGlintY] = useState(50);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Clear timeout on unmount to prevent leaks
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const card = cardRef.current;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Convert positions to percentages for custom glint style
+    const glintPercentX = (x / rect.width) * 100;
+    const glintPercentY = (y / rect.height) * 100;
+    setGlintX(glintPercentX);
+    setGlintY(glintPercentY);
+
+    // Subtle 3D tilt: max 10 degrees to keep it professional but responsive
+    const tiltX = -((y / rect.height) - 0.5) * 12;
+    const tiltY = ((x / rect.width) - 0.5) * 12;
+    setRotateX(tiltX);
+    setRotateY(tiltY);
+  };
 
   const handleMouseEnter = () => {
+    setIsHovered(true);
     setHoveredProject(project);
-    // Debounce the iframe load by 200ms to ignore casual pointer sweeps
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShouldLoadIframe(true);
-    }, 200);
   };
 
   const handleMouseLeave = () => {
+    setIsHovered(false);
+    setRotateX(0);
+    setRotateY(0);
+    setGlintX(50);
+    setGlintY(50);
     setHoveredProject(null);
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-  };
-
-  const getProjectIcon = (type: string, size = 40) => {
-    switch (type) {
-      case 'message': return <MessageSquare size={size} className="text-[#58a6ff]/30 transition-colors duration-300" />;
-      case 'eye': return <Eye size={size} className="text-[#58a6ff]/30 transition-colors duration-300" />;
-      case 'layout': return <Layout size={size} className="text-[#58a6ff]/30 transition-colors duration-300" />;
-      case 'chart': return <BarChart3 size={size} className="text-[#58a6ff]/30 transition-colors duration-300" />;
-      default: return <Zap size={size} className="text-[#58a6ff]/30 transition-colors duration-300" />;
-    }
   };
 
   const techStack = project.fullDetails?.techStack || [];
@@ -62,97 +68,161 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   } else {
     tags = ['React', 'TypeScript', 'Tailwind'];
   }
-  const displayTags = tags.slice(0, 4);
+  const displayTags = tags.slice(0, 3); // 3 clear premium chips
+
+  // Compute a highly realistic and smart GitHub link related to project if none exists directly
+  const getGithubUrl = () => {
+    if (project.link?.includes('github.io')) {
+      const match = project.link.match(/https?:\/\/([^.]+)\.github\.io\/([^/]+)/);
+      if (match) {
+        return `https://github.com/${match[1]}/${match[2]}`;
+      }
+    }
+    return 'https://github.com/Nishkalya/' + project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  };
+  const githubUrl = getGithubUrl();
+
+  // Project credit card number generation (elegant futuristic ATM formatting)
+  const cardNo = `4128  7034  8911  00${(index + 1).toString().padStart(2, '0')}`;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="group cursor-pointer relative"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-      id={`project-card-${project.id}`}
+      transition={{ delay: index * 0.1, duration: 0.5 }}
+      className="perspective-[1200px]"
     >
-      {/* Outer container with BGMI-Style premium glass profile */}
-      <div className="aspect-[4/5] bg-[#0c1017]/45 backdrop-blur-xl border border-[#30363d]/60 rounded-3xl mb-6 flex items-center justify-center group-hover:border-[#58a6ff]/60 hover:shadow-[0_0_30px_rgba(88,166,255,0.22)] transition-all duration-500 overflow-hidden relative">
-        
-        {/* Background Project Area */}
-        {project.link ? (
-          <div className="absolute inset-0 z-0 overflow-hidden bg-[#0d1117]/85">
-            {shouldLoadIframe ? (
-              <iframe 
-                src={project.link} 
-                className="w-[100%] h-[100%] border-none opacity-40 group-hover:opacity-100 transition-all duration-1000 pointer-events-none scale-[1.1] group-hover:scale-100 bg-[#0d1117]/85"
-                title={project.title}
-                loading="lazy"
-              />
-            ) : (
-              // Ambient placeholder during cold idle
-              <div className="absolute inset-0 bg-gradient-to-b from-[#161b22] to-[#0d1117] flex items-center justify-center">
-                <div className="scale-75 opacity-20 group-hover:opacity-40 transition-opacity duration-500">
-                  {getProjectIcon(project.iconType, 80)}
+      <div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onClick}
+        id={`project-card-${project.id}`}
+        style={{
+          transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${isHovered ? '-8px' : '0px'})`,
+          transition: isHovered ? 'none' : 'transform 300ms cubic-bezier(0.25, 1, 0.5, 1)',
+        }}
+        className="relative overflow-hidden cursor-pointer select-none rounded-[24px] bg-gradient-to-br from-[#0a0f1d] via-[#070b13] to-[#04060b] border border-[#1f293d] hover:border-[#58a6ff]/50 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_0_35px_rgba(88,166,255,0.25)] flex flex-col justify-between p-6 h-[460px] md:h-[480px] w-full max-w-sm mx-auto group duration-300"
+      >
+        {/* Holographic light sweep / moving reflection overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+          style={{
+            background: `radial-gradient(circle at ${glintX}% ${glintY}%, rgba(88, 166, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 35%, transparent 70%)`
+          }}
+        />
+
+        {/* Diagonal high-end metallic/holographic reflection line sweep */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 rounded-[24px]">
+          <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] bg-[linear-gradient(110deg,transparent_45%,rgba(255,255,255,0.04)_48%,rgba(255,255,255,0.12)_50%,rgba(255,255,255,0.04)_52%,transparent_55%)] transform rotate-[15deg] group-hover:animate-shine pointer-events-none" />
+        </div>
+
+        {/* Fine inner border guide simulating high-end card margins */}
+        <div className="absolute inset-3.5 border border-white/[0.03] group-hover:border-[#58a6ff]/10 rounded-[18px] pointer-events-none transition-colors duration-300" />
+
+        {/* ================= HEADER SECTION ================= */}
+        <div className="flex items-center justify-between z-20 relative">
+          {/* Card Branding or Credit Type */}
+          <div className="flex items-center gap-2">
+            <Cpu size={14} className="text-[#58a6ff] opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+            <span className="text-[10px] font-bold text-[#8b949e] uppercase tracking-[0.25em] font-sans">
+              CYBER PLATINUM
+            </span>
+          </div>
+
+          {/* Golden EMV Chip & Contactless sign */}
+          <div className="flex items-center gap-3">
+            {/* Contactless waves symbol */}
+            <svg className="w-4 h-4 text-white/20 group-hover:text-[#58a6ff]/40 rotate-90 transition-colors pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M5 12h.01" />
+              <path d="M12 12a5 5 0 0 0-5-5" />
+              <path d="M19 12a10 10 0 0 0-10-10" />
+            </svg>
+            
+            {/* Premium Gold Chip */}
+            <div className="w-9 h-7 rounded-md bg-gradient-to-br from-[#f2cc81] via-[#ffffff] to-[#cfa151] border border-amber-300/20 p-1 flex flex-col justify-between overflow-hidden shadow-sm">
+              <div className="flex justify-between h-full w-full opacity-90">
+                <div className="w-[30%] border-r border-black/10 h-full"></div>
+                <div className="w-[40%] flex flex-col justify-between h-full">
+                  <div className="h-[30%] border-b border-black/10 w-full"></div>
+                  <div className="h-[30%] border-b border-black/10 w-full"></div>
                 </div>
+                <div className="w-[30%] border-l border-black/10 h-full"></div>
               </div>
-            )}
+            </div>
           </div>
-        ) : (
-          <div className="absolute inset-0 bg-[#58a6ff]/5 opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
-        )}
+        </div>
 
-        {/* Integrated Live-Vignette Frame */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(13,17,23,0.45)_70%,rgba(13,17,23,0.95)_100%)] pointer-events-none z-10 transition-all duration-500 group-hover:bg-[radial-gradient(circle_at_center,transparent_20%,rgba(13,17,23,0.3)_60%,rgba(13,17,23,0.9)_100%)]" />
-
-        {/* Scanlines layer for Cyberpunk digital monitor vibe */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.015)_50%,rgba(0,0,0,0.12)_50%)] bg-[length:100%_4px] pointer-events-none z-[11] opacity-30 group-hover:opacity-15 transition-opacity duration-500" />
-
-        {/* Premium Frosted Glass Overlay layer (fades/sharpens on hover to clear live iframe) */}
-        <div className="absolute inset-0 z-[12] backdrop-blur-md group-hover:backdrop-blur-none bg-gradient-to-b from-transparent via-[#0d1117]/30 to-[#030712]/95 group-hover:bg-gradient-to-b group-hover:from-transparent group-hover:via-black/20 group-hover:to-black/85 transition-all duration-700 pointer-events-none" />
-
-        {/* Structural internal frame guide */}
-        <div className="absolute inset-3.5 z-[13] border border-white/5 rounded-[20px] group-hover:border-[#58a6ff]/25 pointer-events-none transition-all duration-500" />
-
-        {/* Cyberpunk HUD Corner Brackets that flare on hover */}
-        {/* Top Left */}
-        <div className="absolute top-4 left-4 w-5 h-5 border-t-2 border-l-2 border-[#58a6ff]/30 group-hover:border-[#58a6ff] group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(88,166,255,0.6)] transition-all duration-300 pointer-events-none z-20" />
-        {/* Top Right */}
-        <div className="absolute top-4 right-4 w-5 h-5 border-t-2 border-r-2 border-[#58a6ff]/30 group-hover:border-[#58a6ff] group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(88,166,255,0.6)] transition-all duration-300 pointer-events-none z-20" />
-        {/* Bottom Left */}
-        <div className="absolute bottom-4 left-4 w-5 h-5 border-b-2 border-l-2 border-[#58a6ff]/30 group-hover:border-[#58a6ff] group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(88,166,255,0.6)] transition-all duration-300 pointer-events-none z-20" />
-        {/* Bottom Right */}
-        <div className="absolute bottom-4 right-4 w-5 h-5 border-b-2 border-r-2 border-[#58a6ff]/30 group-hover:border-[#58a6ff] group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(88,166,255,0.6)] transition-all duration-300 pointer-events-none z-20" />
-
-        {/* Foreground Information */}
-        <div className="absolute bottom-8 left-8 right-8 z-20 transform group-hover:-translate-y-2 transition-transform duration-500 text-left">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-[#58a6ff]/80 font-mono tracking-widest uppercase">{project.category}</span>
-            <span className="text-[8px] font-mono text-white/20 tracking-tight select-none">ID://{(index + 1).toString().padStart(3, '0')}</span>
+        {/* ================= MIDDLE SECTION ================= */}
+        <div className="flex-1 flex flex-col justify-center py-6 z-20 relative text-left">
+          {/* [ Project Category ] Bracketed Style */}
+          <div className="mb-2 text-[#58a6ff] text-[10px] font-bold uppercase tracking-[0.2em] font-mono flex items-center gap-1">
+            <span>[</span>
+            <span>{project.category || "DEVELOPMENT"}</span>
+            <span>]</span>
           </div>
 
-          <h3 className="text-xl font-bold text-white mb-2.5 uppercase tracking-tight leading-tight group-hover:text-[#58a6ff] transition-colors duration-300">
+          {/* PROJECT NAME (Large bold heading) */}
+          <h3 className="text-xl md:text-2xl font-extrabold text-white uppercase tracking-tight leading-tight group-hover:text-[#58a6ff] transition-colors duration-300 font-sans mb-3">
             {project.title}
           </h3>
 
-          {/* Tech Stack Specification Pills representing high Sthira organization */}
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {/* Short 2-line description */}
+          <p className="text-[#8b949e] text-xs font-light tracking-wide leading-relaxed line-clamp-2 mb-4 h-10">
+            {project.desc}
+          </p>
+
+          {/* ATM Style Card Monospace Project Number at the top-right of information block */}
+          <div className="mt-2 pt-2 border-t border-white/[0.04] group-hover:border-[#58a6ff]/10">
+            <span className="text-[11px] font-mono tracking-[0.22em] text-white/50 group-hover:text-white/80 transition-colors">
+              {cardNo}
+            </span>
+          </div>
+        </div>
+
+        {/* ================= FOOTER SECTION ================= */}
+        <div className="z-20 relative space-y-4">
+          {/* Bottom-left/Middle Technology Chips */}
+          <div className="flex flex-wrap gap-1.5 justify-start">
             {displayTags.map((tag, i) => (
-              <span 
+              <span
                 key={i}
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#0d1117]/85 group-hover:bg-[#58a6ff]/10 text-white/60 group-hover:text-[#58a6ff] border border-white/5 group-hover:border-[#58a6ff]/25 text-[9px] font-mono tracking-wider uppercase shadow-sm transition-all duration-300"
+                className="inline-flex items-center px-2 py-0.5 rounded bg-[#0d121f]/90 border border-white/[0.06] group-hover:border-[#58a6ff]/20 text-[9px] font-mono tracking-wider text-white/50 group-hover:text-[#58a6ff] transition-all uppercase"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#30363d] group-hover:bg-[#58a6ff] transition-colors duration-300" />
                 {tag}
               </span>
             ))}
           </div>
 
-          <div className="w-12 h-0.5 bg-[#58a6ff] mt-4 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
-        </div>
+          {/* Action Buttons: [ View Project ] and [ GitHub ] */}
+          <div className="flex items-center gap-2.5 pt-1">
+            {/* View Project Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}
+              className="flex-1 py-2 px-3 bg-gradient-to-r from-[#162235] to-[#111a28] hover:from-[#58a6ff] hover:to-[#1a73e8] border border-[#303d52] hover:border-[#58a6ff] text-[10px] font-bold tracking-widest uppercase text-white hover:text-black rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 hover:shadow-[0_0_15px_rgba(88,166,255,0.4)]"
+            >
+              <ExternalLink size={11} className="shrink-0" />
+              View Project
+            </button>
 
-        {/* Desktop Hover Icon Accent in background layer */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-[0.12] transition-all duration-1000 transform group-hover:scale-[2] pointer-events-none z-10">
-          {getProjectIcon(project.iconType, 120)}
+            {/* GitHub Link Button */}
+            <a
+              href={githubUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              className="py-2 px-3 bg-[#0d1117] hover:bg-[#161b22] border border-[#21262d] hover:border-white/40 text-[10px] font-bold tracking-widest uppercase text-[#8b949e] hover:text-white rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shrink-0"
+            >
+              <Github size={11} className="shrink-0" />
+              GitHub
+            </a>
+          </div>
         </div>
       </div>
     </motion.div>

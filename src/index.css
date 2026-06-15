@@ -523,3 +523,18 @@ input:focus, textarea:focus, select:focus {
     outline: none;
   }
 }
+
+/* Premium Card Holographic Shine Reflection Animation */
+@keyframes card-shine {
+  0% {
+    transform: translate(-30%, -30%) rotate(15deg);
+  }
+  100% {
+    transform: translate(30%, 30%) rotate(15deg);
+  }
+}
+
+.group:hover .group-hover\:animate-shine {
+  animation: card-shine 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

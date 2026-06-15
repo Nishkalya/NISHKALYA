@@ -23,7 +23,8 @@ import {
   Clock,
   AlertTriangle,
   Info,
-  ChevronDown
+  ChevronDown,
+  Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { marketingUserService } from '../services/marketingUserService';
@@ -281,6 +282,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Form states for creating or editing entries
   const [editFormValues, setEditFormValues] = useState<any>({});
@@ -364,10 +367,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
     }
   }, [marketingUser]);
 
-  // Set selected query default to the first entry if Query Management is selected & no query is active
+  // Set selected query default/active entry on module selection
   useEffect(() => {
     if (activeModule === 'queries' && queryRecords.length > 0 && !selectedQuery) {
       setSelectedQuery(queryRecords[0]);
+    }
+    if (activeModule === 'inbox' && inboxTickets.length > 0 && !selectedTicket) {
+      setSelectedTicket(inboxTickets[0]);
     }
     // Reset search, filters, sorting, and pagination when switching modules
     setSearchTerm('');
@@ -375,7 +381,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
     setSortField('');
     setSortDirection('asc');
     setCurrentPage(1);
-  }, [activeModule, queryRecords]);
+  }, [activeModule, queryRecords, inboxTickets]);
 
   // Save updates helper
   const saveInboxTickets = (updated: InboxTicket[]) => {
@@ -783,7 +789,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   };
 
   return (
-    <div className="pt-32 pb-32 px-4 sm:px-6 md:px-12 w-full max-w-7xl mx-auto min-h-[85vh] flex flex-col justify-start">
+    <div className={`w-full min-h-[85vh] flex flex-col justify-start transition-all duration-300 ${!marketingUser ? 'pt-32 pb-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto' : 'py-6 px-4 md:px-6 max-w-full'}`}>
       {!marketingUser ? (
         /* Secure Login Card */
         <div className="w-full max-w-md mx-auto my-auto relative z-10">
@@ -866,34 +872,191 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
         </div>
       ) : (
         /* Redesigned Portal Workspace */
-        <div className="space-y-8 w-full">
-          {/* Header Dashboard panel */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#30363d]/85 pb-6 gap-4">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
-                Marketing
-              </h1>
-              <p className="text-xs text-[#8b949e] mt-1.5 leading-relaxed tracking-wide font-light">
-                Secure Marketer ID: <span className="font-mono text-white font-bold bg-[#161b22] border border-[#30363d] px-2 py-0.5 rounded text-[11px]">{marketingUser.username}</span>
-              </p>
+        <div className="space-y-4 w-full">
+          {/* Mobile Collapsible Sidebar Drawer */}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="fixed inset-0 bg-black/60 z-[100] lg:hidden"
+                />
+                
+                {/* Drawer Content */}
+                <motion.div
+                  initial={{ x: '-100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '-100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                  className="fixed top-0 left-0 bottom-0 w-[240px] bg-[#0d1117] border-r border-[#30363d] z-[101] p-5 flex flex-col justify-between shadow-2xl lg:hidden"
+                >
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-[#30363d]/50">
+                      <div className="text-[10px] font-mono font-extrabold text-[#58a6ff] uppercase tracking-[0.2em]">
+                        Matrix Workspace
+                      </div>
+                      <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-805 transition-colors cursor-pointer"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    <nav className="space-y-1">
+                      <button
+                        onClick={() => {
+                          setActiveModule('inbox');
+                          setIsSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                          activeModule === 'inbox' 
+                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35' 
+                            : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/85 border-transparent'
+                        }`}
+                      >
+                        <div className="relative">
+                          <InboxIcon size={14} />
+                          {inboxTickets.length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-[#58a6ff] rounded-full animate-bounce"></span>
+                          )}
+                        </div>
+                        <span>Inbox</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setActiveModule('queries');
+                          setIsSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                          activeModule === 'queries' 
+                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35' 
+                            : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/85 border-transparent'
+                        }`}
+                      >
+                        <MessageSquare size={14} />
+                        <span>Query Hub</span>
+                      </button>
+                    </nav>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#30363d]/40">
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsSidebarOpen(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-950/20 text-red-400 hover:bg-red-900/40 border border-red-900/30 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      <LogOut size={12} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* 1. TOP HEADER BAR */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#161b22]/90 border border-[#30363d] p-4 rounded-2xl shadow-lg w-full">
+            {/* Left: Marketing Title */}
+            <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
+              {/* Sidebar Menu Toggle Button on Mobile and Tablet */}
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2 text-zinc-400 hover:text-white bg-[#161b22] border border-[#30363d] rounded-xl hover:bg-[#21262d] transition-all cursor-pointer shrink-0 flex items-center justify-center"
+                title="Open Navigation Menu"
+              >
+                <Menu size={15} />
+              </button>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#1f6feb] animate-pulse"></span>
+                  <h1 className="text-xl font-black text-white tracking-tight">Marketing Portal Layout</h1>
+                </div>
+                <p className="text-[10px] text-[#8b949e] font-mono whitespace-nowrap mt-0.5">
+                  Secure Access ID: <span className="text-zinc-200 font-bold">{marketingUser.username}</span>
+                </p>
+              </div>
             </div>
-            
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2.5 bg-red-950/30 text-red-400 hover:text-white hover:bg-red-800/80 border border-red-900/40 rounded-xl text-xs font-mono font-bold tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <LogOut size={13} />
-              <span>Sign Out</span>
-            </button>
+
+            {/* Center: Search box */}
+            <div className="relative w-full md:max-w-md lg:max-w-lg">
+              <span className="absolute left-3.5 top-2.5 text-zinc-500">
+                <Search size={14} />
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder={
+                  activeModule === 'inbox' 
+                    ? "Search security inbox..." 
+                    : "Search queries by customer name..."
+                }
+                className="w-full bg-[#0d1117] border border-zinc-850 rounded-xl pl-10 pr-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 transition-colors"
+              />
+            </div>
+
+            {/* Right: Filters, Add Button & Log Out */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start sm:justify-end">
+              {/* Filter dropdown */}
+              <div className="flex items-center gap-1.5">
+                <Filter size={11} className="text-zinc-500 shrink-0" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="bg-[#0d1117] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-[11px] text-zinc-300 outline-none focus:border-[#58a6ff]/40 font-mono cursor-pointer shrink-0"
+                >
+                  <option value="all">All States</option>
+                  <option value="New Query">New Query</option>
+                  <option value="In Process">In Process</option>
+                  <option value="Won">Won</option>
+                  <option value="Lost">Lost</option>
+                </select>
+              </div>
+
+              {/* Create button */}
+              <button
+                onClick={handleOpenAdd}
+                className="bg-[#2ea44f]/90 hover:bg-[#2ea44f] text-white border border-[#2ea44f]/40 px-2.5 py-1.5 rounded-xl text-[11px] font-bold uppercase font-mono tracking-wider flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+              >
+                <Plus size={13} />
+                <span>{activeModule === 'inbox' ? 'Create' : 'Create Query'}</span>
+              </button>
+
+              {/* Sign Out Button in Header Bar Area */}
+              <button
+                onClick={handleLogout}
+                className="px-2.5 py-1.5 bg-red-950/30 text-red-400 hover:text-white hover:bg-red-800/80 border border-red-900/40 rounded-xl text-[11px] font-mono font-bold tracking-wider uppercase transition-all flex items-center gap-1 cursor-pointer shrink-0"
+              >
+                <LogOut size={12} />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
 
-          {/* New Portal Layout: Sidebar on left, Content Area on right */}
-          <div className="flex flex-row md:gap-8 gap-4 items-start w-full">
+          <div className={`grid gap-4 w-full items-start ${
+            activeModule === 'queries'
+              ? 'grid-cols-1 lg:grid-cols-[220px_1fr_320px] xl:grid-cols-[240px_1fr_340px]'
+              : 'grid-cols-1 lg:grid-cols-[220px_1fr] xl:grid-cols-[240px_1fr]'
+          }`}>
             
-            {/* LEFT SIDEBAR MENU PANEL */}
-            <div className="w-48 sm:w-56 md:w-64 shrink-0 space-y-4">
-              <div className="bg-[#161b22]/70 border border-[#30363d]/80 rounded-2xl p-4 space-y-3 shadow-xl">
-                <div className="text-[10px] font-mono font-extrabold text-[#8b949e] uppercase tracking-[0.2em] px-3 pb-1 border-b border-[#30363d]/40">
+            {/* 2. LEFT SIDEBAR (Column 1) */}
+            <div className="hidden lg:block space-y-4">
+              <div className="bg-[#161b22]/90 border border-[#30363d] rounded-2xl p-4 space-y-4 shadow-xl">
+                <div className="text-[10px] font-mono font-extrabold text-[#8b949e] uppercase tracking-[0.2em] px-3 pb-2 border-b border-[#30363d]/45">
                   Matrix Workspace
                 </div>
                 
@@ -902,13 +1065,18 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                     onClick={() => {
                       setActiveModule('inbox');
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                       activeModule === 'inbox' 
-                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/35 shadow-md shadow-[#58a6ff]/5' 
-                        : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/80 border border-transparent'
+                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35 shadow-md shadow-[#58a6ff]/5' 
+                        : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/80 border-transparent'
                     }`}
                   >
-                    <InboxIcon size={16} />
+                    <div className="relative">
+                      <InboxIcon size={16} />
+                      {inboxTickets.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#58a6ff] rounded-full animate-bounce"></span>
+                      )}
+                    </div>
                     <span>Inbox</span>
                   </button>
 
@@ -916,143 +1084,101 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                     onClick={() => {
                       setActiveModule('queries');
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                       activeModule === 'queries' 
-                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/35 shadow-md shadow-[#58a6ff]/5'
-                        : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/80 border border-transparent'
+                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35 shadow-md shadow-[#58a6ff]/5'
+                        : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/80 border-transparent'
                     }`}
                   >
                     <MessageSquare size={16} />
-                    <span>Query Management</span>
+                    <span>Query Hub</span>
                   </button>
                 </nav>
               </div>
             </div>
 
-            {/* RIGHT CONTENT AREA PANEL */}
-            <div className="flex-1 min-w-0 space-y-6">
+            {/* 3. MAIN CONTENT AREA (Column 2) */}
+            <div className="min-w-0 space-y-4 w-full">
               
+              {/* TOP SECTION: Equal-width ERP status cards */}
               {activeModule === 'queries' && (
-                <>
-                  {/* Table search, actions, and filters header */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-5 bg-[#161b22]/40 border border-[#30363d]/60 rounded-2xl">
-                    
-                    {/* Search field */}
-                    <div className="relative flex-1">
-                      <span className="absolute left-3.5 top-3 text-zinc-500">
-                        <Search size={14} />
-                      </span>
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setCurrentPage(1);
-                        }}
-                        placeholder="Search queries by customer name, category, ID..."
-                        className="w-full bg-[#0d1117] border border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 transition-colors"
-                      />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 w-full">
+                  {/* NEW QUERY */}
+                  <button
+                    id="pipeline-btn-new-query"
+                    onClick={() => handlePipelineTabChange('NEW_QUERY')}
+                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
+                      pipelineTab === 'NEW_QUERY'
+                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/65 shadow-md shadow-[#58a6ff]/5 font-extrabold scale-[1.02]'
+                        : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#58a6ff] border-[#30363d]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">New Query</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#58a6ff]"></span>
                     </div>
+                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
+                      {queryRecords.filter(q => q.status === 'New Query').length}
+                    </span>
+                  </button>
 
-                    {/* Status Filter dropdown */}
-                    <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                      <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-mono font-bold uppercase">
-                        <Filter size={12} className="text-zinc-500" />
-                        <span>Filter:</span>
-                      </div>
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => {
-                          setStatusFilter(e.target.value);
-                          setCurrentPage(1);
-                        }}
-                        className="bg-[#0d1117] border border-zinc-850 rounded-xl px-3 py-1.5 text-xs text-zinc-300 outline-none focus:border-[#58a6ff]/40 font-mono cursor-pointer"
-                      >
-                        <option value="all">All States</option>
-                        <option value="New Query">New Query</option>
-                        <option value="In Process">In Process</option>
-                        <option value="Won">Won</option>
-                        <option value="Lost">Lost</option>
-                      </select>
-
-                      {/* Add record button */}
-                      <button
-                        onClick={handleOpenAdd}
-                        className="bg-emerald-900/60 hover:bg-emerald-700 font-mono text-emerald-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider border border-emerald-800/60 flex items-center gap-1.5 cursor-pointer ml-auto transition-colors"
-                      >
-                        <Plus size={14} />
-                        <span>Create Mock</span>
-                      </button>
+                  {/* IN PROCESS */}
+                  <button
+                    id="pipeline-btn-inprocess"
+                    onClick={() => handlePipelineTabChange('INPROCESS')}
+                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
+                      pipelineTab === 'INPROCESS'
+                        ? 'bg-amber-500/15 text-amber-500 border-amber-500/65 shadow-md shadow-amber-500/5 font-extrabold scale-[1.02]'
+                        : 'bg-[#161b22]/30 text-zinc-400 hover:text-amber-500 border-[#30363d]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">In Process</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                     </div>
+                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
+                      {queryRecords.filter(q => q.status === 'In Process').length}
+                    </span>
+                  </button>
 
-                  </div>
-
-                  {/* Pipeline progression monitor section */}
-                  <div id="pipeline-filter-bar" className="bg-[#161b22]/40 border border-[#30363d]/60 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#1f6feb] animate-pulse"></div>
-                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">Lead Pipeline Monitor:</span>
+                  {/* WON */}
+                  <button
+                    id="pipeline-btn-won"
+                    onClick={() => handlePipelineTabChange('WON')}
+                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
+                      pipelineTab === 'WON'
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/65 shadow-md shadow-emerald-400/5 font-extrabold scale-[1.02]'
+                        : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#2ea44f] border-[#30363d]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Won</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     </div>
-                    
-                    <div className="grid grid-cols-2 md:flex md:items-center gap-2.5 flex-grow md:justify-end">
-                      {/* NEW QUERY BUTTON */}
-                      <button
-                        id="pipeline-btn-new-query"
-                        onClick={() => handlePipelineTabChange('NEW_QUERY')}
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-                          pipelineTab === 'NEW_QUERY'
-                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/65 shadow-md shadow-[#58a6ff]/5 font-extrabold scale-[1.02]'
-                            : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#58a6ff] border-[#30363d]/40'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#58a6ff]"></span>
-                        <span>New Query</span>
-                      </button>
+                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
+                      {queryRecords.filter(q => q.status === 'Won').length}
+                    </span>
+                  </button>
 
-                      {/* INPROCESS BUTTON */}
-                      <button
-                        id="pipeline-btn-inprocess"
-                        onClick={() => handlePipelineTabChange('INPROCESS')}
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-                          pipelineTab === 'INPROCESS'
-                            ? 'bg-amber-500/15 text-amber-500 border-amber-500/65 shadow-md shadow-amber-500/5 font-extrabold scale-[1.02]'
-                            : 'bg-[#161b22]/30 text-zinc-400 hover:text-amber-500 border-[#30363d]/40'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                        <span>In-Process</span>
-                      </button>
-
-                      {/* WON BUTTON */}
-                      <button
-                        id="pipeline-btn-won"
-                        onClick={() => handlePipelineTabChange('WON')}
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-                          pipelineTab === 'WON'
-                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/65 shadow-md shadow-emerald-500/5 font-extrabold scale-[1.02]'
-                            : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#2ea44f] border-[#30363d]/40'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                        <span>Won</span>
-                      </button>
-
-                      {/* LOST BUTTON */}
-                      <button
-                        id="pipeline-btn-lost"
-                        onClick={() => handlePipelineTabChange('LOST')}
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-                          pipelineTab === 'LOST'
-                            ? 'bg-red-500/15 text-red-100 border-red-500/65 shadow-md shadow-red-500/5 font-extrabold scale-[1.02]'
-                            : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#cf222e] border-[#30363d]/40'
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                        <span>Lost</span>
-                      </button>
+                  {/* LOST */}
+                  <button
+                    id="pipeline-btn-lost"
+                    onClick={() => handlePipelineTabChange('LOST')}
+                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
+                      pipelineTab === 'LOST'
+                        ? 'bg-red-500/15 text-red-100 border-red-500/65 shadow-md shadow-red-500/5 font-extrabold scale-[1.02]'
+                        : 'bg-[#161b22]/30 text-[#8b949e] hover:text-[#cf222e] border-[#30363d]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Lost</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                     </div>
-                  </div>
-                </>
+                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
+                      {queryRecords.filter(q => q.status === 'Lost').length}
+                    </span>
+                  </button>
+                </div>
               )}
 
               {/* ACTIVE TAB: INBOX DATA TABLE */}
@@ -1099,91 +1225,144 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       </div>
                     )
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs font-sans">
-                        <thead className="bg-[#0c1017] text-zinc-500 border-b border-[#30363d] text-[10px] font-bold uppercase tracking-wider font-mono">
-                          <tr>
-                            <th className="p-4 pl-6 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('name')}>
-                              <div className="flex items-center gap-1">
-                                <span>Name</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                            <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('email')}>
-                              <div className="flex items-center gap-1">
-                                <span>Email</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                            <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('company')}>
-                              <div className="flex items-center gap-1">
-                                <span>Company</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                            <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('service')}>
-                              <div className="flex items-center gap-1">
-                                <span>Service</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                            <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('message')}>
-                              <div className="flex items-center gap-1">
-                                <span>Message</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                            <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('date')}>
-                              <div className="flex items-center gap-1">
-                                <span>Date</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                            <th className="p-4 cursor-pointer hover:text-white select-none pr-6" onClick={() => toggleSort('status')}>
-                              <div className="flex items-center gap-1">
-                                <span>Status</span>
-                                <ArrowUpDown size={10} className="text-zinc-650" />
-                              </div>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#30363d]/45">
-                          {currentItems.map((ticket) => (
-                            <tr 
-                              key={ticket.id} 
-                              onClick={() => handleOpenView(ticket)}
-                              className="hover:bg-[#161b22]/60 transition-all duration-150 cursor-pointer group"
-                              title="Click to view details"
-                            >
-                              <td className="p-4 pl-6 font-semibold text-white">{ticket.name}</td>
-                              <td className="p-4 text-zinc-400 font-mono text-[11px]">{ticket.email}</td>
-                              <td className="p-4 text-zinc-300 font-medium font-mono text-[11px]">{ticket.company || 'N/A'}</td>
-                              <td className="p-4 text-zinc-450 font-bold font-mono text-[10px] text-[#58a6ff]">{ticket.service || 'General Inquiry'}</td>
-                              <td className="p-4 text-zinc-350 font-light truncate max-w-[200px]" title={ticket.message}>
-                                {ticket.message}
-                              </td>
-                              <td className="p-4 text-zinc-450 font-mono text-[10px] whitespace-nowrap">{ticket.date}</td>
-                              <td className="p-4 pr-6">
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
-                                  ticket.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                  ticket.status === 'In Process' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                                  ticket.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40' :
-                                  'bg-red-950/20 text-red-450 border-red-900/40'
-                                }`}>
-                                  <span className={`w-1 h-1 rounded-full ${
-                                    ticket.status === 'New Query' ? 'bg-blue-400' :
-                                    ticket.status === 'In Process' ? 'bg-amber-500' :
-                                    ticket.status === 'Won' ? 'bg-emerald-400' :
-                                    'bg-red-500'
-                                  }`} />
-                                  {ticket.status}
-                                </span>
-                              </td>
+                    <>
+                      {/* Desktop View Table: Shown on Medium and above screens */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left text-xs font-sans">
+                          <thead className="bg-[#0c1017] text-zinc-500 border-b border-[#30363d] text-[10px] font-bold uppercase tracking-wider font-mono">
+                            <tr>
+                              <th className="p-4 pl-6 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('name')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Name</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
+                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('email')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Email</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
+                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('company')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Company</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
+                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('service')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Service</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
+                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('message')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Message</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
+                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('date')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Date</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
+                              <th className="p-4 cursor-pointer hover:text-white select-none pr-6" onClick={() => toggleSort('status')}>
+                                <div className="flex items-center gap-1">
+                                  <span>Status</span>
+                                  <ArrowUpDown size={10} className="text-zinc-650" />
+                                </div>
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody className="divide-y divide-[#30363d]/45">
+                            {currentItems.map((ticket) => (
+                              <tr 
+                                key={ticket.id} 
+                                onClick={() => handleOpenView(ticket)}
+                                className="hover:bg-[#161b22]/60 transition-all duration-150 cursor-pointer group"
+                                title="Click to view details"
+                              >
+                                <td className="p-4 pl-6 font-semibold text-white">{ticket.name}</td>
+                                <td className="p-4 text-zinc-400 font-mono text-[11px]">{ticket.email}</td>
+                                <td className="p-4 text-zinc-300 font-medium font-mono text-[11px]">{ticket.company || 'N/A'}</td>
+                                <td className="p-4 text-zinc-450 font-bold font-mono text-[10px] text-[#58a6ff]">{ticket.service || 'General Inquiry'}</td>
+                                <td className="p-4 text-zinc-350 font-light truncate max-w-[200px]" title={ticket.message}>
+                                  {ticket.message}
+                                </td>
+                                <td className="p-4 text-zinc-450 font-mono text-[10px] whitespace-nowrap">{ticket.date}</td>
+                                <td className="p-4 pr-6">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
+                                    ticket.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
+                                    ticket.status === 'In Process' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
+                                    ticket.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40' :
+                                    'bg-red-950/20 text-red-410 border-red-900/40'
+                                  }`}>
+                                    <span className={`w-1 h-1 rounded-full ${
+                                      ticket.status === 'New Query' ? 'bg-blue-400' :
+                                      ticket.status === 'In Process' ? 'bg-amber-500' :
+                                      ticket.status === 'Won' ? 'bg-emerald-400' :
+                                      'bg-red-500'
+                                    }`} />
+                                    {ticket.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile View Cards: Shown on Mobile/Tablet screens */}
+                      <div className="block md:hidden divide-y divide-[#30363d]/30">
+                        {currentItems.map((ticket) => (
+                          <div 
+                            key={ticket.id} 
+                            onClick={() => handleOpenView(ticket)}
+                            className="p-4 space-y-2 select-none hover:bg-[#161b22]/40 active:bg-[#161b22]/70 transition-all duration-150 cursor-pointer"
+                            title="Click to view details"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold text-white text-xs truncate max-w-[150px]">{ticket.name}</span>
+                              <span className="text-[9px] font-mono text-zinc-500 shrink-0">{ticket.date}</span>
+                            </div>
+                            
+                            <div className="flex items-baseline justify-between gap-2 pt-0.5">
+                              <span className="text-[10px] text-[#58a6ff] font-bold font-mono tracking-tight">{ticket.service || 'General Inquiry'}</span>
+                              {ticket.company && (
+                                <span className="text-[10px] text-zinc-400 font-mono font-medium truncate max-w-[120px]" title={ticket.company}>
+                                  {ticket.company}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-xs text-zinc-400 font-light line-clamp-2 pt-0.5">
+                              {ticket.message}
+                            </p>
+
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[10px] text-zinc-500 font-mono truncate max-w-[180px]" title={ticket.email}>
+                                {ticket.email}
+                              </span>
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase border shrink-0 ${
+                                ticket.status === 'New Query' ? 'bg-blue-950/25 text-blue-400 border-blue-900/40' :
+                                ticket.status === 'In Process' ? 'bg-amber-950/25 text-amber-500 border-amber-900/40' :
+                                ticket.status === 'Won' ? 'bg-emerald-950/25 text-emerald-400 border-emerald-900/40' :
+                                'bg-red-950/25 text-red-400 border-red-900/40'
+                              }`}>
+                                <span className={`w-1 h-1 rounded-full ${
+                                  ticket.status === 'New Query' ? 'bg-blue-400' :
+                                  ticket.status === 'In Process' ? 'bg-amber-500' :
+                                  ticket.status === 'Won' ? 'bg-emerald-400' :
+                                  'bg-red-500'
+                                }`} />
+                                {ticket.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
 
                   {/* Pagination control footer block */}
@@ -1215,12 +1394,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                 </div>
               )}
 
-              {/* ACTIVE TAB: QUERY MANAGEMENT SPLIT-LAYOUT PANEL */}
+              {/* ACTIVE TAB: QUERY MANAGEMENT LIST TABLE */}
               {activeModule === 'queries' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <>
                   
                   {/* Left Column of Splitting: Queries List and Table */}
-                  <div className="lg:col-span-7 flex flex-col justify-between bg-[#161b22]/40 border border-[#30363d]/60 rounded-2xl overflow-hidden shadow-xl min-h-[460px]">
+                  <div className="flex flex-col justify-between bg-[#161b22]/40 border border-[#30363d]/60 rounded-2xl overflow-hidden shadow-xl min-h-[460px] w-full">
                     
                     <div>
                       <div className="p-4 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]/60">
@@ -1267,89 +1446,121 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                           </div>
                         )
                       ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs font-sans">
-                            <thead className="bg-[#0c1017] text-zinc-500 border-b border-[#30363d] text-[10px] font-bold uppercase tracking-wider font-mono">
-                              <tr>
-                                <th className="p-3 pl-4 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('id')}>
-                                  <div className="flex items-center gap-1">
-                                    <span>Query ID</span>
-                                    <ArrowUpDown size={9} className="text-zinc-650" />
-                                  </div>
-                                </th>
-                                <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('customerName')}>
-                                  <div className="flex items-center gap-1">
-                                    <span>Client</span>
-                                    <ArrowUpDown size={9} className="text-zinc-650" />
-                                  </div>
-                                </th>
-                                <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('priority')}>
-                                  <div className="flex items-center gap-1">
-                                    <span>Priority</span>
-                                    <ArrowUpDown size={9} className="text-zinc-650" />
-                                  </div>
-                                </th>
-                                <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('status')}>
-                                  <div className="flex items-center gap-1">
-                                    <span>Status</span>
-                                    <ArrowUpDown size={9} className="text-zinc-650" />
-                                  </div>
-                                </th>
-                                <th className="p-3 text-center pr-4">Action</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#30363d]/40">
-                              {currentItems.map((record) => (
-                                <tr 
-                                  key={record.id} 
-                                  onClick={() => setSelectedQuery(record)}
-                                  className={`hover:bg-[#161b22]/35 transition-colors cursor-pointer ${selectedQuery?.id === record.id ? 'bg-[#58a6ff]/5 border-l-2 border-[#58a6ff]' : ''}`}
-                                >
-                                  <td className="p-3 pl-4 font-mono font-bold text-[#58a6ff] whitespace-nowrap">{record.id}</td>
-                                  <td className="p-3 font-semibold text-zinc-100 truncate max-w-[100px]">{record.customerName}</td>
-                                  <td className="p-3 whitespace-nowrap">
-                                    <span className={`inline-block px-1.5 py-0.5 rounded font-mono text-[8.5px] font-extrabold uppercase border ${
-                                      record.priority === 'Critical' ? 'bg-red-950/20 text-red-400 border-red-900/40' :
-                                      record.priority === 'High' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                                      record.priority === 'Medium' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                      'bg-zinc-900 text-zinc-400 border-zinc-800'
-                                    }`}>
-                                      {record.priority}
-                                    </span>
-                                  </td>
-                                  <td className="p-3 whitespace-nowrap">
-                                    <span className={`inline-block px-1.5 py-0.5 rounded font-mono text-[8.5px] font-bold uppercase border ${
-                                      record.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                      record.status === 'In Process' ? 'bg-amber-950/20 text-amber-550 border-amber-900/40' :
-                                      record.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-950/40' :
-                                      'bg-red-950/20 text-red-500 border-red-900/40'
-                                    }`}>
-                                      {record.status}
-                                    </span>
-                                  </td>
-                                  <td className="p-3 pr-4" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-center gap-1.5">
-                                      <button
-                                        onClick={() => handleOpenEdit(record)}
-                                        className="p-1 text-amber-500/85 hover:text-amber-400 border border-[#30363d]/45 bg-[#161b22] rounded transition-colors cursor-pointer"
-                                        title="Quick Edit"
-                                      >
-                                        <Edit2 size={11} />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteItem(record.id)}
-                                        className="p-1 text-red-400 hover:text-white border border-[#30363d]/45 bg-[#161b22] rounded transition-colors cursor-pointer hover:bg-red-950"
-                                        title="Remove Query"
-                                      >
-                                        <Trash2 size={11} />
-                                      </button>
+                        <>
+                          {/* Desktop Query Table - Shown on medium and above screens */}
+                          <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-left text-xs font-sans">
+                              <thead className="bg-[#0c1017] text-zinc-500 border-b border-[#30363d] text-[10px] font-bold uppercase tracking-wider font-mono">
+                                <tr>
+                                  <th className="p-3 pl-4 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('id')}>
+                                    <div className="flex items-center gap-1">
+                                      <span>Query ID</span>
+                                      <ArrowUpDown size={9} className="text-zinc-650" />
                                     </div>
-                                  </td>
+                                  </th>
+                                  <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('customerName')}>
+                                    <div className="flex items-center gap-1">
+                                      <span>Client</span>
+                                      <ArrowUpDown size={9} className="text-zinc-650" />
+                                    </div>
+                                  </th>
+                                  <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('priority')}>
+                                    <div className="flex items-center gap-1">
+                                      <span>Priority</span>
+                                      <ArrowUpDown size={9} className="text-zinc-650" />
+                                    </div>
+                                  </th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                              </thead>
+                              <tbody className="divide-y divide-[#30363d]/40">
+                                {currentItems.map((record) => (
+                                  <tr 
+                                    key={record.id} 
+                                    onClick={() => setSelectedQuery(record)}
+                                    className={`hover:bg-[#161b22]/35 transition-colors cursor-pointer ${selectedQuery?.id === record.id ? 'bg-[#58a6ff]/5 border-l-2 border-[#58a6ff]' : ''}`}
+                                  >
+                                    <td className="p-3 pl-4 font-mono font-bold text-[#58a6ff] whitespace-nowrap">{record.id}</td>
+                                    <td className="p-3 font-semibold text-zinc-100 truncate max-w-[150px]">{record.customerName}</td>
+                                    <td className="p-3 whitespace-nowrap">
+                                      <span className={`inline-block px-1.5 py-0.5 rounded font-mono text-[8.5px] font-extrabold uppercase border ${
+                                        record.priority === 'Critical' ? 'bg-red-950/20 text-red-400 border-red-900/40' :
+                                        record.priority === 'High' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
+                                        record.priority === 'Medium' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
+                                        'bg-zinc-900 text-zinc-400 border-zinc-800'
+                                      }`}>
+                                        {record.priority}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Mobile Query Cards List - Shown on Mobile/Tablet screens */}
+                          <div className="block md:hidden divide-y divide-[#30363d]/30">
+                            {currentItems.map((record) => (
+                              <div 
+                                key={record.id} 
+                                onClick={() => {
+                                  setSelectedQuery(record);
+                                  // Open details view overlay on mobile screens immediately
+                                  if (window.innerWidth < 1024) {
+                                    handleOpenView(record);
+                                  }
+                                }}
+                                className={`p-4 space-y-2 select-none hover:bg-[#161b22]/40 active:bg-[#161b22]/70 transition-all duration-150 cursor-pointer ${
+                                  selectedQuery?.id === record.id ? 'bg-[#58a6ff]/5 border-l-2 border-[#58a6ff]' : ''
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-mono font-bold text-[#58a6ff] text-xs">{record.id}</span>
+                                  <span className={`inline-block px-1.5 py-0.5 rounded font-mono text-[8px] font-extrabold uppercase border ${
+                                    record.priority === 'Critical' ? 'bg-red-950/20 text-red-400 border-red-900/40' :
+                                    record.priority === 'High' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
+                                    record.priority === 'Medium' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
+                                    'bg-zinc-900 text-zinc-400 border-zinc-800'
+                                  }`}>
+                                    {record.priority}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-0.5">
+                                  <div>
+                                    <span className="text-[8px] font-mono text-zinc-500 uppercase block font-bold leading-none">Client</span>
+                                    <span className="font-semibold text-zinc-100 text-xs">{record.customerName}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-[8px] font-mono text-zinc-500 uppercase block font-bold leading-none">Classification</span>
+                                    <span className="text-[10px] font-mono font-bold text-zinc-400">{record.category}</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-0.5 text-[10px]">
+                                  <span className="text-zinc-400 font-light truncate max-w-[150px]">
+                                    <span className="text-zinc-550 text-[8px] uppercase font-bold font-mono tracking-wider mr-1">Owner:</span>
+                                    {record.assignedTo}
+                                  </span>
+                                  <span className="text-zinc-500 font-mono text-[9px]">
+                                    {record.createdDate}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1">
+                                  <span className="text-[9px] text-[#8b949e] font-mono uppercase font-bold">Query Status</span>
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase border ${
+                                    record.status === 'New Query' ? 'bg-blue-950/25 text-blue-400 border-blue-900/40' :
+                                    record.status === 'In Process' ? 'bg-amber-950/25 text-amber-500 border-amber-900/40' :
+                                    record.status === 'Won' ? 'bg-emerald-950/25 text-emerald-400 border-emerald-900/40' :
+                                    'bg-red-950/25 text-red-400 border-red-900/40'
+                                  }`}>
+                                    {record.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -1381,8 +1592,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                     </div>
                   </div>
 
-                  {/* Right Column of Splitting: Query Details Panel */}
-                  <div className="lg:col-span-5 bg-[#161b22]/70 border border-[#30363d] rounded-2xl p-5 shadow-2xl flex flex-col min-h-[460px] justify-between">
+                </>
+              )}
+
+            </div>
+
+            {/* DETAILS PANEL (Column 3) */}
+            {activeModule === 'queries' && (
+              <div className="bg-[#161b22]/70 border border-[#30363d] rounded-2xl p-5 shadow-2xl flex flex-col min-h-[460px] justify-between h-auto w-full">
                     
                     {selectedQuery ? (
                       <div className="space-y-5 h-full flex flex-col justify-between">
@@ -1426,24 +1643,61 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             </div>
                             <div>
                               <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Current Status</span>
-                              <span className="inline-block mt-0.5">
-                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
-                                  selectedQuery.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                  selectedQuery.status === 'In Process' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                                  selectedQuery.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40' :
-                                  'bg-red-950/20 text-red-500 border-red-900/40'
-                                }`}>
-                                  <span className={`w-1 h-1 rounded-full ${
+                              <div className="relative inline-block mt-0.5">
+                                <button
+                                  onClick={() => setIsChangingStatus(!isChangingStatus)}
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[9.5px] font-mono font-black uppercase border cursor-pointer hover:brightness-125 hover:border-zinc-500/80 transition-all ${
+                                    selectedQuery.status === 'New Query' ? 'bg-blue-950/25 text-blue-400 border-blue-900/50' :
+                                    selectedQuery.status === 'In Process' ? 'bg-amber-950/25 text-amber-500 border-amber-900/50' :
+                                    selectedQuery.status === 'Won' ? 'bg-emerald-950/25 text-emerald-400 border-emerald-900/50' :
+                                    'bg-red-950/25 text-red-500 border-red-900/50'
+                                  }`}
+                                  title="Click to Change Status"
+                                >
+                                  <span className={`w-1.5 h-1.5 rounded-full ${
                                     selectedQuery.status === 'New Query' ? 'bg-blue-400' :
                                     selectedQuery.status === 'In Process' ? 'bg-amber-500' :
                                     selectedQuery.status === 'Won' ? 'bg-emerald-400' :
                                     'bg-red-500'
                                   }`} />
-                                  {selectedQuery.status}
-                                </span>
-                              </span>
+                                  <span>{selectedQuery.status}</span>
+                                  <ChevronDown size={10} className="text-zinc-400 ml-0.5 shrink-0" />
+                                </button>
+
+                                {isChangingStatus && (
+                                  <>
+                                    <div 
+                                      className="fixed inset-0 z-30" 
+                                      onClick={() => setIsChangingStatus(false)} 
+                                    />
+                                    <div className="absolute left-0 mt-1.5 w-32 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-40 overflow-hidden font-mono text-[9px] divide-y divide-[#30363d]/50">
+                                      {(['New Query', 'In Process', 'Won', 'Lost'] as const).map((statusOption) => (
+                                        <button
+                                          key={statusOption}
+                                          onClick={() => {
+                                            handleUpdateStatus(statusOption);
+                                            setIsChangingStatus(false);
+                                          }}
+                                          className={`w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-[#21262d] transition-colors cursor-pointer ${
+                                            selectedQuery.status === statusOption ? 'text-[#58a6ff] bg-[#1f6feb]/5 font-bold' : 'text-zinc-300'
+                                          }`}
+                                        >
+                                          <span className={`w-1.5 h-1.5 rounded-full ${
+                                            statusOption === 'New Query' ? 'bg-blue-400' :
+                                            statusOption === 'In Process' ? 'bg-amber-500' :
+                                            statusOption === 'Won' ? 'bg-emerald-400' :
+                                            'bg-red-500'
+                                          }`} />
+                                          <span>{statusOption.toUpperCase()}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
+                        </div>
 
                           {/* Query Description Area */}
                           <div className="pt-2">
@@ -1476,7 +1730,6 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               </div>
                             </div>
                           </div>
-                        </div>
 
                         {/* Interactive edit and helper dispatch panel */}
                         <div className="pt-4 border-t border-[#30363d]/70 flex items-center justify-end gap-3.5 mt-4">
@@ -1508,10 +1761,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
 
                   </div>
 
-                </div>
               )}
-
-            </div>
 
           </div>
 
