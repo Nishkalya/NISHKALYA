@@ -241,6 +241,199 @@ const DEFAULT_QUERY_RECORDS: QueryRecord[] = [
   }
 ];
 
+// Interface for the structured data
+interface CommentItem {
+  id: string;
+  author: string;
+  text: string;
+  timestamp: string;
+}
+
+interface NotesData {
+  comments: CommentItem[];
+  subtasks: {
+    assess: boolean;
+    callback: boolean;
+    quote: boolean;
+    audit: boolean;
+  };
+  channel: string;
+  region: string;
+  estimatedHours?: number;
+  contactPreference?: string;
+}
+
+// Parsing helper with safe fallback
+const parseNotesData = (notesText: string | undefined): NotesData => {
+  const defaultVal: NotesData = {
+    comments: [],
+    subtasks: { assess: false, callback: false, quote: false, audit: false },
+    channel: 'Inbound Webhook',
+    region: 'North America (US-East)',
+    estimatedHours: 8,
+    contactPreference: 'Email / Portal'
+  };
+
+  if (!notesText) return defaultVal;
+  const text = notesText.trim();
+  
+  // Clean JSON checks
+  if (text.startsWith('{') && text.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(text);
+      return {
+        comments: parsed.comments || [],
+        subtasks: {
+          assess: parsed.subtasks?.assess || false,
+          callback: parsed.subtasks?.callback || false,
+          quote: parsed.subtasks?.quote || false,
+          audit: parsed.subtasks?.audit || false,
+        },
+        channel: parsed.channel || defaultVal.channel,
+        region: parsed.region || defaultVal.region,
+        estimatedHours: parsed.estimatedHours || defaultVal.estimatedHours,
+        contactPreference: parsed.contactPreference || defaultVal.contactPreference
+      };
+    } catch (e) {
+      // JSON parse error, fallback
+    }
+  } else if (text.startsWith('[') && text.endsWith(']')) {
+    try {
+      const parsedComments = JSON.parse(text);
+      return {
+        ...defaultVal,
+        comments: parsedComments
+      };
+    } catch (e) {
+      // fallback
+    }
+  }
+
+  // legacy plain text string converted to initial comment item
+  return {
+    ...defaultVal,
+    comments: [{
+      id: 'legacy-init',
+      author: 'Audit System',
+      text: notesText,
+      timestamp: 'Original Entry'
+    }]
+  };
+};
+
+// Serializing helper
+const serializeNotesData = (data: NotesData): string => {
+  return JSON.stringify(data);
+};
+
+function NotesAndDetailsWidget({
+  itemId,
+  notesText,
+  isInbox,
+  onSave,
+  author
+}: {
+  itemId: string;
+  notesText: string | undefined;
+  isInbox: boolean;
+  onSave: (id: string, notesText: string, isInbox: boolean) => Promise<void>;
+  author: string;
+}) {
+  const data = parseNotesData(notesText);
+  const [draft, setDraft] = useState('');
+
+  // Trigger whenever sub-settings are modified
+  const updateNotesField = async (updatedData: NotesData) => {
+    const serialized = serializeNotesData(updatedData);
+    await onSave(itemId, serialized, isInbox);
+  };
+
+  const handleAddComment = async () => {
+    if (!draft.trim()) return;
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newComment: CommentItem = {
+      id: `CMT-${Math.floor(100000 + Math.random() * 900000)}`,
+      author: author || 'System Representative',
+      text: draft.trim(),
+      timestamp: formattedDate
+    };
+    const updatedData: NotesData = {
+      ...data,
+      comments: [newComment, ...data.comments] // Latest first
+    };
+    setDraft('');
+    await updateNotesField(updatedData);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddComment();
+    }
+  };
+
+  return (
+    <div className="space-y-4 font-sans text-xs">
+      
+      {/* 2. Interactive Comments Thread Timeline */}
+      <div className="space-y-2">
+        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold flex items-center gap-1">
+          <MessageSquare size={10} className="text-amber-550" />
+          Comments Log / Thread History ({data.comments.length})
+        </label>
+
+        {/* Input Textarea with enter listener */}
+        <div className="relative">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type comment log... (Press Enter or Click 'Add Comment')"
+            className="w-full bg-[#161b22]/80 border border-[#30363d]/80 rounded-xl p-2 px-3 pb-8 text-xs text-zinc-200 outline-none focus:border-amber-500/50 min-h-[58px] font-sans resize-none transition-all duration-200"
+          />
+          <div className="absolute right-2 bottom-1.5 flex items-center gap-2">
+            <span className="text-[7.5px] font-mono text-zinc-650 tracking-wider">
+              ENTER TO SEND
+            </span>
+            <button
+              onClick={handleAddComment}
+              className="p-1 px-2.5 bg-amber-950/20 hover:bg-amber-800/85 text-amber-400 hover:text-white border border-amber-900/40 rounded-lg text-[10px] font-mono font-bold uppercase transition-all duration-200 cursor-pointer flex items-center gap-1"
+            >
+              <span>Add Comment</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Thread timeline log output */}
+        <div className="max-h-[160px] overflow-y-auto space-y-1.5 pr-1 divide-y divide-[#30363d]/20">
+          {data.comments.length === 0 ? (
+            <div className="text-zinc-650 italic font-sans text-[11px] text-center py-2">
+              No comments logged yet. Use box above to start logging.
+            </div>
+          ) : (
+            data.comments.map((comment) => (
+              <div key={comment.id} className="pt-2 text-[11px] space-y-0.5">
+                <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 rounded-full bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 font-bold font-mono text-[8px] flex items-center justify-center">
+                      {comment.author.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-mono font-bold text-zinc-300">{comment.author}</span>
+                  </div>
+                  <span className="text-[9px] p-0.5 font-mono text-zinc-500">{comment.timestamp}</span>
+                </div>
+                <p className="text-zinc-450 font-sans pl-5 whitespace-pre-wrap leading-relaxed">{comment.text}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
 export default function MarketingPage({ marketingUser, setMarketingUser }: MarketingPageProps) {
   // Login states
   const [username, setUsername] = useState('');
@@ -1717,26 +1910,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
 
                           {/* Administrative Notes / Comments Section */}
                           <div className="pt-3 border-t border-[#30363d]/40">
-                            <span className="text-[9px] font-mono text-amber-500 uppercase tracking-widest block font-bold mb-1.5 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                              Administrative Notes / Internal Comments
-                            </span>
-                            <div className="space-y-2">
-                              <textarea
-                                value={queryNotesText[selectedQuery.id] !== undefined ? queryNotesText[selectedQuery.id] : (selectedQuery.notes || '')}
-                                onChange={(e) => setQueryNotesText({ ...queryNotesText, [selectedQuery.id]: e.target.value })}
-                                placeholder="Add administrative notes, audit comments, or next action steps for this client query..."
-                                className="w-full bg-[#0d1117] border border-[#30363d]/70 rounded-xl p-2.5 text-xs text-zinc-200 outline-none focus:border-amber-500/50 min-h-[70px] font-sans resize-none transition-all duration-200"
-                              />
-                              <div className="flex justify-end">
-                                <button
-                                  onClick={() => handleSaveNotes(selectedQuery.id, queryNotesText[selectedQuery.id] !== undefined ? queryNotesText[selectedQuery.id] : (selectedQuery.notes || ''), false)}
-                                  className="px-3 py-1 bg-amber-950/20 hover:bg-amber-800/80 text-amber-400 hover:text-white border border-amber-900/40 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1 shadow-sm hover:shadow-md"
-                                >
-                                  <span>Save Note Comment</span>
-                                </button>
-                              </div>
-                            </div>
+                            <NotesAndDetailsWidget 
+                              itemId={selectedQuery.id}
+                              notesText={selectedQuery.notes}
+                              isInbox={false}
+                              onSave={handleSaveNotes}
+                              author={marketingUser?.username || 'Admin Staff'}
+                            />
                           </div>
 
                         {/* Interactive edit and helper dispatch panel */}
@@ -1873,26 +2053,15 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
 
                       {/* Administrative Notes / Comments Section */}
                       <div className="pt-3 border-t border-[#30363d]/40">
-                        <span className="text-[9px] font-mono text-amber-500 uppercase tracking-widest block font-bold mb-1.5 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                          Administrative Notes
-                        </span>
-                        <div className="space-y-2">
-                          <textarea
-                            value={selectedTicket ? (queryNotesText[selectedTicket.id] !== undefined ? queryNotesText[selectedTicket.id] : (selectedTicket.notes || '')) : ''}
-                            onChange={(e) => selectedTicket && setQueryNotesText({ ...queryNotesText, [selectedTicket.id]: e.target.value })}
-                            placeholder="Add administrative notes or next contact steps for this message..."
-                            className="w-full bg-[#161b22]/80 border border-[#30363d]/70 rounded-xl p-2.5 text-xs text-zinc-200 outline-none focus:border-amber-500/50 min-h-[70px] font-sans resize-none transition-all duration-200"
+                        {selectedTicket && (
+                          <NotesAndDetailsWidget 
+                            itemId={selectedTicket.id}
+                            notesText={selectedTicket.notes}
+                            isInbox={true}
+                            onSave={handleSaveNotes}
+                            author={marketingUser?.username || 'Admin Staff'}
                           />
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => selectedTicket && handleSaveNotes(selectedTicket.id, queryNotesText[selectedTicket.id] !== undefined ? queryNotesText[selectedTicket.id] : (selectedTicket.notes || ''), true)}
-                              className="px-3 py-1 bg-amber-950/20 hover:bg-amber-800/80 text-amber-400 hover:text-white border border-amber-900/40 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1"
-                            >
-                              <span>Update Comments</span>
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -1958,26 +2127,15 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
 
                       {/* Administrative Notes / Comments Section */}
                       <div className="pt-3 border-t border-[#30363d]/40">
-                        <span className="text-[9px] font-mono text-amber-500 uppercase tracking-widest block font-bold mb-1.5 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                          Administrative Notes
-                        </span>
-                        <div className="space-y-2">
-                          <textarea
-                            value={selectedQuery ? (queryNotesText[selectedQuery.id] !== undefined ? queryNotesText[selectedQuery.id] : (selectedQuery.notes || '')) : ''}
-                            onChange={(e) => selectedQuery && setQueryNotesText({ ...queryNotesText, [selectedQuery.id]: e.target.value })}
-                            placeholder="Add administrative summary or audit comments..."
-                            className="w-full bg-[#161b22]/80 border border-[#30363d]/70 rounded-xl p-2.5 text-xs text-zinc-200 outline-none focus:border-amber-500/50 min-h-[70px] font-sans resize-none transition-all duration-200"
+                        {selectedQuery && (
+                          <NotesAndDetailsWidget 
+                            itemId={selectedQuery.id}
+                            notesText={selectedQuery.notes}
+                            isInbox={false}
+                            onSave={handleSaveNotes}
+                            author={marketingUser?.username || 'Admin Staff'}
                           />
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => selectedQuery && handleSaveNotes(selectedQuery.id, queryNotesText[selectedQuery.id] !== undefined ? queryNotesText[selectedQuery.id] : (selectedQuery.notes || ''), false)}
-                              className="px-3 py-1 bg-amber-950/20 hover:bg-amber-800/80 text-amber-400 hover:text-white border border-amber-900/40 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200"
-                            >
-                              <span>Update Comments</span>
-                            </button>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   )}

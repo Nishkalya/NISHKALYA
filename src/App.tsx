@@ -3311,17 +3311,18 @@ export default function App() {
                      <label className="block text-[9px] md:text-[10px] font-bold text-[#8b949e] uppercase tracking-widest mb-2 px-1 font-mono">Service Needed</label>
                      <div className="relative">
                        <select 
-                         name="service"
-                         value={formData.service}
-                         onChange={handleChange}
-                         className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#58a6ff] transition-all text-white font-light appearance-none text-[#c9d1d9]"
-                       >
-                         <option className="bg-[#161b22] text-[#c9d1d9]">Select a service</option>
-                         <option className="bg-[#161b22] text-white">AI Product Development</option>
-                         <option className="bg-[#161b22] text-white">UI/UX Design Systems</option>
-                         <option className="bg-[#161b22] text-white">LLM Integration</option>
-                         <option className="bg-[#161b22] text-white">Custom Strategy</option>
-                       </select>
+                          name="service"
+                          value={formData.service}
+                          onChange={handleChange}
+                          className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#58a6ff] transition-all text-white font-light appearance-none text-[#c9d1d9]"
+                        >
+                          <option value="" className="bg-[#161b22] text-[#8b949e]">Select a service</option>
+                          {websiteConfig?.services?.map((service: any, index: number) => (
+                            <option key={index} value={service.title} className="bg-[#161b22] text-white">
+                              {service.title}
+                            </option>
+                          ))}
+                        </select>
                        <ChevronRight size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8b949e] pointer-events-none rotate-90" />
                      </div>
                    </div>
