@@ -182,6 +182,7 @@ export default function App() {
   const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile' | 'full'>('desktop');
   const [isLiveViewExpanded, setIsLiveViewExpanded] = useState(false);
   const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
+  const [failedProjectScreenshots, setFailedProjectScreenshots] = useState<Set<string>>(new Set());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [showFullPreview, setShowFullPreview] = useState(false);
@@ -2791,7 +2792,7 @@ export default function App() {
                   playsInline
                   className="w-full h-full object-cover"
                 />
-              ) : hoveredProject.screenshots && hoveredProject.screenshots.length > 0 ? (
+              ) : (hoveredProject.screenshots && hoveredProject.screenshots.length > 0 && !failedProjectScreenshots.has(hoveredProject.screenshots[0])) ? (
                 <img 
                   src={hoveredProject.screenshots[0]} 
                   alt={hoveredProject.title} 
@@ -2799,6 +2800,13 @@ export default function App() {
                   referrerPolicy="no-referrer"
                   loading="lazy"
                   decoding="async"
+                  onError={() => {
+                    setFailedProjectScreenshots(prev => {
+                      const updated = new Set(prev);
+                      updated.add(hoveredProject.screenshots[0]);
+                      return updated;
+                    });
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-[#8b949e] gap-4">
@@ -2820,9 +2828,9 @@ export default function App() {
 
               <p className="text-[#8b949e] text-sm leading-relaxed mb-8 flex-1 font-light">{hoveredProject.desc}</p>
 
-              {hoveredProject.screenshots && hoveredProject.screenshots.length > 1 && (
+              {hoveredProject.screenshots && hoveredProject.screenshots.slice(1, 3).filter(shot => !failedProjectScreenshots.has(shot)).length > 0 && (
                 <div className="grid grid-cols-2 gap-3 mb-8">
-                  {hoveredProject.screenshots.slice(1, 3).map((shot, idx) => (
+                  {hoveredProject.screenshots.slice(1, 3).filter(shot => !failedProjectScreenshots.has(shot)).map((shot, idx) => (
                     <img 
                       key={idx} 
                       src={shot} 
@@ -2831,6 +2839,13 @@ export default function App() {
                       referrerPolicy="no-referrer"
                       loading="lazy"
                       decoding="async"
+                      onError={() => {
+                        setFailedProjectScreenshots(prev => {
+                          const updated = new Set(prev);
+                          updated.add(shot);
+                          return updated;
+                        });
+                      }}
                     />
                   ))}
                 </div>

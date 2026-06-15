@@ -359,7 +359,11 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
             notes: data.notes || ''
           } as InboxTicket;
         });
-        setInboxTickets(msgs);
+        if (msgs.length === 0) {
+          setInboxTickets(DEFAULT_INBOX_TICKETS);
+        } else {
+          setInboxTickets(msgs);
+        }
       }, (error) => {
         console.error('Firestore messages subscribe error:', error);
       });
@@ -789,7 +793,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   };
 
   return (
-    <div className={`w-full min-h-[85vh] flex flex-col justify-start transition-all duration-300 ${!marketingUser ? 'pt-32 pb-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto' : 'py-6 px-4 md:px-6 max-w-full'}`}>
+    <div className={`w-full min-h-[85vh] flex flex-col justify-start transition-all duration-300 ${!marketingUser ? 'pt-32 pb-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto' : 'pt-28 pb-6 md:pt-32 px-4 md:px-6 max-w-full'}`}>
       {!marketingUser ? (
         /* Secure Login Card */
         <div className="w-full max-w-md mx-auto my-auto relative z-10">
@@ -1007,34 +1011,38 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
             </div>
 
             {/* Right: Filters, Add Button & Log Out */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start sm:justify-end">
-              {/* Filter dropdown */}
-              <div className="flex items-center gap-1.5">
-                <Filter size={11} className="text-zinc-500 shrink-0" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="bg-[#0d1117] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-[11px] text-zinc-300 outline-none focus:border-[#58a6ff]/40 font-mono cursor-pointer shrink-0"
-                >
-                  <option value="all">All States</option>
-                  <option value="New Query">New Query</option>
-                  <option value="In Process">In Process</option>
-                  <option value="Won">Won</option>
-                  <option value="Lost">Lost</option>
-                </select>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start sm:justify-end font-mono">
+              {activeModule !== 'inbox' && (
+                <>
+                  {/* Filter dropdown */}
+                  <div className="flex items-center gap-1.5">
+                    <Filter size={11} className="text-zinc-500 shrink-0" />
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="bg-[#0d1117] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-[11px] text-zinc-300 outline-none focus:border-[#58a6ff]/40 font-mono cursor-pointer shrink-0"
+                    >
+                      <option value="all">All States</option>
+                      <option value="New Query">New Query</option>
+                      <option value="In Process">In Process</option>
+                      <option value="Won">Won</option>
+                      <option value="Lost">Lost</option>
+                    </select>
+                  </div>
 
-              {/* Create button */}
-              <button
-                onClick={handleOpenAdd}
-                className="bg-[#2ea44f]/90 hover:bg-[#2ea44f] text-white border border-[#2ea44f]/40 px-2.5 py-1.5 rounded-xl text-[11px] font-bold uppercase font-mono tracking-wider flex items-center gap-1 cursor-pointer transition-colors shrink-0"
-              >
-                <Plus size={13} />
-                <span>{activeModule === 'inbox' ? 'Create' : 'Create Query'}</span>
-              </button>
+                  {/* Create button */}
+                  <button
+                    onClick={handleOpenAdd}
+                    className="bg-[#2ea44f]/90 hover:bg-[#2ea44f] text-white border border-[#2ea44f]/40 px-2.5 py-1.5 rounded-xl text-[11px] font-bold uppercase font-mono tracking-wider flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+                  >
+                    <Plus size={13} />
+                    <span>Create Query</span>
+                  </button>
+                </>
+              )}
 
               {/* Sign Out Button in Header Bar Area */}
               <button

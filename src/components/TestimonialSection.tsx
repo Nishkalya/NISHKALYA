@@ -11,6 +11,7 @@ export const TestimonialSection: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
   const [isHovered, setIsHovered] = useState(false);
+  const [failedAvatars, setFailedAvatars] = useState<Set<string>>(new Set());
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Subscribe to testimonials collection
@@ -250,16 +251,23 @@ export const TestimonialSection: React.FC = () => {
 
                 {/* Author & Profile Meta */}
                 <div className="flex items-center gap-4 mt-auto">
-                  {currentTestimonial.avatarUrl ? (
+                  {currentTestimonial.avatarUrl && !failedAvatars.has(currentTestimonial.avatarUrl) ? (
                     <img 
                       src={currentTestimonial.avatarUrl} 
                       alt={currentTestimonial.author}
                       referrerPolicy="no-referrer"
+                      onError={() => {
+                        setFailedAvatars(prev => {
+                          const updated = new Set(prev);
+                          updated.add(currentTestimonial.avatarUrl);
+                          return updated;
+                        });
+                      }}
                       className="w-12 h-12 rounded-full border border-[#30363d] object-cover transition-transform duration-500 group-hover/testimonial:scale-110"
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-full border border-[#30363d] bg-[#21262d] flex items-center justify-center text-white font-mono text-sm transition-transform duration-500 group-hover/testimonial:scale-110">
-                      {currentTestimonial.author.charAt(0)}
+                      {currentTestimonial.author ? currentTestimonial.author.charAt(0) : '?'}
                     </div>
                   )}
                   <div className="text-left">

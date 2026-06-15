@@ -78,6 +78,9 @@ export function AdminContentEditor({
   const [showSkillInput, setShowSkillInput] = useState(false);
   const [newSkillText, setNewSkillText] = useState('');
 
+  const [failedThumbnails, setFailedThumbnails] = useState<Set<string>>(new Set());
+  const [failedAvatars, setFailedAvatars] = useState<Set<string>>(new Set());
+
   const displayPlatforms = websiteConfig.platforms || [];
 
   interface ContentTabItem {
@@ -1188,8 +1191,21 @@ export function AdminContentEditor({
                         className="p-4 bg-[#0d1117] hover:border-[#58a6ff]/40 border border-[#30363d] rounded-xl flex flex-col justify-between transition-all duration-300 relative group cursor-pointer"
                       >
                         <div className="flex gap-4 items-start mb-3">
-                          {p.thumbnailUrl ? (
-                            <img src={p.thumbnailUrl} alt={p.title} referrerPolicy="no-referrer" className="w-12 h-12 rounded-lg object-cover border border-[#30363d]/50 shrink-0" />
+                          {p.thumbnailUrl && !failedThumbnails.has(p.thumbnailUrl) ? (
+                            <img 
+                              src={p.thumbnailUrl} 
+                              alt={p.title} 
+                              referrerPolicy="no-referrer" 
+                              loading="lazy"
+                              onError={() => {
+                                setFailedThumbnails(prev => {
+                                  const updated = new Set(prev);
+                                  updated.add(p.thumbnailUrl);
+                                  return updated;
+                                });
+                              }}
+                              className="w-12 h-12 rounded-lg object-cover border border-[#30363d]/50 shrink-0" 
+                            />
                           ) : (
                             <div className="w-12 h-12 rounded-lg bg-[#161b22] border border-[#30363d] flex items-center justify-center text-[#58a6ff] shrink-0 font-bold font-mono text-sm">
                               {p.title?.charAt(0) || 'P'}
@@ -1260,8 +1276,21 @@ export function AdminContentEditor({
                         className="p-4 bg-[#0d1117] hover:border-[#58a6ff]/40 border border-[#30363d] rounded-xl flex flex-col justify-between transition-all duration-300 relative group cursor-pointer"
                       >
                         <div className="flex gap-3 items-start mb-3">
-                          {item.avatarUrl ? (
-                            <img src={item.avatarUrl} alt={item.author} referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover border border-[#30363d] shrink-0" />
+                          {item.avatarUrl && !failedAvatars.has(item.avatarUrl) ? (
+                            <img 
+                              src={item.avatarUrl} 
+                              alt={item.author} 
+                              referrerPolicy="no-referrer" 
+                              loading="lazy"
+                              onError={() => {
+                                setFailedAvatars(prev => {
+                                  const updated = new Set(prev);
+                                  updated.add(item.avatarUrl);
+                                  return updated;
+                                });
+                              }}
+                              className="w-10 h-10 rounded-full object-cover border border-[#30363d] shrink-0" 
+                            />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-[#161b22] border border-[#30363d] flex items-center justify-center text-[#58a6ff] shrink-0 font-bold font-mono text-sm">
                               {item.author?.charAt(0) || 'U'}
