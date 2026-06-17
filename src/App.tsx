@@ -258,7 +258,7 @@ export default function App() {
         clearDynamicProjectSEO();
 
         if (currentView === 'home') {
-          document.title = "Nishkalya — AI-First Digital Excellence";
+          document.title = "Nishkalya";
           const descMeta = document.querySelector('meta[name="description"]');
           if (descMeta) {
             descMeta.setAttribute('content', "Nishkalya: Delivering pure creation and precise craftsmanship in AI product development and UI/UX design.");
@@ -266,7 +266,7 @@ export default function App() {
           
           // Update Open Graph tags for social crawlers dynamically
           const ogTitle = document.querySelector('meta[property="og:title"]');
-          if (ogTitle) ogTitle.setAttribute('content', "Nishkalya — AI-First Digital Excellence");
+          if (ogTitle) ogTitle.setAttribute('content', "Nishkalya");
           const ogDesc = document.querySelector('meta[property="og:description"]');
           if (ogDesc) ogDesc.setAttribute('content', "Pure creation, precise craftsmanship. Discover our next-generation digital products and services.");
           const ogUrl = document.querySelector('meta[property="og:url"]');
