@@ -258,15 +258,15 @@ export default function App() {
         clearDynamicProjectSEO();
 
         if (currentView === 'home') {
-          document.title = "Nishkalya Studio — AI-First Digital Excellence";
+          document.title = "Nishkalya — AI-First Digital Excellence";
           const descMeta = document.querySelector('meta[name="description"]');
           if (descMeta) {
-            descMeta.setAttribute('content', "Nishkalya Studio: Delivering pure creation and precise craftsmanship in AI product development and UI/UX design.");
+            descMeta.setAttribute('content', "Nishkalya: Delivering pure creation and precise craftsmanship in AI product development and UI/UX design.");
           }
           
           // Update Open Graph tags for social crawlers dynamically
           const ogTitle = document.querySelector('meta[property="og:title"]');
-          if (ogTitle) ogTitle.setAttribute('content', "Nishkalya Studio — AI-First Digital Excellence");
+          if (ogTitle) ogTitle.setAttribute('content', "Nishkalya — AI-First Digital Excellence");
           const ogDesc = document.querySelector('meta[property="og:description"]');
           if (ogDesc) ogDesc.setAttribute('content', "Pure creation, precise craftsmanship. Discover our next-generation digital products and services.");
           const ogUrl = document.querySelector('meta[property="og:url"]');
@@ -282,10 +282,10 @@ export default function App() {
           canonicalLink.setAttribute('href', origin + "/");
           
         } else if (currentView === 'projects') {
-          document.title = "Explore Our Works | Nishkalya Studio";
+          document.title = "Explore Our Works | Nishkalya";
           const descMeta = document.querySelector('meta[name="description"]');
           if (descMeta) {
-            descMeta.setAttribute('content', "Curated elite portfolio of specialized applications, SaaS, and custom LLM / UI solutions by Nishkalya Studio.");
+            descMeta.setAttribute('content', "Curated elite portfolio of specialized applications, SaaS, and custom LLM / UI solutions by Nishkalya.");
           }
           
           const ogTitle = document.querySelector('meta[property="og:title"]');
@@ -304,9 +304,9 @@ export default function App() {
           canonicalLink.setAttribute('href', origin + "?view=projects");
           
         } else if (currentView === 'marketing') {
-          document.title = "Marketing Strategy Matrix | Nishkalya Studio";
+          document.title = "Marketing Strategy Matrix | Nishkalya";
         } else if (currentView === 'admin') {
-          document.title = "Management Console | Nishkalya Studio";
+          document.title = "Management Console | Nishkalya";
         }
       }
     } catch (e) {

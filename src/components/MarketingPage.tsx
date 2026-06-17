@@ -81,7 +81,7 @@ const DEFAULT_INBOX_TICKETS: InboxTicket[] = [
     subject: 'Custom AI Agent Integration request',
     date: '2026-06-08',
     status: 'New Query',
-    message: 'We are looking to implement a custom AI triage agent for our internal developer ticketing platform. The agent should parse stack traces and match them with past resolution Git commits. Is this something Nishkalya Studio could build within our 4-week timeline?'
+    message: 'We are looking to implement a custom AI triage agent for our internal developer ticketing platform. The agent should parse stack traces and match them with past resolution Git commits. Is this something Nishkalya could build within our 4-week timeline?'
   },
   {
     id: 'TCK-8419',

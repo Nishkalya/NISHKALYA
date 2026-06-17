@@ -29,7 +29,7 @@ const TESTIMONIALS_COLLECTION = 'testimonials';
 
 export const DEFAULT_TESTIMONIALS: Omit<Testimonial, 'id' | 'createdAt' | 'updatedAt'>[] = [
   {
-    quote: "Nishkalya Studio delivered our core NLP intelligence platform weeks ahead of schedule. The absolute precision in system architecture and beautiful design elements transformed our entire workflow.",
+    quote: "Nishkalya delivered our core NLP intelligence platform weeks ahead of schedule. The absolute precision in system architecture and beautiful design elements transformed our entire workflow.",
     author: "Elena Rostova",
     title: "VP of Product",
     company: "IntellectSaaS",

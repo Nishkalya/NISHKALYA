@@ -14,7 +14,7 @@ export const updateDynamicProjectSEO = (project: Project, origin: string): void 
     const canonicalUrl = `${origin}?project=${project.id}`;
 
     // 1. Title is handled by App.tsx, but we can set or guarantee it here
-    document.title = `${project.title} — Elite Craftsmanship | Nishkalya Studio`;
+    document.title = `${project.title} — Elite Craftsmanship | Nishkalya`;
 
     // 2. Dynamic description
     let descMeta = document.querySelector('meta[name="description"]');
@@ -23,7 +23,7 @@ export const updateDynamicProjectSEO = (project: Project, origin: string): void 
       descMeta.setAttribute('name', 'description');
       document.head.appendChild(descMeta);
     }
-    const descriptionText = project.desc || `Technical details, architecture design and custom software realization of ${project.title} developed by Nishkalya Studio.`;
+    const descriptionText = project.desc || `Technical details, architecture design and custom software realization of ${project.title} developed by Nishkalya.`;
     descMeta.setAttribute('content', descriptionText);
 
     // 3. Dynamic keywords extraction combining title, category and technical stack roles
@@ -39,7 +39,7 @@ export const updateDynamicProjectSEO = (project: Project, origin: string): void 
     const keywordsList = [
       project.title,
       project.category,
-      'Nishkalya Studio',
+      'Nishkalya',
       'AI-First Digital Ecosystem',
       'Software Architecture',
       'React Design Systems',
@@ -88,7 +88,7 @@ export const updateDynamicProjectSEO = (project: Project, origin: string): void 
       'softwareVersion': '1.0.0',
       'author': {
         '@type': 'Organization',
-        'name': 'Nishkalya Studio',
+        'name': 'Nishkalya',
         'url': origin
       },
       'offers': {
