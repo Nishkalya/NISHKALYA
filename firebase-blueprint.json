@@ -99,6 +99,36 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["username", "passwordHash", "isLocked"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Customer inquiry message submitted via contact form or marketing inbox",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Sender name" },
+        "email": { "type": "string", "description": "Sender email" },
+        "company": { "type": "string", "description": "Sender company" },
+        "service": { "type": "string", "description": "Requested service" },
+        "budget": { "type": "string", "description": "Estimated budget" },
+        "timeline": { "type": "string", "description": "Project timeline" },
+        "message": { "type": "string", "description": "Inquiry text" },
+        "status": { "type": "string", "description": "Status (unread, read, New Query, In Process, Won, Lost)" },
+        "notes": { "type": "string", "description": "Internal notes for this ticket" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message"]
+    },
+    "Config": {
+      "title": "Config",
+      "description": "Website configuration document",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "tagline": { "type": "string" },
+        "bio": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
@@ -121,6 +151,14 @@
     "marketing_users": {
       "schema": "MarketingUser",
       "description": "Collection of custom marketing section users managed by admin"
+    },
+    "messages": {
+      "schema": "Message",
+      "description": "Collection of customer inquiries and marketing inbox tickets"
+    },
+    "config": {
+      "schema": "Config",
+      "description": "Site-wide configuration documents"
     }
   }
 }

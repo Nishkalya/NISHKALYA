@@ -12,12 +12,20 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
+export interface AuditEntry {
+  action: string;
+  timestamp: string;
+  details?: string;
+  performer?: string;
+}
+
 export interface MarketingUser {
   username: string;
   passwordHash: string;
   isLocked: boolean;
   createdAt?: any;
   updatedAt?: any;
+  auditLogs?: AuditEntry[];
 }
 
 // Secure native SHA-256 hashing using Web Crypto API (fully Client-Side safe)
@@ -144,11 +152,117 @@ export const marketingUserService = {
         passwordHash,
         isLocked: false,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        auditLogs: [
+          {
+            action: 'Account Created',
+            timestamp: new Date().toISOString(),
+            details: 'Initial account provisioning in directory'
+          }
+        ]
       });
     } catch (error) {
       console.error('[MarketingUser] Error creating user:', error);
       handleFirestoreError(error, OperationType.WRITE, `marketing_users/${username}`);
+      throw error;
+    }
+  },
+
+  /**
+   * Comprehensive edit user account: allows changing username, password, lock status, and logs audit trail.
+   */
+  editUserAccount: async (
+    currentUsername: string,
+    updates: {
+      newUsername?: string;
+      newPasswordPlain?: string;
+      isLocked?: boolean;
+    }
+  ): Promise<{ username: string }> => {
+    try {
+      const isRenaming = updates.newUsername && updates.newUsername.trim() !== currentUsername;
+      const targetUsername = isRenaming ? updates.newUsername!.trim() : currentUsername;
+
+      const oldDocRef = doc(db, 'marketing_users', currentUsername);
+      const oldSnap = await getDoc(oldDocRef);
+      if (!oldSnap.exists()) {
+        throw new Error(`User "${currentUsername}" not found.`);
+      }
+      const currentData = oldSnap.data() as MarketingUser;
+      const currentAuditLogs = currentData.auditLogs || [];
+      const newLogs: AuditEntry[] = [...currentAuditLogs];
+
+      if (isRenaming) {
+        const targetDocRef = doc(db, 'marketing_users', targetUsername);
+        const targetSnap = await getDoc(targetDocRef);
+        if (targetSnap.exists()) {
+          throw new Error(`User ID "${targetUsername}" already exists. Choose a different username.`);
+        }
+        newLogs.unshift({
+          action: 'Username Changed',
+          timestamp: new Date().toISOString(),
+          details: `User ID updated from "${currentUsername}" to "${targetUsername}"`
+        });
+      }
+
+      let finalHash = currentData.passwordHash;
+      if (updates.newPasswordPlain && updates.newPasswordPlain.trim() !== '') {
+        finalHash = await hashPassword(updates.newPasswordPlain.trim());
+        newLogs.unshift({
+          action: 'Password Changed',
+          timestamp: new Date().toISOString(),
+          details: 'Security password credential re-keyed'
+        });
+      }
+
+      const finalLock = updates.isLocked !== undefined ? updates.isLocked : currentData.isLocked;
+      if (updates.isLocked !== undefined && updates.isLocked !== currentData.isLocked) {
+        newLogs.unshift({
+          action: finalLock ? 'Account Locked' : 'Account Activated',
+          timestamp: new Date().toISOString(),
+          details: `Status set to ${finalLock ? 'Locked' : 'Active'}`
+        });
+      }
+
+      const updatedUserObj: MarketingUser = {
+        username: targetUsername,
+        passwordHash: finalHash,
+        isLocked: finalLock,
+        createdAt: currentData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        auditLogs: newLogs.slice(0, 30)
+      };
+
+      if (isRenaming) {
+        const targetDocRef = doc(db, 'marketing_users', targetUsername);
+        await setDoc(targetDocRef, updatedUserObj);
+        await deleteDoc(oldDocRef);
+
+        try {
+          const sessionRaw = localStorage.getItem('marketing_user_session');
+          if (sessionRaw) {
+            const session = JSON.parse(sessionRaw);
+            if (session.username === currentUsername) {
+              session.username = targetUsername;
+              localStorage.setItem('marketing_user_session', JSON.stringify(session));
+            }
+          }
+        } catch {
+          // ignore session sync error
+        }
+      } else {
+        await updateDoc(oldDocRef, {
+          passwordHash: finalHash,
+          isLocked: finalLock,
+          updatedAt: new Date().toISOString(),
+          auditLogs: newLogs.slice(0, 30)
+        });
+      }
+
+      return { username: targetUsername };
+    } catch (error) {
+      console.error('[MarketingUser] Error updating user account:', error);
+      handleFirestoreError(error, OperationType.WRITE, `marketing_users/${currentUsername}`);
       throw error;
     }
   },

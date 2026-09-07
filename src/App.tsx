@@ -27,6 +27,7 @@ import {
   Search,
   Share2,
   ChevronRight,
+  ChevronDown,
   Star,
   Github,
   AlertCircle,
@@ -193,6 +194,7 @@ export default function App() {
   const [localConfig, setLocalConfig] = useState<any>(null);
   const [isConfigDirty, setIsConfigDirty] = useState(false);
   const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance' | 'users'>('messages');
+  const [isEditorDropdownOpen, setIsEditorDropdownOpen] = useState(true);
   const [marketingUser, setMarketingUser] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('marketing_user_session');
@@ -524,16 +526,27 @@ export default function App() {
   };
 
   const scrollToSection = (sectionId: string) => {
-    setCurrentView('home');
     setIsMobileMenuOpen(false);
-    
-    // Smooth scroll after a tiny delay to allow home view to render if we were on projects view
-    setTimeout(() => {
+    if (currentView !== 'home') {
+      setCurrentView('home');
+      // Home view enters with animation. Poll until the target element is mounted in DOM
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          clearInterval(interval);
+        } else if (attempts > 35) {
+          clearInterval(interval);
+        }
+      }, 40);
+    } else {
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 100);
+    }
   };
 
 
@@ -546,6 +559,7 @@ export default function App() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [adminBanner, setAdminBanner] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -598,19 +612,12 @@ export default function App() {
       
       // Provide actionable feedback for the common "domain not authorized" error
       if (error.code === 'auth/popup-blocked') {
-        alert("Pop-up blocked! Please allow pop-ups for this site or try again.");
+        setLoginError("Pop-up blocked! Please allow pop-ups for this site or use the email/password login below.");
       } else if (error.message?.includes('The requested action is invalid') || error.code === 'auth/unauthorized-domain') {
         const domain = window.location.hostname;
-        alert(
-          `Domain Not Authorized!\n\n` +
-          `Firebase is blocking the login because this domain (${domain}) is not authorized.\n\n` +
-          `If you are the developer:\n` +
-          `1. Go to Firebase Console > Authentication > Settings\n` +
-          `2. Add "${domain}" to Authorized Domains.\n\n` +
-          `If you are using the AI Studio preview, this may be a temporary environment issue.`
-        );
+        setLoginError(`Domain (${domain}) is not authorized in Firebase Console > Authentication > Settings. Please use email/password login below.`);
       } else {
-        alert("Login failed: " + (error.message || "Unknown error"));
+        setLoginError("Login failed: " + (error.message || "Unknown error"));
       }
     } finally {
       setIsLoggingIn(false);
@@ -653,7 +660,7 @@ export default function App() {
           console.error("Seamless registration failed:", createErr);
           if (createErr.code === 'auth/email-already-in-use') {
              // email is already in use, which means password was actually incorrect
-             alert("Incorrect password for admin account. Please enter the correct password.");
+             setLoginError("Incorrect password for admin account. Please enter the correct password.");
              return;
           } else if (createErr.code === 'auth/operation-not-allowed') {
              setLoginError('setup-required');
@@ -665,9 +672,9 @@ export default function App() {
       if (error.code === 'auth/operation-not-allowed') {
         setLoginError('setup-required');
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        alert("Invalid Email or Password. Please check your credentials or ensure the user exists in Firebase Console.");
+        setLoginError("Invalid Email or Password. Please check your credentials or ensure the user exists in Firebase Console.");
       } else {
-        alert("Login failed: " + (error.message || "Unknown error"));
+        setLoginError("Login failed: " + (error.message || "Unknown error"));
       }
     } finally {
       setIsLoggingIn(false);
@@ -677,8 +684,8 @@ export default function App() {
   const AdminDashboard = () => {
     if (!currentUser) {
       return (
-        <div className="min-h-screen flex items-center justify-center pt-32 pb-20 px-6 bg-transparent">
-          <div className="max-w-md w-full text-center space-y-8 p-10 bg-[#161b22]/90 border border-[#30363d] rounded-2xl shadow-2xl relative z-10">
+        <div className="h-screen w-full overflow-hidden flex items-center justify-center p-6 bg-[#0d1117]">
+          <div className="max-w-md w-full text-center space-y-8 p-10 bg-[#161b22] border border-[#30363d] rounded-2xl shadow-2xl relative z-10">
             <div className="w-14 h-14 bg-[#58a6ff]/10 border border-[#30363d] rounded-2xl flex items-center justify-center text-[#58a6ff] mx-auto transform rotate-12">
               <Lock size={26} />
             </div>
@@ -711,6 +718,23 @@ export default function App() {
                     Got it, I've enabled it. Try again.
                   </button>
                 </div>
+              </motion.div>
+            )}
+
+            {loginError && loginError !== 'setup-required' && (
+              <motion.div 
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3.5 bg-red-950/40 border border-red-900/60 rounded-xl text-left text-red-400 text-xs font-mono flex items-center justify-between gap-3"
+              >
+                <span>{loginError}</span>
+                <button 
+                  type="button" 
+                  onClick={() => setLoginError(null)} 
+                  className="text-red-400 hover:text-white shrink-0 cursor-pointer p-1"
+                >
+                  <X size={14} />
+                </button>
               </motion.div>
             )}
 
@@ -758,6 +782,23 @@ export default function App() {
             >
               <LogIn size={14} /> {isLoggingIn ? "Authenticating..." : "Continue with Google"}
             </button>
+
+            <div className="pt-4 border-t border-[#30363d]/60 flex items-center justify-between text-xs">
+              <button 
+                type="button"
+                onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className="text-[#8b949e] hover:text-[#58a6ff] transition-colors text-[11px] font-mono cursor-pointer flex items-center gap-1.5"
+              >
+                ← Back to Marketing Portal
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className="text-[#8b949e] hover:text-white transition-colors text-[11px] font-mono cursor-pointer"
+              >
+                Home
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -827,194 +868,449 @@ export default function App() {
       }
     };
 
+    const editorSectionTabs = [
+      { id: 'hero', name: 'Hero Header', icon: <Zap size={13} />, count: editorConfig?.hero?.stats?.length || 0 },
+      { id: 'theme', name: 'Theme & Style', icon: <Palette size={13} /> },
+      { id: 'about', name: 'Biography / About', icon: <UserIcon size={13} />, count: editorConfig?.about?.skills?.length || 0 },
+      { id: 'services', name: 'Core Services', icon: <Globe size={13} />, count: editorConfig?.services?.length || 0 },
+      { id: 'platforms', name: 'Connected Streams', icon: <Compass size={13} />, count: (editorConfig?.platforms || []).reduce((acc: number, p: any) => acc + (p.items?.length || 0), 0) },
+      { id: 'projects', name: 'Portfolio Cases', icon: <Shield size={13} />, count: projects.length },
+      { id: 'testimonials', name: 'Client Feedback', icon: <MessageSquare size={13} />, count: adminTestimonials.length },
+      { id: 'process', name: 'Business Process', icon: <ArrowRight size={13} />, count: editorConfig?.process?.steps?.length || 0 },
+      { id: 'techStack', name: 'Tools & Stack', icon: <Cpu size={13} />, count: editorConfig?.techStack?.items?.length || 0 }
+    ];
+
     return (
-      <div className="pt-32 pb-20 px-6 md:px-12 w-full max-w-7xl mx-auto min-h-screen">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-          <div>
-            <div className="text-[#58a6ff] text-[10px] font-bold uppercase tracking-[0.4em] mb-4 font-mono">Command Center</div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white font-sans">
-              {adminTab === 'messages' ? 'Inquiry Dashboard' : adminTab === 'content' ? 'Website Editor' : adminTab === 'performance' ? 'Performance Analytics' : 'User Accounts (Marketing)'}
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {isActionPending && (
-              <motion.div 
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-2 text-[#58a6ff] text-[10px] font-bold uppercase tracking-widest mr-4 font-mono"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-[#58a6ff] animate-pulse"></div>
-                Syncing...
-              </motion.div>
-            )}
-            <div className="flex bg-[#161b22] border border-[#30363d] p-1 rounded-xl">
-              <button 
-                onClick={() => setAdminTab('messages')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'messages' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
-              >
-                <Mail size={12} /> Messages
-              </button>
-              <button 
-                onClick={() => setAdminTab('content')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'content' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
-              >
-                <Edit2 size={12} /> Content
-              </button>
-              <button 
-                onClick={() => setAdminTab('users')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'users' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
-              >
-                <Users size={12} /> Users
-              </button>
-              <button 
-                onClick={() => setAdminTab('performance')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest admin-glow ${adminTab === 'performance' ? 'bg-[#21262d] text-white border border-[#30363d]' : 'text-[#8b949e] hover:text-white border border-transparent'}`}
-              >
-                <Activity size={12} /> Performance
-              </button>
-            </div>
-            <button 
-              onClick={handleAdminLogout} 
-              disabled={isLoggingIn}
-              className="p-3 bg-[#21262d] border border-[#30363d] text-[#8b949e] hover:text-white hover:border-[#8b949e] rounded-xl admin-glow disabled:opacity-50"
-            >
-              <LogOut size={18} className={isLoggingIn ? "animate-pulse" : ""} />
-            </button>
-            {!isAdmin && currentUser?.email === 'nishkalya@gmail.com' && (
-              <button 
-                onClick={async () => {
-                  if (currentUser) {
-                    setIsActionPending(true);
-                    try {
-                      await setDoc(doc(db, 'admins', currentUser.uid), {
-                        email: currentUser.email,
-                        promotedBy: 'system_bootstrap',
-                        createdAt: serverTimestamp()
-                      });
-                      setIsAdmin(true);
-                      alert("Admin status verified. Refreshing permissions.");
-                    } catch (err) {
-                      console.error("Self-promotion failed", err);
-                      alert("Verification failed. Check Firestore rules.");
-                    } finally {
-                      setIsActionPending(false);
-                    }
-                  }
-                }}
-                className="px-6 py-3 bg-[#A67C00] text-white font-bold rounded-xl hover:bg-[#8A6600] transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-amber-600/20 flex items-center gap-2"
-              >
-                <Shield size={16} /> Verify
-              </button>
-            )}
-          </div>
-        </div>
-
-        {adminTab === 'messages' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-1 flex flex-row lg:flex-col gap-4 w-full">
-              <div className="bg-[#161b22] p-5 rounded-xl border border-[#30363d] shadow-sm flex-1 lg:flex-none">
-                <div className="text-[9px] font-bold text-[#8b949e] uppercase tracking-widest mb-1.5 font-mono">Total Inquiries</div>
-                <div className="text-2xl md:text-3xl font-extrabold text-white">{adminMessages.length}</div>
+      <div className="h-screen w-full overflow-hidden flex bg-[#0d1117] text-white select-none">
+        {/* Left Vertical Navigation Sidebar (ERP Rail ~260px) */}
+        <aside className="w-64 min-w-[260px] max-w-[260px] h-full bg-[#161b22] border-r border-[#30363d] flex flex-col justify-between shrink-0 z-20 overflow-hidden">
+          {/* Header & Brand */}
+          <div className="p-4 border-b border-[#30363d] flex items-center justify-between shrink-0 bg-[#161b22]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#0d1117] border border-[#30363d] flex items-center justify-center shadow-inner shrink-0">
+                <span className="text-[#58a6ff] font-mono font-black text-sm">N</span>
               </div>
-              <div className="bg-[#58a6ff]/5 p-5 rounded-xl border border-[#58a6ff]/20 shadow-sm flex-1 lg:flex-none">
-                <div className="text-[9px] font-bold text-[#58a6ff] uppercase tracking-widest mb-1.5 font-mono">New Messages</div>
-                <div className="text-2xl md:text-3xl font-extrabold text-white">{adminMessages.filter(m => m.status === 'unread').length}</div>
+              <div className="min-w-0">
+                <div className="text-xs font-extrabold tracking-wider text-white font-sans uppercase truncate">Command Center</div>
+                <div className="flex items-center gap-1.5 text-[9px] text-emerald-400 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  ERP v2.4 • Online
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="lg:col-span-3 space-y-4">
-              {adminMessages.length === 0 ? (
-                <div className="bg-[#161b22]/50 border border-[#30363d] border-dashed rounded-2xl p-12 md:p-20 text-center">
-                  <div className="w-14 h-14 bg-[#161b22] border border-[#30363d] text-[#8b949e] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Mail size={24} />
+          {/* Vertical Navigation Sections */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+            {/* Main Tabs Group */}
+            <div className="pt-1">
+              <div className="px-2.5 mb-2.5 text-[9px] font-bold text-[#8b949e] uppercase tracking-[0.25em] font-mono flex items-center justify-between">
+                <span>Modules</span>
+                <span className="text-[8px] text-zinc-500 font-normal">CORE</span>
+              </div>
+              <div className="space-y-1">
+                <button 
+                  onClick={() => setAdminTab('messages')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
+                    adminTab === 'messages' 
+                      ? 'bg-[#21262d] text-[#58a6ff] border border-[#30363d] shadow-sm font-semibold' 
+                      : 'text-[#8b949e] hover:text-white hover:bg-[#1c2128] border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Mail size={15} className={adminTab === 'messages' ? 'text-[#58a6ff]' : 'text-[#8b949e]'} />
+                    <span>Inquiries</span>
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-1.5">No messages yet</h3>
-                  <p className="text-[#8b949e] text-xs font-light max-w-sm mx-auto leading-relaxed">Submissions from the contact form will appear here.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {adminMessages.map((msg) => (
-                    <motion.div 
-                      key={msg.id}
-                      layoutId={msg.id}
-                      onClick={() => setSelectedAdminMessage(msg)}
-                      className={`group relative bg-[#161b22] border rounded-xl p-5 md:px-6 cursor-pointer admin-glow overflow-hidden ${msg.status === 'unread' ? 'border-[#58a6ff]/40 shadow-md bg-[#58a6ff]/2' : 'border-[#30363d]'}`}
-                    >
-                      {msg.status === 'unread' && (
-                        <div className="absolute top-0 left-0 w-1 h-full bg-[#58a6ff]" />
+                  <div className="flex items-center gap-1.5">
+                    {adminMessages.filter(m => m.status === 'unread').length > 0 && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-[#58a6ff]/20 text-[#58a6ff] border border-[#58a6ff]/30 font-mono">
+                        {adminMessages.filter(m => m.status === 'unread').length}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-zinc-500 font-mono">{adminMessages.length}</span>
+                  </div>
+                </button>
+
+                {/* Website Editor Module with Collapsible Dropdown Submenu */}
+                <div className="space-y-1">
+                  <button 
+                    onClick={() => {
+                      if (adminTab !== 'content') {
+                        setAdminTab('content');
+                        setIsEditorDropdownOpen(true);
+                      } else {
+                        setIsEditorDropdownOpen(!isEditorDropdownOpen);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
+                      adminTab === 'content' 
+                        ? 'bg-[#21262d] text-[#58a6ff] border border-[#30363d] shadow-sm font-semibold' 
+                        : 'text-[#8b949e] hover:text-white hover:bg-[#1c2128] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Edit2 size={15} className={adminTab === 'content' ? 'text-[#58a6ff]' : 'text-[#8b949e]'} />
+                      <span>Website Editor</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isConfigDirty && (
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Unpublished changes"></span>
                       )}
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#0d1117] border border-[#30363d] text-zinc-400">
+                        9
+                      </span>
+                      <ChevronDown 
+                        size={13} 
+                        className={`transition-transform duration-200 text-zinc-400 ${
+                          isEditorDropdownOpen ? 'rotate-180 text-[#58a6ff]' : ''
+                        }`} 
+                      />
+                    </div>
+                  </button>
 
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                        <div className="md:col-span-3">
-                          <div className="flex flex-col">
-                            <span className="text-[7px] font-black text-[#58a6ff] uppercase tracking-[0.3em] mb-1 opacity-80 group-hover:opacity-100 transition-opacity font-mono">
-                              {msg.service || 'General'}
-                            </span>
-                            <h4 className="text-sm font-bold text-white group-hover:text-[#58a6ff] transition-colors duration-300 truncate">
-                              {msg.name}
-                            </h4>
-                            <span className="text-[9px] text-[#8b949e] font-medium uppercase tracking-widest mt-0.5 font-mono truncate">
-                              {msg.company || 'Private'}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="md:col-span-6 lg:col-span-7">
-                          <div className="border-l border-[#30363d] pl-4 md:pl-6">
-                            <p className="text-[#8b949e] text-[11px] font-light leading-relaxed line-clamp-1 italic opacity-80 group-hover:opacity-100 transition-opacity">
-                              {msg.message}
-                            </p>
+                  {/* Dropdown Menu Tree */}
+                  <AnimatePresence initial={false}>
+                    {isEditorDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden pl-3 pr-1 py-1 space-y-1 border-l-2 border-[#30363d] ml-3.5 my-1"
+                      >
+                        {/* Interactive Dropdown Selector */}
+                        <div className="px-1 pb-1">
+                          <div className="relative">
+                            <select
+                              value={activeContentSection || 'hero'}
+                              onChange={(e) => {
+                                setAdminTab('content');
+                                setActiveContentSection(e.target.value as any);
+                              }}
+                              className="w-full bg-[#0d1117] border border-[#30363d] hover:border-[#58a6ff]/50 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-zinc-300 focus:outline-none focus:border-[#58a6ff] cursor-pointer appearance-none pr-6 transition-colors"
+                            >
+                              {editorSectionTabs.map(sec => (
+                                <option key={sec.id} value={sec.id} className="bg-[#161b22] text-white">
+                                  {sec.name} {sec.count !== undefined && sec.count > 0 ? `(${sec.count})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown size={11} className="absolute right-2 top-2.5 text-zinc-400 pointer-events-none" />
                           </div>
                         </div>
 
-                        <div className="md:col-span-3 lg:col-span-2 flex items-center justify-between md:justify-end gap-5">
-                          <div className="flex flex-col items-end shrink-0 font-mono">
-                            <span className="text-[9px] font-bold text-[#c9d1d9] tabular-nums tracking-tighter">
-                              {msg.createdAt?.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                            <span className="text-[8px] text-[#8b949e] font-semibold uppercase tracking-tighter">
-                              {msg.createdAt?.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                            </span>
-                          </div>
-                          <div className="w-7 h-7 rounded-full bg-[#21262d] border border-[#30363d] text-[#8b949e] flex items-center justify-center transition-all duration-300 group-hover:bg-[#58a6ff] group-hover:text-white group-hover:border-transparent shrink-0">
-                            <ArrowRight size={10} />
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                        {/* Sub-item Buttons */}
+                        {editorSectionTabs.map((sec) => {
+                          const isSecActive = adminTab === 'content' && (activeContentSection || 'hero') === sec.id;
+                          return (
+                            <button
+                              key={sec.id}
+                              onClick={() => {
+                                setAdminTab('content');
+                                setActiveContentSection(sec.id as any);
+                              }}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-all text-left cursor-pointer ${
+                                isSecActive
+                                  ? 'bg-[#58a6ff]/15 text-[#58a6ff] border border-[#58a6ff]/30 font-semibold shadow-sm'
+                                  : 'text-[#8b949e] hover:text-white hover:bg-[#1c2128] border border-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <span className={isSecActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}>
+                                  {sec.icon}
+                                </span>
+                                <span className="truncate">{sec.name}</span>
+                              </div>
+                              {sec.count !== undefined && sec.count > 0 && (
+                                <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[#30363d]/60 text-zinc-400 shrink-0">
+                                  {sec.count}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
+                <button 
+                  onClick={() => setAdminTab('users')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
+                    adminTab === 'users' 
+                      ? 'bg-[#21262d] text-[#58a6ff] border border-[#30363d] shadow-sm font-semibold' 
+                      : 'text-[#8b949e] hover:text-white hover:bg-[#1c2128] border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Users size={15} className={adminTab === 'users' ? 'text-[#58a6ff]' : 'text-[#8b949e]'} />
+                    <span>User Accounts</span>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => setAdminTab('performance')}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
+                    adminTab === 'performance' 
+                      ? 'bg-[#21262d] text-[#58a6ff] border border-[#30363d] shadow-sm font-semibold' 
+                      : 'text-[#8b949e] hover:text-white hover:bg-[#1c2128] border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Activity size={15} className={adminTab === 'performance' ? 'text-[#58a6ff]' : 'text-[#8b949e]'} />
+                    <span>Performance</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="p-3 border-t border-[#30363d] bg-[#161b22] shrink-0 space-y-2">
+            <div className="p-2.5 rounded-xl bg-[#0d1117] border border-[#30363d] flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#58a6ff] shrink-0">
+                  <Shield size={13} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold text-white truncate">{currentUser?.email || 'Admin'}</div>
+                  <div className="text-[9px] text-[#8b949e] uppercase tracking-wider font-mono">Super Admin</div>
+                </div>
+              </div>
+              <button
+                onClick={handleAdminLogout}
+                disabled={isLoggingIn}
+                className="p-1.5 text-[#8b949e] hover:text-red-400 hover:bg-[#21262d] rounded-lg transition-colors cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut size={14} className={isLoggingIn ? "animate-pulse" : ""} />
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setCurrentView('home');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full py-2 px-3 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-zinc-300 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer font-mono"
+            >
+              <Globe size={12} />
+              <span>Exit to Public Site</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Right Independent Content Workspace */}
+        <section className="flex-1 h-full overflow-hidden flex flex-col bg-[#0d1117]">
+          {/* Fixed ERP Top Bar */}
+          <header className="h-14 shrink-0 px-6 border-b border-[#30363d] bg-[#161b22]/70 backdrop-blur-md flex items-center justify-between z-10">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-2 text-xs font-mono text-[#8b949e]">
+                <span>Admin</span>
+                <span>/</span>
+                <span className="text-white font-semibold">
+                  {adminTab === 'messages' ? 'Inquiry Dashboard' : adminTab === 'content' ? 'Website Editor' : adminTab === 'performance' ? 'Performance Analytics' : 'User Accounts'}
+                </span>
+                {adminTab === 'content' && (
+                  <>
+                    <span>/</span>
+                    <span className="text-[#58a6ff] font-semibold">
+                      {editorSectionTabs.find(s => s.id === (activeContentSection || 'hero'))?.name || 'Section'}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              {isActionPending && (
+                <motion.div 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center gap-2 text-[#58a6ff] text-[10px] font-bold uppercase tracking-widest font-mono"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#58a6ff] animate-pulse"></div>
+                  Syncing...
+                </motion.div>
+              )}
+
+              {adminTab === 'content' && isConfigDirty && (
+                <div className="flex items-center gap-2">
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    Unpublished Draft
+                  </span>
+                  <button
+                    onClick={() => setLocalConfig(JSON.parse(JSON.stringify(websiteConfig)))}
+                    className="px-3 py-1.5 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={handlePublishConfig}
+                    className="px-3.5 py-1.5 bg-[#238636] hover:bg-[#2eaa44] border border-[#2ea44f] text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check size={12} /> Publish Live
+                  </button>
+                </div>
+              )}
+
+              {!isAdmin && currentUser?.email === 'nishkalya@gmail.com' && (
+                <button 
+                  onClick={async () => {
+                    if (currentUser) {
+                      setIsActionPending(true);
+                      try {
+                        await setDoc(doc(db, 'admins', currentUser.uid), {
+                          email: currentUser.email,
+                          promotedBy: 'system_bootstrap',
+                          createdAt: serverTimestamp()
+                        });
+                        setIsAdmin(true);
+                        setAdminBanner({ type: 'success', message: 'Admin status verified. Full administrative permissions active.' });
+                      } catch (err) {
+                        console.error("Self-promotion failed", err);
+                        setAdminBanner({ type: 'error', message: 'Verification failed. Please check Firestore security rules.' });
+                      } finally {
+                        setIsActionPending(false);
+                      }
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-[#A67C00] text-white font-bold rounded-lg hover:bg-[#8A6600] transition-all text-[10px] uppercase tracking-widest shadow-md flex items-center gap-1.5 cursor-pointer font-mono"
+                >
+                  <Shield size={13} /> Verify
+                </button>
+              )}
+            </div>
+          </header>
+
+          {/* Independent Scrollable Content Body */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+            <div className="max-w-7xl mx-auto space-y-6">
+              {adminBanner && (
+                <div className={`p-4 rounded-xl border text-xs font-mono flex items-center justify-between transition-all ${
+                  adminBanner.type === 'success' 
+                    ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-400' 
+                    : 'bg-red-950/40 border-red-800/60 text-red-400'
+                }`}>
+                  <span>{adminBanner.message}</span>
+                  <button onClick={() => setAdminBanner(null)} className="p-1 hover:text-white cursor-pointer">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {adminTab === 'messages' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                  <div className="lg:col-span-1 flex flex-row lg:flex-col gap-4 w-full">
+                    <div className="bg-[#161b22] p-5 rounded-xl border border-[#30363d] shadow-sm flex-1 lg:flex-none">
+                      <div className="text-[9px] font-bold text-[#8b949e] uppercase tracking-widest mb-1.5 font-mono">Total Inquiries</div>
+                      <div className="text-2xl md:text-3xl font-extrabold text-white">{adminMessages.length}</div>
+                    </div>
+                    <div className="bg-[#58a6ff]/5 p-5 rounded-xl border border-[#58a6ff]/20 shadow-sm flex-1 lg:flex-none">
+                      <div className="text-[9px] font-bold text-[#58a6ff] uppercase tracking-widest mb-1.5 font-mono">New Messages</div>
+                      <div className="text-2xl md:text-3xl font-extrabold text-white">{adminMessages.filter(m => m.status === 'unread').length}</div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-3 space-y-4">
+                    {adminMessages.length === 0 ? (
+                      <div className="bg-[#161b22]/50 border border-[#30363d] border-dashed rounded-2xl p-12 md:p-20 text-center">
+                        <div className="w-14 h-14 bg-[#161b22] border border-[#30363d] text-[#8b949e] rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Mail size={24} />
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-1.5">No messages yet</h3>
+                        <p className="text-[#8b949e] text-xs font-light max-w-sm mx-auto leading-relaxed">Submissions from the contact form will appear here.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {adminMessages.map((msg) => (
+                          <motion.div 
+                            key={msg.id}
+                            layoutId={msg.id}
+                            onClick={() => setSelectedAdminMessage(msg)}
+                            className={`group relative bg-[#161b22] border rounded-xl p-5 md:px-6 cursor-pointer admin-glow overflow-hidden ${msg.status === 'unread' ? 'border-[#58a6ff]/40 shadow-md bg-[#58a6ff]/2' : 'border-[#30363d]'}`}
+                          >
+                            {msg.status === 'unread' && (
+                              <div className="absolute top-0 left-0 w-1 h-full bg-[#58a6ff]" />
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                              <div className="md:col-span-3">
+                                <div className="flex flex-col">
+                                  <span className="text-[7px] font-black text-[#58a6ff] uppercase tracking-[0.3em] mb-1 opacity-80 group-hover:opacity-100 transition-opacity font-mono">
+                                    {msg.service || 'General'}
+                                  </span>
+                                  <h4 className="text-sm font-bold text-white group-hover:text-[#58a6ff] transition-colors duration-300 truncate">
+                                    {msg.name}
+                                  </h4>
+                                  <span className="text-[9px] text-[#8b949e] font-medium uppercase tracking-widest mt-0.5 font-mono truncate">
+                                    {msg.company || 'Private'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="md:col-span-6 lg:col-span-7">
+                                <div className="border-l border-[#30363d] pl-4 md:pl-6">
+                                  <p className="text-[#8b949e] text-[11px] font-light leading-relaxed line-clamp-1 italic opacity-80 group-hover:opacity-100 transition-opacity">
+                                    {msg.message}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="md:col-span-3 lg:col-span-2 flex items-center justify-between md:justify-end gap-5">
+                                <div className="flex flex-col items-end shrink-0 font-mono">
+                                  <span className="text-[9px] font-bold text-[#c9d1d9] tabular-nums tracking-tighter">
+                                    {msg.createdAt?.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                  <span className="text-[8px] text-[#8b949e] font-semibold uppercase tracking-tighter">
+                                    {msg.createdAt?.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                  </span>
+                                </div>
+                                <div className="w-7 h-7 rounded-full bg-[#21262d] border border-[#30363d] text-[#8b949e] flex items-center justify-center transition-all duration-300 group-hover:bg-[#58a6ff] group-hover:text-white group-hover:border-transparent shrink-0">
+                                  <ArrowRight size={10} />
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : adminTab === 'content' ? (
+                <AdminContentEditor 
+                  websiteConfig={editorConfig}
+                  updateConfig={updateConfigLocal}
+                  isConfigDirty={isConfigDirty}
+                  handlePublishConfig={handlePublishConfig}
+                  setLocalConfig={setLocalConfig}
+                  projects={projects}
+                  adminTestimonials={adminTestimonials}
+                  handleEditProject={handleEditProject}
+                  handleDeleteProject={handleDeleteProject}
+                  handleAddTestimonial={handleAddTestimonial}
+                  handleEditTestimonial={handleEditTestimonial}
+                  handleDeleteTestimonial={handleDeleteTestimonial}
+                  activeContentSection={activeContentSection as any || 'hero'}
+                  setActiveContentSection={setActiveContentSection}
+                  hideSidebar={true}
+                />
+              ) : adminTab === 'users' ? (
+                <AdminUserManagement />
+              ) : (
+                <AdminPerformanceDashboard />
               )}
             </div>
           </div>
-        ) : adminTab === 'content' ? (
-          <AdminContentEditor 
-            websiteConfig={editorConfig}
-            updateConfig={updateConfigLocal}
-            isConfigDirty={isConfigDirty}
-            handlePublishConfig={handlePublishConfig}
-            setLocalConfig={setLocalConfig}
-            projects={projects}
-            adminTestimonials={adminTestimonials}
-            handleEditProject={handleEditProject}
-            handleDeleteProject={handleDeleteProject}
-            handleAddTestimonial={handleAddTestimonial}
-            handleEditTestimonial={handleEditTestimonial}
-            handleDeleteTestimonial={handleDeleteTestimonial}
-            activeContentSection={activeContentSection as any || 'hero'}
-            setActiveContentSection={setActiveContentSection}
-          />
-        ) : adminTab === 'users' ? (
-          <AdminUserManagement />
-        ) : (
-          <AdminPerformanceDashboard />
-        )}
+        </section>
       </div>
     );
   };
 
   const AdminMessageModal = ({ message, onClose }: { message: any, onClose: () => void }) => {
     if (!message) return null;
+    const [confirmDeleteMessage, setConfirmDeleteMessage] = useState(false);
 
     return (
       <AnimatePresence>
@@ -1106,23 +1402,40 @@ export default function App() {
                     <Check size={12} className={isActionPending ? "animate-pulse" : ""} /> {isActionPending ? "Updating..." : "Mark as Read"}
                   </button>
                 )}
-                <button 
-                  disabled={isActionPending}
-                  onClick={async () => {
-                    if (window.confirm("Are you sure you want to delete this message?")) {
-                      setIsActionPending(true);
-                      try {
-                        await deleteDoc(doc(db, 'messages', message.id));
-                        onClose();
-                      } finally {
-                        setIsActionPending(false);
-                      }
-                    }
-                  }}
-                  className="px-6 py-3 bg-transparent border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/10 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-75"
-                >
-                  <Trash size={12} className={isActionPending ? "animate-pulse" : ""} /> {isActionPending ? "Deleting..." : "Delete Inquiry"}
-                </button>
+                {!confirmDeleteMessage ? (
+                  <button 
+                    disabled={isActionPending}
+                    onClick={() => setConfirmDeleteMessage(true)}
+                    className="px-6 py-3 bg-transparent border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/10 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-75 cursor-pointer"
+                  >
+                    <Trash size={12} /> Delete Inquiry
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={isActionPending}
+                      onClick={async () => {
+                        setIsActionPending(true);
+                        try {
+                          await deleteDoc(doc(db, 'messages', message.id));
+                          onClose();
+                        } finally {
+                          setIsActionPending(false);
+                        }
+                      }}
+                      className="px-5 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-75 cursor-pointer shadow-lg shadow-red-600/30"
+                    >
+                      <Trash size={12} className={isActionPending ? "animate-pulse" : ""} /> {isActionPending ? "Deleting..." : "Confirm Delete"}
+                    </button>
+                    <button
+                      disabled={isActionPending}
+                      onClick={() => setConfirmDeleteMessage(false)}
+                      className="px-4 py-3 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-white rounded-lg transition-all text-[10px] font-bold uppercase tracking-widest cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -1366,6 +1679,13 @@ export default function App() {
     }
   };
 
+  const getReadingTime = (text: string) => {
+    if (!text) return 0;
+    const cleanText = text.replace(/[#*`>_\-]/g, '').trim();
+    const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.ceil(wordCount / 200));
+  };
+
   const getPlatformIcon = (iconType: string, size = 18) => {
     switch (iconType?.toLowerCase()) {
       case 'github': return <Github size={size} />;
@@ -1537,7 +1857,7 @@ export default function App() {
 
   return (
     <div 
-      className="min-h-screen bg-transparent text-[#c9d1d9] font-sans selection:bg-[#58a6ff]/30 selection:text-white overflow-x-hidden"
+      className={`bg-transparent text-[#c9d1d9] font-sans selection:bg-[#58a6ff]/30 selection:text-white overflow-x-hidden ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser))) ? 'h-screen overflow-hidden' : 'min-h-screen'}`}
       style={{ 
         '--color-primary': themeMode === 'white' 
           ? '#0969da' 
@@ -1552,7 +1872,7 @@ export default function App() {
       } as any}
     >
       {/* Clean compiled theme integration handled by index.css variables */}
-      {currentUser?.email === 'nishkalya@gmail.com' && (
+      {currentUser?.email === 'nishkalya@gmail.com' && currentView !== 'admin' && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-[#161b22] text-white text-[9px] font-bold uppercase tracking-[0.3em] h-8 flex items-center justify-center gap-6 border-b border-[#30363d]">
           <div className="flex items-center gap-2 text-[#58a6ff]">
             <div className="w-1.5 h-1.5 rounded-full bg-[#58a6ff] animate-pulse"></div>
@@ -1561,7 +1881,7 @@ export default function App() {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setCurrentView('admin')} 
-              className={`hover:text-[#58a6ff] transition-colors ${currentView === 'admin' ? 'text-[#58a6ff]' : 'text-zinc-400'}`}
+              className="hover:text-[#58a6ff] text-zinc-400 transition-colors"
             >
               Management Console
             </button>
@@ -1572,6 +1892,13 @@ export default function App() {
             >
               Public Preview
             </button>
+            <div className="w-px h-3 bg-zinc-800"></div>
+            <button 
+              onClick={handleAdminLogout} 
+              className="hover:text-red-400 text-zinc-400 transition-colors cursor-pointer"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       )}
@@ -1579,12 +1906,12 @@ export default function App() {
       <AdminMessageModal message={selectedAdminMessage} onClose={() => setSelectedAdminMessage(null)} />
       
       {/* Ambient Background Accents */}
-      <div className={`fixed top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#58a6ff]/3 rounded-full blur-[140px] pointer-events-none z-0 ${currentUser?.email === 'nishkalya@gmail.com' ? 'translate-y-8' : ''}`}></div>
+      <div className={`fixed top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#58a6ff]/3 rounded-full blur-[140px] pointer-events-none z-0 ${currentUser?.email === 'nishkalya@gmail.com' && currentView !== 'admin' ? 'translate-y-8' : ''}`}></div>
       <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#238636]/2 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
-      {/* Navigation */}
-      <nav className={`fixed left-0 right-0 z-50 bg-[#0d1117]/80 backdrop-blur-md border-b border-[#30363d] transition-all duration-300 ${currentUser?.email === 'nishkalya@gmail.com' ? 'top-8' : 'top-0'}`}>
-        <div className="flex items-center justify-between px-6 md:px-12 py-4 w-full max-w-7xl mx-auto">
+      {/* Navigation (hidden after admin login or in marketing ERP dashboard per user request) */}
+      <nav className={`fixed left-0 right-0 z-50 bg-[#0d1117]/80 backdrop-blur-md border-b border-[#30363d] transition-all duration-300 top-0 ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser)) || currentUser?.email === 'nishkalya@gmail.com' || isAdmin) ? 'hidden' : ''}`}>
+        <div className={`flex items-center justify-between px-6 md:px-12 py-4 w-full max-w-7xl mx-auto ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser)) || currentUser?.email === 'nishkalya@gmail.com' || isAdmin) ? 'hidden' : ''}`}>
           <div 
             className="flex items-center space-x-2 group cursor-pointer" 
             onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -1604,7 +1931,7 @@ export default function App() {
             <button aria-label="About" onClick={() => scrollToSection('about')} className="hover:text-white transition-colors pb-1">About</button>
             <button aria-label="Services" onClick={() => scrollToSection('services')} className="hover:text-white transition-colors pb-1">Services</button>
             <button aria-label="Projects" onClick={() => { setCurrentView('projects'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-white transition-colors ${currentView === 'projects' ? 'text-white border-b-2 border-[#58a6ff] pb-1' : ''}`}>Projects</button>
-            <button aria-label="Marketing" onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-white transition-colors ${currentView === 'marketing' ? 'text-white border-b-2 border-[#58a6ff] pb-1' : ''}`}>Marketing</button>
+            <button aria-label="Development" onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-white transition-colors ${currentView === 'marketing' ? 'text-white border-b-2 border-[#58a6ff] pb-1' : ''}`}>Development</button>
             <button aria-label="Contact" onClick={() => scrollToSection('contact')} className="hover:text-white transition-colors pb-1">Contact</button>
           </div>
           <div className="flex items-center gap-4">
@@ -1643,7 +1970,7 @@ export default function App() {
                 <button onClick={() => scrollToSection('about')} className="hover:text-[#58a6ff] py-2">About</button>
                 <button onClick={() => scrollToSection('services')} className="hover:text-[#58a6ff] py-2">Services</button>
                 <button onClick={() => { setCurrentView('projects'); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white py-2">Projects</button>
-                <button onClick={() => { setCurrentView('marketing'); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white py-2">Marketing</button>
+                <button onClick={() => { setCurrentView('marketing'); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white py-2">Development</button>
                 <button onClick={() => scrollToSection('contact')} className="hover:text-[#58a6ff] py-2">Contact</button>
                 <button 
                   onClick={() => scrollToSection('contact')}
@@ -1658,7 +1985,7 @@ export default function App() {
       </nav>
 
       {/* Main Content Area */}
-      <main id="main-content" className="flex-grow">
+      <main id="main-content" className={`flex-grow ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser))) ? 'h-screen w-full overflow-hidden flex flex-col' : ''}`}>
         <AnimatePresence mode="wait">
         {currentView === 'admin' ? (
           <motion.div
@@ -1667,6 +1994,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            className="h-full w-full overflow-hidden flex flex-col"
           >
             {AdminDashboard()}
           </motion.div>
@@ -1677,8 +2005,20 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            className="h-full w-full overflow-hidden flex flex-col"
           >
-            <MarketingPage marketingUser={marketingUser} setMarketingUser={setMarketingUser} />
+            <MarketingPage 
+              marketingUser={marketingUser} 
+              setMarketingUser={setMarketingUser} 
+              onOpenAdmin={() => {
+                setCurrentView('admin');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onExitPortal={() => {
+                setCurrentView('home');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
           </motion.div>
         ) : currentView === 'home' ? (
           <motion.div
@@ -1882,15 +2222,16 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="pt-32 pb-32 px-6 md:px-12 w-full max-w-7xl mx-auto min-h-screen"
           >
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-6 md:gap-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-6 md:gap-8 pb-8 md:pb-12 border-b border-[#30363d]/50">
               <div>
-                <div className="text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4">
-                  Begin your project
+                <div className="inline-flex items-center gap-2 text-[#58a6ff] text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#58a6ff] animate-pulse" />
+                  Curated Portfolio
                 </div>
                 <motion.h1 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-4xl md:text-6xl font-extrabold text-white"
+                  className="text-4xl md:text-6xl font-extrabold text-white tracking-tight"
                 >
                   Pure <span className="italic text-[#58a6ff]">Innovation.</span>
                 </motion.h1>
@@ -1899,9 +2240,17 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="flex flex-col sm:flex-row items-start sm:items-center gap-6"
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6"
               >
-                <p className="text-[#8b949e] max-w-md text-sm leading-relaxed">A specialized gallery of our most impactful work in AI, Design, and Engineering.</p>
+                <p className="text-[#8b949e] max-w-md text-sm leading-relaxed">
+                  A specialized gallery of our most impactful work in AI, Design, and Engineering. Click any project to open detailed architecture notes and interactive live previews.
+                </p>
+                <button
+                  onClick={() => scrollToSection('contact')}
+                  className="px-5 py-2.5 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] hover:border-[#58a6ff]/50 text-white rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer shrink-0 shadow-sm flex items-center gap-2"
+                >
+                  Start a Project <ArrowRight size={13} className="text-[#58a6ff]" />
+                </button>
               </motion.div>
             </div>
 
@@ -1939,13 +2288,17 @@ export default function App() {
                     index={i}
                     setHoveredProject={setHoveredProject}
                     onClick={() => {
+                      setSelectedProjectForPreview(project);
                       if (project.link) {
-                        setSelectedProjectForPreview(project);
-                        setIsFlipped(true);
+                        setIsFlipped(false);
                         setActivePreviewUrl(project.link);
                         setIsIframeLoading(true);
-                        setShowFullPreview(false);
+                      } else {
+                        setIsFlipped(true);
+                        setActivePreviewUrl(null);
+                        setIsIframeLoading(false);
                       }
+                      setShowFullPreview(false);
                     }}
                   />
                 ))
@@ -2993,7 +3346,13 @@ export default function App() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                       <div className="lg:col-span-7 space-y-10">
                         <section className="space-y-4">
-                          <div className="text-amber-500 font-mono text-[9px] uppercase tracking-[0.4em]">Overview</div>
+                          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                            <div className="text-amber-500 font-mono text-[9px] uppercase tracking-[0.4em]">Overview</div>
+                            <div className="flex items-center gap-1.5 text-zinc-500 font-mono text-[9px] uppercase tracking-widest">
+                              <Clock size={11} className="text-amber-500" />
+                              <span>{getReadingTime(selectedProjectForPreview.fullDetails?.overview || '')} min read</span>
+                            </div>
+                          </div>
                           <h3 className="text-2xl md:text-4xl font-light text-white leading-tight" style={{ fontFamily: "'Georgia', serif" }}>
                             Mechanical & <span className="italic">Architectural</span> Vision
                           </h3>
@@ -3034,6 +3393,7 @@ export default function App() {
                               {[
                                 { l: 'Project Category', v: selectedProjectForPreview.category },
                                 { l: 'License Type', v: selectedProjectForPreview.fullDetails?.license || 'Proprietary' },
+                                { l: 'Reading Time', v: `${getReadingTime(selectedProjectForPreview.fullDetails?.overview || '')} min read` },
                                 { l: 'Current Status', v: 'Active Node', c: 'text-emerald-500' },
                                 { l: 'Engine Version', v: 'v4.2.1-stable' }
                               ].map((spec, i) => (
@@ -3357,8 +3717,8 @@ export default function App() {
       )}
       </main>
 
-      {/* Footer */}
-      <footer className="pt-20 md:pt-24 pb-10 md:pb-12 px-6 md:px-12 border-t border-[#30363d] bg-[#0d1117]">
+      {/* Footer (hidden on Admin console and after logging into Development per user request) */}
+      <footer className={`pt-20 md:pt-24 pb-10 md:pb-12 px-6 md:px-12 border-t border-[#30363d] bg-[#0d1117] ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser))) ? 'hidden' : ''}`}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start gap-12 md:gap-10 mb-16 md:mb-20">
             <div className="max-w-xs">
@@ -3384,8 +3744,8 @@ export default function App() {
                 <button onClick={() => scrollToSection('about')} className="block text-[#8b949e] hover:text-white text-xs md:text-sm transition-colors font-light text-left w-full">About</button>
                 <button onClick={() => scrollToSection('services')} className="block text-[#8b949e] hover:text-white text-xs md:text-sm transition-colors font-light text-left w-full">Services</button>
                 <button onClick={() => { setCurrentView('projects'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="block text-[#8b949e] hover:text-white text-xs md:text-sm transition-colors font-light text-left w-full">Projects</button>
+                <button onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="block text-[#8b949e] hover:text-white text-xs md:text-sm transition-colors font-light text-left w-full">Development</button>
                 <button onClick={() => scrollToSection('contact')} className="block text-[#8b949e] hover:text-white text-xs md:text-sm transition-colors font-light text-left w-full">Contact</button>
-                <button onClick={() => setCurrentView('admin')} className="block text-[#8b949e] hover:text-white text-[8px] transition-colors font-light text-left w-full pt-4">Admin Login</button>
               </div>
               <div className="space-y-3 md:space-y-4">
                 <div className="text-[9px] md:text-[10px] font-bold text-[#8b949e] uppercase tracking-widest mb-6 font-mono">Social</div>

@@ -22,7 +22,9 @@ export const DEFAULT_CONFIG = {
     skills: ["AI Strategy", "React Mastery", "System Design", "Product Engineering", "UI/UX Architecture"],
     paragraphs: [
       "With over a decade of experience across the full digital stack, I specialize in building systems that aren't just functional, but emotionally resonant. My approach combines the rigor of engineering with the nuance of high-end design.",
-      "I believe that the best products are those that feel invisible — where technology serves humanity without friction. This philosophy drives every project from initial prototype to final production release."
+      "I believe that the best products are those that feel invisible — where technology serves humanity without friction. This philosophy drives every project from initial prototype to final production release.",
+      "Rooted in ancient Sanskrit philosophies of balance and clarity, our engineering practices prioritize deterministic architectures, minimal cognitive overhead, and resilient distributed microservices.",
+      "From fine-tuning specialized LLM agents to crafting atomic design tokens that scale gracefully across multi-platform surfaces, we partner with visionary teams to turn ambitious concepts into enduring market standards."
     ]
   },
   services: [

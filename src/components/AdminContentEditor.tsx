@@ -40,6 +40,7 @@ interface AdminContentEditorProps {
   handleDeleteTestimonial: (e: any, id: string) => void;
   activeContentSection: 'hero' | 'theme' | 'about' | 'services' | 'platforms' | 'projects' | 'testimonials' | 'process' | 'techStack';
   setActiveContentSection: (section: any) => void;
+  hideSidebar?: boolean;
 }
 
 export function AdminContentEditor({
@@ -56,7 +57,8 @@ export function AdminContentEditor({
   handleEditTestimonial,
   handleDeleteTestimonial,
   activeContentSection,
-  setActiveContentSection
+  setActiveContentSection,
+  hideSidebar = false
 }: AdminContentEditorProps) {
   // Localized state for dynamic platforms category actions
   const [showAddPlatformForm, setShowAddPlatformForm] = useState(false);
@@ -155,45 +157,47 @@ export function AdminContentEditor({
       )}
 
       {/* Grid Layout containing Sidebar and Active Editor panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+      <div className={hideSidebar ? "w-full space-y-6" : "grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start"}>
         {/* Navigation Rail */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 space-y-2 lg:sticky lg:top-36">
-          <div className="px-3 py-2 text-[10px] font-bold text-[#8b949e] uppercase tracking-[0.2em] font-mono border-b border-[#30363d]/60 pb-3 mb-3">
-            Editor Sections
+        {!hideSidebar && (
+          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-4 space-y-2 lg:sticky lg:top-36">
+            <div className="px-3 py-2 text-[10px] font-bold text-[#8b949e] uppercase tracking-[0.2em] font-mono border-b border-[#30363d]/60 pb-3 mb-3">
+              Editor Sections
+            </div>
+            
+            <div className="space-y-1 max-h-[50vh] lg:max-h-none overflow-y-auto custom-scrollbar">
+              {contentTabs.map((tab) => {
+                const isActive = activeContentSection === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveContentSection(tab.id)}
+                    className={`relative w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                      isActive 
+                        ? 'bg-[#21262d] text-[#58a6ff] border-[#30363d] shadow-[0_0_15px_rgba(88,166,255,0.06)] font-semibold' 
+                        : 'text-[#8b949e] border-transparent hover:text-white hover:bg-[#161b22]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={isActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}>
+                        {tab.icon}
+                      </span>
+                      <span className="text-xs">{tab.name}</span>
+                    </div>
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-[#30363d]/60 text-zinc-300 font-mono">
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          
-          <div className="space-y-1 max-h-[50vh] lg:max-h-none overflow-y-auto custom-scrollbar">
-            {contentTabs.map((tab) => {
-              const isActive = activeContentSection === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveContentSection(tab.id)}
-                  className={`relative w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
-                    isActive 
-                      ? 'bg-[#21262d] text-[#58a6ff] border-[#30363d] shadow-[0_0_15px_rgba(88,166,255,0.06)] font-semibold' 
-                      : 'text-[#8b949e] border-transparent hover:text-white hover:bg-[#161b22]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={isActive ? 'text-[#58a6ff]' : 'text-[#8b949e]'}>
-                      {tab.icon}
-                    </span>
-                    <span className="text-xs">{tab.name}</span>
-                  </div>
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-[#30363d]/60 text-zinc-300 font-mono">
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        )}
 
         {/* Dynamic Content Editor Viewport */}
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeContentSection}

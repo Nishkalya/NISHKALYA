@@ -21,7 +21,7 @@
    UI COLOR REDESIGN: CORPORATE THEME VARIABLES
    ========================================================== */
 
-:root, .theme-dark, .theme-white, .theme-personal {
+:root, .theme-dark, .theme-personal, .marketing-portal-dark {
   --bg-main: #0F172A;
   --bg-panel: #111827;
   --bg-card: #1E293B;
@@ -45,6 +45,94 @@
 
   --theme-glow: rgba(59, 130, 246, 0.25);
   --accent-color: #06B6D4;
+}
+
+.theme-white,
+.marketing-portal-white {
+  --bg-main: #FFFFFF;
+  --bg-panel: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --border-color: #E2E8F0;
+
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-label: #475569;
+  --text-muted: #64748B;
+
+  --btn-primary: #2563EB;
+  --btn-primary-hover: #1D4ED8;
+  --btn-success: #10B981;
+  --btn-warning: #F59E0B;
+  --btn-danger: #EF4444;
+
+  --status-new: #2563EB;
+  --status-progress: #D97706;
+  --status-won: #059669;
+  --status-lost: #DC2626;
+
+  --theme-glow: rgba(37, 99, 235, 0.15);
+  --accent-color: #0284C7;
+}
+
+/* Scoped rules for White Marketing Portal */
+.marketing-portal-white {
+  background-color: #F8FAFC !important;
+  color: #1E293B !important;
+}
+
+.marketing-portal-white table {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+.marketing-portal-white thead tr {
+  background-color: #F1F5F9 !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+}
+
+.marketing-portal-white tbody tr {
+  background-color: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.marketing-portal-white tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+.marketing-portal-white td,
+.marketing-portal-white th {
+  color: #0F172A !important;
+  border-color: #E2E8F0 !important;
+}
+
+.marketing-portal-white h1,
+.marketing-portal-white h2,
+.marketing-portal-white h3,
+.marketing-portal-white h4,
+.marketing-portal-white strong {
+  color: #0F172A !important;
+}
+
+.marketing-portal-white p,
+.marketing-portal-white li {
+  color: #334155 !important;
+}
+
+.marketing-portal-white label {
+  color: #475569 !important;
+}
+
+.marketing-portal-white input,
+.marketing-portal-white textarea,
+.marketing-portal-white select {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+.marketing-portal-white input::placeholder,
+.marketing-portal-white textarea::placeholder {
+  color: #94A3B8 !important;
 }
 
 /* Global Overrides across ALL themes to enforce a professional dark corporate dashboard with excellent readability. */

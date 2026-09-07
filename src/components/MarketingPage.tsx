@@ -20,11 +20,15 @@ import {
   Check, 
   CheckCircle, 
   ShieldAlert,
+  Shield,
   Clock,
   AlertTriangle,
   Info,
   ChevronDown,
-  Menu
+  Menu,
+  ArrowLeft,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { marketingUserService } from '../services/marketingUserService';
@@ -40,6 +44,9 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import MarketingSidebar from './marketing/MarketingSidebar';
+import MarketingInboxTable from './marketing/MarketingInboxTable';
+import MarketingQueriesView from './marketing/MarketingQueriesView';
 
 // Interface Definitions
 interface InboxTicket {
@@ -70,176 +77,14 @@ interface QueryRecord {
 interface MarketingPageProps {
   marketingUser: any;
   setMarketingUser: (user: any) => void;
+  onOpenAdmin?: () => void;
+  onExitPortal?: () => void;
 }
 
-// Default Seed Datasets (to populate localStorage on first load)
-const DEFAULT_INBOX_TICKETS: InboxTicket[] = [
-  {
-    id: 'TCK-8421',
-    name: 'Julian Vester',
-    email: 'jvester@quantum-core.dev',
-    subject: 'Custom AI Agent Integration request',
-    date: '2026-06-08',
-    status: 'New Query',
-    message: 'We are looking to implement a custom AI triage agent for our internal developer ticketing platform. The agent should parse stack traces and match them with past resolution Git commits. Is this something Nishkalya could build within our 4-week timeline?'
-  },
-  {
-    id: 'TCK-8419',
-    name: 'Amara Sterling',
-    email: 'amara@aurora-labs.io',
-    subject: 'Partnership & White-Label SaaS Platform',
-    date: '2026-06-07',
-    status: 'In Process',
-    message: 'We represent Aurora Labs. We want to white-label your custom analytics engine and bundle it into our upcoming SaaS suite. Let us discuss enterprise licensing and API throttling tolerances.'
-  },
-  {
-    id: 'TCK-8412',
-    name: 'René Dupont',
-    email: 'dupont@cybersec.fr',
-    subject: 'GDPR Compliance Questionnaire',
-    date: '2026-06-06',
-    status: 'Won',
-    message: 'Thank you for sending the security checklist. All privacy standards look solid. We are happy to proceed with signing the MSA.'
-  },
-  {
-    id: 'TCK-8409',
-    name: 'Kenji Takahashi',
-    email: 'takahashi@neo-tokyo.jp',
-    subject: 'Vite + Express Custom Routing Question',
-    date: '2026-06-05',
-    status: 'New Query',
-    message: 'Hello! We saw your Vite + Express middleware boilerplates in your portfolio projects. Are they optimized for low-spec serverless instances, or do they require continuous warm container runtimes?'
-  },
-  {
-    id: 'TCK-8404',
-    name: 'Evelyn Thorne',
-    email: 'evelyn@thorn-fintech.com',
-    subject: 'Fintech Dashboard Layout Design',
-    date: '2026-06-04',
-    status: 'In Process',
-    message: 'Our team needs a high-density, high-contrast dashboard with instant websocket-based stock price feeds. Please let us know your standard consulting rate for premium Figma mockups and React codebases.'
-  },
-  {
-    id: 'TCK-8398',
-    name: 'Marcus Vance',
-    email: 'marcus.vance@solarpixel.net',
-    subject: 'Urgent Security Patch Check',
-    date: '2026-06-02',
-    status: 'Won',
-    message: 'Just confirming that the credentials for our test databases were rotated. Everything is secure and ready for your staging environment run.'
-  },
-  {
-    id: 'TCK-8385',
-    name: 'Sofia Gatti',
-    email: 's.gatti@milano-design.it',
-    subject: 'Client Website Revamp Consultation',
-    date: '2026-06-01',
-    status: 'New Query',
-    message: 'Ciao! We wish to hire a studio with elite typography aesthetics like yours to design our biannual fashion magazine digital hub. What are your slots for late 25/early 26?'
-  },
-  {
-    id: 'TCK-8370',
-    name: 'Leo Sterling',
-    email: 'lsterling@apex-finance.co.uk',
-    subject: 'Lead Follow-up Closed (No Budget)',
-    date: '2026-05-28',
-    status: 'Lost',
-    message: 'Client team decided to postpone custom dashboard migrations until Q4. Lead marked as closed-lost due to current year budget freezes.'
-  }
-];
+// Default Seed Datasets (initialized empty to start from 0 records)
+const DEFAULT_INBOX_TICKETS: InboxTicket[] = [];
 
-const DEFAULT_QUERY_RECORDS: QueryRecord[] = [
-  {
-    id: 'QRY-1204',
-    customerName: 'Robert Chen',
-    category: 'Enterprise AI',
-    priority: 'High',
-    assignedTo: 'Vishal',
-    createdDate: '2026-06-08',
-    status: 'New Query',
-    description: 'Customer reports Gemini model latency spikes when sending large context payloads containing structured system tables. Check if chunking optimizer is enabled.'
-  },
-  {
-    id: 'QRY-1201',
-    customerName: 'Sarah Jenkins',
-    category: 'SaaS Platform',
-    priority: 'Critical',
-    assignedTo: 'Nishkalya Support',
-    createdDate: '2026-06-08',
-    status: 'In Process',
-    description: 'Our webhook events for Stripe stripe-billing are occasionally failing with 502 Bad Gateway under peak loads. We need to check if Node process memory limits are hit.'
-  },
-  {
-    id: 'QRY-1195',
-    customerName: 'Devon Brooks',
-    category: 'Technical Support',
-    priority: 'Low',
-    assignedTo: 'AI Agent',
-    createdDate: '2026-06-07',
-    status: 'Won',
-    description: 'Issue with mobile navbar collapsing too early on 820px tablets is resolved. Applied md:flex change to main navigation container.'
-  },
-  {
-    id: 'QRY-1188',
-    customerName: 'Elena Rostova',
-    category: 'API Integration',
-    priority: 'Medium',
-    assignedTo: 'Vishal',
-    createdDate: '2026-06-06',
-    status: 'In Process',
-    description: 'OAuth client state param validation is failing when initiated from third-party mobile webviews. Requires deep investigation into session cookie persistence across iframe sandboxes.'
-  },
-  {
-    id: 'QRY-1182',
-    customerName: 'Lukas Weber',
-    category: 'Enterprise AI',
-    priority: 'Medium',
-    assignedTo: 'AI Agent',
-    createdDate: '2026-06-05',
-    status: 'Won',
-    description: 'Added rate limiter configuration file with reasonable 100 requests per minute ceiling to prevent endpoint abuse.'
-  },
-  {
-    id: 'QRY-1175',
-    customerName: 'Chloe Patel',
-    category: 'SaaS Platform',
-    priority: 'Low',
-    assignedTo: 'Nishkalya Support',
-    createdDate: '2026-06-03',
-    status: 'New Query',
-    description: 'Requested dashboard CSV download feature to compile monthly telemetry records into Excel-ready sheets.'
-  },
-  {
-    id: 'QRY-1170',
-    customerName: 'Mateo Silva',
-    category: 'API Integration',
-    priority: 'High',
-    assignedTo: 'Vishal',
-    createdDate: '2026-06-02',
-    status: 'In Process',
-    description: 'Integration with external shipping API occasionally throws 401 Unauthorized during session token expiration window. Needs token-refresh interceptor.'
-  },
-  {
-    id: 'QRY-1162',
-    customerName: 'Zoe Bell',
-    category: 'Technical Support',
-    priority: 'Critical',
-    assignedTo: 'Nishkalya Support',
-    createdDate: '2026-06-01',
-    status: 'Won',
-    description: 'The contact form validation error when receiving emojis in the username field was fixed. Updated text encoding schemas to UTF-8 in database parameters.'
-  },
-  {
-    id: 'QRY-1145',
-    customerName: 'Jack Snyder',
-    category: 'Enterprise AI',
-    priority: 'Low',
-    assignedTo: 'Vishal',
-    createdDate: '2026-05-25',
-    status: 'Lost',
-    description: 'Client chose to run with built-in open-source model frameworks rather than customized corporate APIs. Project archived under inactive lead pipeline.'
-  }
-];
+const DEFAULT_QUERY_RECORDS: QueryRecord[] = [];
 
 // Interface for the structured data
 interface CommentItem {
@@ -331,14 +176,17 @@ function NotesAndDetailsWidget({
   notesText,
   isInbox,
   onSave,
-  author
+  author,
+  portalTheme = 'white'
 }: {
   itemId: string;
   notesText: string | undefined;
   isInbox: boolean;
   onSave: (id: string, notesText: string, isInbox: boolean) => Promise<void>;
   author: string;
+  portalTheme?: 'white' | 'dark';
 }) {
+  const isWhite = portalTheme === 'white';
   const data = parseNotesData(notesText);
   const [draft, setDraft] = useState('');
 
@@ -378,8 +226,10 @@ function NotesAndDetailsWidget({
       
       {/* 2. Interactive Comments Thread Timeline */}
       <div className="space-y-2">
-        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold flex items-center gap-1">
-          <MessageSquare size={10} className="text-amber-550" />
+        <label className={`text-[9px] font-mono uppercase tracking-widest block font-bold flex items-center gap-1 ${
+          isWhite ? 'text-slate-600' : 'text-zinc-500'
+        }`}>
+          <MessageSquare size={10} className={isWhite ? 'text-amber-600' : 'text-amber-400'} />
           Comments Log / Thread History ({data.comments.length})
         </label>
 
@@ -390,15 +240,23 @@ function NotesAndDetailsWidget({
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type comment log... (Press Enter or Click 'Add Comment')"
-            className="w-full bg-[#161b22]/80 border border-[#30363d]/80 rounded-xl p-2 px-3 pb-8 text-xs text-zinc-200 outline-none focus:border-amber-500/50 min-h-[58px] font-sans resize-none transition-all duration-200"
+            className={`w-full border rounded-xl p-2 px-3 pb-8 text-xs outline-none focus:border-amber-500/50 min-h-[58px] font-sans resize-none transition-all duration-200 ${
+              isWhite
+                ? 'bg-slate-50 border-slate-300 text-slate-800 placeholder-slate-400'
+                : 'bg-[#161b22]/80 border-[#30363d]/80 text-zinc-200 placeholder-zinc-500'
+            }`}
           />
           <div className="absolute right-2 bottom-1.5 flex items-center gap-2">
-            <span className="text-[7.5px] font-mono text-zinc-650 tracking-wider">
+            <span className={`text-[7.5px] font-mono tracking-wider ${isWhite ? 'text-slate-400' : 'text-zinc-500'}`}>
               ENTER TO SEND
             </span>
             <button
               onClick={handleAddComment}
-              className="p-1 px-2.5 bg-amber-950/20 hover:bg-amber-800/85 text-amber-400 hover:text-white border border-amber-900/40 rounded-lg text-[10px] font-mono font-bold uppercase transition-all duration-200 cursor-pointer flex items-center gap-1"
+              className={`p-1 px-2.5 rounded-lg text-[10px] font-mono font-bold uppercase transition-all duration-200 cursor-pointer flex items-center gap-1 border ${
+                isWhite
+                  ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300'
+                  : 'bg-amber-950/20 hover:bg-amber-800/85 text-amber-400 hover:text-white border-amber-900/40'
+              }`}
             >
               <span>Add Comment</span>
             </button>
@@ -406,9 +264,13 @@ function NotesAndDetailsWidget({
         </div>
 
         {/* Thread timeline log output */}
-        <div className="max-h-[160px] overflow-y-auto space-y-1.5 pr-1 divide-y divide-[#30363d]/20">
+        <div className={`max-h-[160px] overflow-y-auto space-y-1.5 pr-1 divide-y ${
+          isWhite ? 'divide-slate-200' : 'divide-[#30363d]/20'
+        }`}>
           {data.comments.length === 0 ? (
-            <div className="text-zinc-650 italic font-sans text-[11px] text-center py-2">
+            <div className={`italic font-sans text-[11px] text-center py-2 ${
+              isWhite ? 'text-slate-400' : 'text-zinc-500'
+            }`}>
               No comments logged yet. Use box above to start logging.
             </div>
           ) : (
@@ -416,14 +278,20 @@ function NotesAndDetailsWidget({
               <div key={comment.id} className="pt-2 text-[11px] space-y-0.5">
                 <div className="flex items-center justify-between text-[10px]">
                   <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 rounded-full bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 font-bold font-mono text-[8px] flex items-center justify-center">
+                    <div className={`w-4 h-4 rounded-full font-bold font-mono text-[8px] flex items-center justify-center border ${
+                      isWhite
+                        ? 'bg-sky-100 text-sky-700 border-sky-300'
+                        : 'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/20'
+                    }`}>
                       {comment.author.charAt(0).toUpperCase()}
                     </div>
-                    <span className="font-mono font-bold text-zinc-300">{comment.author}</span>
+                    <span className={`font-mono font-bold ${isWhite ? 'text-slate-800' : 'text-zinc-300'}`}>{comment.author}</span>
                   </div>
-                  <span className="text-[9px] p-0.5 font-mono text-zinc-500">{comment.timestamp}</span>
+                  <span className={`text-[9px] p-0.5 font-mono ${isWhite ? 'text-slate-400' : 'text-zinc-500'}`}>{comment.timestamp}</span>
                 </div>
-                <p className="text-zinc-450 font-sans pl-5 whitespace-pre-wrap leading-relaxed">{comment.text}</p>
+                <p className={`font-sans pl-5 whitespace-pre-wrap leading-relaxed ${
+                  isWhite ? 'text-slate-600' : 'text-zinc-400'
+                }`}>{comment.text}</p>
               </div>
             ))
           )}
@@ -434,7 +302,7 @@ function NotesAndDetailsWidget({
   );
 }
 
-export default function MarketingPage({ marketingUser, setMarketingUser }: MarketingPageProps) {
+export default function MarketingPage({ marketingUser, setMarketingUser, onOpenAdmin, onExitPortal }: MarketingPageProps) {
   // Login states
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -483,33 +351,50 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   const [addFormValues, setAddFormValues] = useState<any>({});
   const [queryNotesText, setQueryNotesText] = useState<Record<string, string>>({});
 
-  // Initialize and synchronize localStorage
+  // Clear all data table records and start from 0
+  const handleClearAllData = () => {
+    setQueryRecords([]);
+    setSelectedQuery(null);
+    localStorage.setItem('nishkalya_marketing_queries', JSON.stringify([]));
+    if (activeModule === 'inbox') {
+      setInboxTickets([]);
+      setSelectedTicket(null);
+      localStorage.setItem('nishkalya_marketing_inbox', JSON.stringify([]));
+    }
+    setCurrentPage(1);
+  };
+
+  // Initialize and synchronize localStorage starting cleanly from 0
   useEffect(() => {
     if (marketingUser) {
-      const storedQueries = localStorage.getItem('nishkalya_marketing_queries');
-
-      if (storedQueries) {
-        const parsed = JSON.parse(storedQueries);
-        const mapped = parsed.map((q: any) => {
-          let s: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
-          if (q.status === 'New' || q.status === 'New Query' || q.status === 'Open') s = 'New Query';
-          else if (q.status === 'In Progress' || q.status === 'In Process' || q.status === 'Investigating' || q.status === 'Escalated') s = 'In Process';
-          else if (q.status === 'Won' || q.status === 'Closed' || q.status === 'Resolved') s = 'Won';
-          else if (q.status === 'Lost') s = 'Lost';
-          return { ...q, status: s };
-        });
-        setQueryRecords(mapped);
+      const hasWipedLegacyMock = localStorage.getItem('nishkalya_marketing_zero_init_v3');
+      if (!hasWipedLegacyMock) {
+        localStorage.setItem('nishkalya_marketing_queries', JSON.stringify([]));
+        localStorage.setItem('nishkalya_marketing_inbox', JSON.stringify([]));
+        localStorage.setItem('nishkalya_marketing_zero_init_v3', 'true');
+        setQueryRecords([]);
+        setSelectedQuery(null);
       } else {
-        const mapped = DEFAULT_QUERY_RECORDS.map((q: any) => {
-          let s: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
-          if (q.status === 'New' || q.status === 'New Query' || q.status === 'Open') s = 'New Query';
-          else if (q.status === 'In Progress' || q.status === 'In Process' || q.status === 'Investigating' || q.status === 'Escalated') s = 'In Process';
-          else if (q.status === 'Won' || q.status === 'Closed' || q.status === 'Resolved') s = 'Won';
-          else if (q.status === 'Lost') s = 'Lost';
-          return { ...q, status: s };
-        });
-        setQueryRecords(mapped);
-        localStorage.setItem('nishkalya_marketing_queries', JSON.stringify(mapped));
+        const storedQueries = localStorage.getItem('nishkalya_marketing_queries');
+        if (storedQueries) {
+          try {
+            const parsed = JSON.parse(storedQueries);
+            const mapped = parsed.map((q: any) => {
+              let s: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
+              if (q.status === 'New' || q.status === 'New Query' || q.status === 'Open') s = 'New Query';
+              else if (q.status === 'In Progress' || q.status === 'In Process' || q.status === 'Investigating' || q.status === 'Escalated') s = 'In Process';
+              else if (q.status === 'Won' || q.status === 'Closed' || q.status === 'Resolved') s = 'Won';
+              else if (q.status === 'Lost') s = 'Lost';
+              return { ...q, status: s };
+            });
+            setQueryRecords(mapped);
+          } catch {
+            setQueryRecords([]);
+          }
+        } else {
+          setQueryRecords([]);
+          localStorage.setItem('nishkalya_marketing_queries', JSON.stringify([]));
+        }
       }
     }
   }, [marketingUser]);
@@ -517,7 +402,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   // Real-time Firestore synchronization for Marketing Inbox (Inquiry Dashboard Data Integration)
   useEffect(() => {
     if (marketingUser) {
-      const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+      const q = collection(db, 'messages');
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const msgs = snapshot.docs.map(doc => {
           const data = doc.data();
@@ -549,16 +434,18 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
             message: data.message || '',
             date: createdDate,
             status: currentStatus,
-            notes: data.notes || ''
-          } as InboxTicket;
+            notes: data.notes || '',
+            _rawCreatedAt: data.createdAt?.seconds || 0
+          } as any;
         });
-        if (msgs.length === 0) {
-          setInboxTickets(DEFAULT_INBOX_TICKETS);
-        } else {
-          setInboxTickets(msgs);
-        }
+
+        // Sort in memory by timestamp/date descending
+        msgs.sort((a, b) => b._rawCreatedAt - a._rawCreatedAt);
+
+        setInboxTickets(msgs);
       }, (error) => {
         console.error('Firestore messages subscribe error:', error);
+        setInboxTickets([]);
       });
       return () => unsubscribe();
     }
@@ -566,11 +453,19 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
 
   // Set selected query default/active entry on module selection
   useEffect(() => {
-    if (activeModule === 'queries' && queryRecords.length > 0 && !selectedQuery) {
-      setSelectedQuery(queryRecords[0]);
+    if (activeModule === 'queries') {
+      if (queryRecords.length > 0 && !selectedQuery) {
+        setSelectedQuery(queryRecords[0]);
+      } else if (queryRecords.length === 0) {
+        setSelectedQuery(null);
+      }
     }
-    if (activeModule === 'inbox' && inboxTickets.length > 0 && !selectedTicket) {
-      setSelectedTicket(inboxTickets[0]);
+    if (activeModule === 'inbox') {
+      if (inboxTickets.length > 0 && !selectedTicket) {
+        setSelectedTicket(inboxTickets[0]);
+      } else if (inboxTickets.length === 0) {
+        setSelectedTicket(null);
+      }
     }
     // Reset search, filters, sorting, and pagination when switching modules
     setSearchTerm('');
@@ -643,9 +538,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   };
 
   // Process and Filter Data
+  const activeInboxTickets = inboxTickets.filter(ticket => ticket.status !== 'Lost');
+  const unreadInboxTickets = inboxTickets.filter(ticket => ticket.status === 'New Query');
+  const inboxCount = unreadInboxTickets.length;
+
   const getProcessedData = () => {
     if (activeModule === 'inbox') {
-      let filtered = [...inboxTickets];
+      let filtered = [...activeInboxTickets];
 
       // Pipeline Filter (Primary Selection)
       if (pipelineTab === 'NEW_QUERY') {
@@ -757,10 +656,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   const handleOpenView = (item: any) => {
     if (activeModule === 'inbox') {
       setSelectedTicket(item);
+      setShowViewModal(true);
     } else {
       setSelectedQuery(item);
     }
-    setShowViewModal(true);
   };
 
   // Actions: Edit
@@ -770,7 +669,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
       setEditFormValues({ ...item });
     } else {
       setSelectedQuery(item);
-      setEditFormValues({ ...item });
+      setEditFormValues({ 
+        ...item, 
+        description: item.description ? item.description.replace(/\[Moved from Inbox ID: .*?\]\n*/g, '') : ''
+      });
     }
     setShowEditModal(true);
   };
@@ -806,26 +708,31 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
   };
 
   // Actions: Delete
-  const handleDeleteItem = async (id: string) => {
-    if (window.confirm(`Are you sure you want to permanently delete record ${id}?`)) {
-      if (activeModule === 'inbox') {
-        try {
-          await deleteDoc(doc(db, 'messages', id));
-          if (selectedTicket?.id === id) setSelectedTicket(null);
-        } catch (err) {
-          console.error("Failed to delete message from Firestore:", err);
-        }
-      } else {
-        const updated = queryRecords.filter(q => q.id !== id);
-        saveQueryRecords(updated);
-        if (selectedQuery?.id === id) setSelectedQuery(null);
+  const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
+
+  const confirmAndDeleteItem = async (id: string) => {
+    if (activeModule === 'inbox') {
+      try {
+        await deleteDoc(doc(db, 'messages', id));
+        if (selectedTicket?.id === id) setSelectedTicket(null);
+      } catch (err) {
+        console.error("Failed to delete message from Firestore:", err);
       }
-      // Readjust current page if it's out of bounds
-      const nextMaxPage = Math.ceil(Math.max(1, getProcessedData().length - 1) / itemsPerPage);
-      if (currentPage > nextMaxPage) {
-        setCurrentPage(nextMaxPage);
-      }
+    } else {
+      const updated = queryRecords.filter(q => q.id !== id);
+      saveQueryRecords(updated);
+      if (selectedQuery?.id === id) setSelectedQuery(null);
     }
+    setDeleteCandidateId(null);
+    // Readjust current page if it's out of bounds
+    const nextMaxPage = Math.ceil(Math.max(1, getProcessedData().length - 1) / itemsPerPage);
+    if (currentPage > nextMaxPage) {
+      setCurrentPage(nextMaxPage);
+    }
+  };
+
+  const handleDeleteItem = (id: string) => {
+    setDeleteCandidateId(id);
   };
 
   // Helper to update status directly (for Won/Lost buttons)
@@ -876,8 +783,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
     }
   };
 
-  // Convert/Move inbox message to query management
-  const handleMoveInboxToQuery = async (ticket: InboxTicket, statusVal: 'New Query' | 'Lost') => {
+  // Convert inbox message to query management (New Query or Lost)
+  const handleMoveInboxToQuery = async (ticket: InboxTicket, statusVal: 'New Query' | 'Lost' = 'New Query') => {
     const newId = `QRY-${Math.floor(1000 + Math.random() * 9000)}`;
     const newQuery: QueryRecord = {
       id: newId,
@@ -887,7 +794,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
       assignedTo: 'Vishal',
       createdDate: ticket.date,
       status: statusVal,
-      description: `[Moved from Security Inbox ID: ${ticket.id}]\n\nSubject: ${ticket.subject}\n\nMessage: ${ticket.message}`,
+      description: `Subject: ${ticket.subject}\n\nMessage: ${ticket.message}`,
       notes: ticket.notes || ''
     };
 
@@ -897,10 +804,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
 
     try {
       const docRef = doc(db, 'messages', ticket.id);
-      let dbStatus = 'read'; // 'read' is 'In Process'
-      if (statusVal === 'Lost') {
-        dbStatus = 'lost';
-      }
+      let dbStatus = statusVal === 'Lost' ? 'lost' : 'read';
       await updateDoc(docRef, { status: dbStatus });
     } catch (err) {
       console.error("Failed to update message status during conversion:", err);
@@ -985,14 +889,21 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
     setShowAddModal(false);
   };
 
+  const newQueryCount = queryRecords.filter(q => q.status === 'New Query').length;
+  const inProcessCount = queryRecords.filter(q => q.status === 'In Process').length;
+  const wonCount = queryRecords.filter(q => q.status === 'Won').length;
+  const lostCount = queryRecords.filter(q => q.status === 'Lost').length;
+
+  const [portalTheme, setPortalTheme] = useState<'white' | 'dark'>('white');
+
   return (
-    <div className={`w-full min-h-[85vh] flex flex-col justify-start transition-all duration-300 ${!marketingUser ? 'pt-32 pb-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto' : 'pt-28 pb-6 md:pt-32 px-4 md:px-6 max-w-full'}`}>
+    <div className={`h-screen w-full overflow-hidden flex flex-col font-sans transition-colors ${portalTheme === 'white' ? 'marketing-portal-white bg-[#F8FAFC] text-slate-800' : 'marketing-portal-dark bg-[#090d13] text-slate-100'}`}>
       {!marketingUser ? (
         /* Secure Login Card */
-        <div className="w-full max-w-md mx-auto my-auto relative z-10">
+        <div className="h-full w-full overflow-hidden flex items-center justify-center p-4 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-tr from-[#58a6ff]/10 to-transparent blur-3xl -z-10 rounded-full w-72 h-72 mx-auto"></div>
           
-          <div className="bg-[#161b22]/90 border border-[#30363d] p-8 md:p-10 rounded-3xl shadow-2xl backdrop-blur-md">
+          <div className="bg-[#161b22]/90 border border-[#30363d] p-8 md:p-10 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col">
             <div className="text-center mb-8">
               <div className="w-12 h-12 bg-[#58a6ff]/10 border border-[#30363d] rounded-2xl flex items-center justify-center text-[#58a6ff] mx-auto mb-4 shadow-xl">
                 <Lock size={22} />
@@ -1065,956 +976,303 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                 )}
               </button>
             </form>
+
+            {onOpenAdmin && (
+              <div className="flex flex-col gap-2.5 pt-5 mt-5 border-t border-[#30363d]/60">
+                <button
+                  type="button"
+                  onClick={onOpenAdmin}
+                  className="w-full py-3 bg-[#0d1117] hover:bg-[#21262d] text-zinc-300 hover:text-white border border-[#30363d] hover:border-[#58a6ff]/50 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <Shield size={14} className="text-[#58a6ff]" />
+                  <span>Admin Login</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       ) : (
-        /* Redesigned Portal Workspace */
-        <div className="space-y-4 w-full">
-          {/* Mobile Collapsible Sidebar Drawer */}
-          <AnimatePresence>
-            {isSidebarOpen && (
-              <>
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="fixed inset-0 bg-black/60 z-[100] lg:hidden"
-                />
-                
-                {/* Drawer Content */}
-                <motion.div
-                  initial={{ x: '-100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: '-100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                  className="fixed top-0 left-0 bottom-0 w-[240px] bg-[#0d1117] border-r border-[#30363d] z-[101] p-5 flex flex-col justify-between shadow-2xl lg:hidden"
-                >
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between pb-3.5 border-b border-[#30363d]/50">
-                      <div className="text-[10px] font-mono font-extrabold text-[#58a6ff] uppercase tracking-[0.2em]">
-                        Matrix Workspace
-                      </div>
-                      <button
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-805 transition-colors cursor-pointer"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-
-                    <nav className="space-y-1">
-                      <button
-                        onClick={() => {
-                          setActiveModule('inbox');
-                          setIsSidebarOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
-                          activeModule === 'inbox' 
-                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35' 
-                            : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/85 border-transparent'
-                        }`}
-                      >
-                        <div className="relative">
-                          <InboxIcon size={14} />
-                          {inboxTickets.length > 0 && (
-                            <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-[#58a6ff] rounded-full animate-bounce"></span>
-                          )}
-                        </div>
-                        <span>Inbox</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setActiveModule('queries');
-                          setIsSidebarOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
-                          activeModule === 'queries' 
-                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35' 
-                            : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/85 border-transparent'
-                        }`}
-                      >
-                        <MessageSquare size={14} />
-                        <span>Query Hub</span>
-                      </button>
-                    </nav>
-                  </div>
-
-                  <div className="pt-4 border-t border-[#30363d]/40">
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsSidebarOpen(false);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-950/20 text-red-400 hover:bg-red-900/40 border border-red-900/30 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
-                    >
-                      <LogOut size={12} />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-
-          {/* 1. TOP HEADER BAR */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#161b22]/90 border border-[#30363d] p-4 rounded-2xl shadow-lg w-full">
-            {/* Left: Marketing Title */}
-            <div className="flex items-center gap-3 shrink-0 self-start md:self-auto">
-              {/* Sidebar Menu Toggle Button on Mobile and Tablet */}
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 text-zinc-400 hover:text-white bg-[#161b22] border border-[#30363d] rounded-xl hover:bg-[#21262d] transition-all cursor-pointer shrink-0 flex items-center justify-center"
-                title="Open Navigation Menu"
-              >
-                <Menu size={15} />
-              </button>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#1f6feb] animate-pulse"></span>
-                  <h1 className="text-xl font-black text-white tracking-tight">Marketing Portal Layout</h1>
-                </div>
-                <p className="text-[10px] text-[#8b949e] font-mono whitespace-nowrap mt-0.5">
-                  Secure Access ID: <span className="text-zinc-200 font-bold">{marketingUser.username}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Center: Search box */}
-            <div className="relative w-full md:max-w-md lg:max-w-lg">
-              <span className="absolute left-3.5 top-2.5 text-zinc-500">
-                <Search size={14} />
-              </span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder={
-                  activeModule === 'inbox' 
-                    ? "Search security inbox..." 
-                    : "Search queries by customer name..."
-                }
-                className="w-full bg-[#0d1117] border border-zinc-850 rounded-xl pl-10 pr-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 transition-colors"
-              />
-            </div>
-
-            {/* Right: Filters, Add Button & Log Out */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-start sm:justify-end font-mono">
-              {activeModule !== 'inbox' && (
+        /* Redesigned ERP Full-Height Fixed Portal Layout */
+        <div className="h-full w-full overflow-hidden flex flex-col relative">
+          <div className="h-full w-full overflow-hidden flex flex-1 relative">
+            {/* Mobile Collapsible Sidebar Drawer */}
+            <AnimatePresence>
+              {isSidebarOpen && (
                 <>
-                  {/* Filter dropdown */}
-                  <div className="flex items-center gap-1.5">
-                    <Filter size={11} className="text-zinc-500 shrink-0" />
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => {
-                        setStatusFilter(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="bg-[#0d1117] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-[11px] text-zinc-300 outline-none focus:border-[#58a6ff]/40 font-mono cursor-pointer shrink-0"
-                    >
-                      <option value="all">All States</option>
-                      <option value="New Query">New Query</option>
-                      <option value="In Process">In Process</option>
-                      <option value="Won">Won</option>
-                      <option value="Lost">Lost</option>
-                    </select>
-                  </div>
-
-                  {/* Create button */}
-                  <button
-                    onClick={handleOpenAdd}
-                    className="bg-[#2ea44f]/90 hover:bg-[#2ea44f] text-white border border-[#2ea44f]/40 px-2.5 py-1.5 rounded-xl text-[11px] font-bold uppercase font-mono tracking-wider flex items-center gap-1 cursor-pointer transition-colors shrink-0"
-                  >
-                    <Plus size={13} />
-                    <span>Create Query</span>
-                  </button>
-                </>
-              )}
-
-              {/* Sign Out Button in Header Bar Area */}
-              <button
-                onClick={handleLogout}
-                className="px-2.5 py-1.5 bg-red-950/30 text-red-400 hover:text-white hover:bg-red-800/80 border border-red-900/40 rounded-xl text-[11px] font-mono font-bold tracking-wider uppercase transition-all flex items-center gap-1 cursor-pointer shrink-0"
-              >
-                <LogOut size={12} />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-
-          <div className={`grid gap-4 w-full items-start ${
-            activeModule === 'queries'
-              ? 'grid-cols-1 lg:grid-cols-[220px_1fr_320px] xl:grid-cols-[240px_1fr_340px]'
-              : 'grid-cols-1 lg:grid-cols-[220px_1fr] xl:grid-cols-[240px_1fr]'
-          }`}>
-            
-            {/* 2. LEFT SIDEBAR (Column 1) */}
-            <div className="hidden lg:block space-y-4">
-              <div className="bg-[#161b22]/90 border border-[#30363d] rounded-2xl p-4 space-y-4 shadow-xl">
-                <div className="text-[10px] font-mono font-extrabold text-[#8b949e] uppercase tracking-[0.2em] px-3 pb-2 border-b border-[#30363d]/45">
-                  Matrix Workspace
-                </div>
-                
-                <nav className="space-y-1.5">
-                  <button
-                    onClick={() => {
-                      setActiveModule('inbox');
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
-                      activeModule === 'inbox' 
-                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35 shadow-md shadow-[#58a6ff]/5' 
-                        : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/80 border-transparent'
-                    }`}
-                  >
-                    <div className="relative">
-                      <InboxIcon size={16} />
-                      {inboxTickets.length > 0 && (
-                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#58a6ff] rounded-full animate-bounce"></span>
-                      )}
-                    </div>
-                    <span>Inbox</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveModule('queries');
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
-                      activeModule === 'queries' 
-                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/35 shadow-md shadow-[#58a6ff]/5'
-                        : 'text-zinc-400 hover:text-white hover:bg-[#161b22]/80 border-transparent'
-                    }`}
-                  >
-                    <MessageSquare size={16} />
-                    <span>Query Hub</span>
-                  </button>
-                </nav>
-              </div>
-            </div>
-
-            {/* 3. MAIN CONTENT AREA (Column 2) */}
-            <div className="min-w-0 space-y-4 w-full">
-              
-              {/* TOP SECTION: Equal-width ERP status cards */}
-              {activeModule === 'queries' && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 w-full">
-                  {/* NEW QUERY */}
-                  <button
-                    id="pipeline-btn-new-query"
-                    onClick={() => handlePipelineTabChange('NEW_QUERY')}
-                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
-                      pipelineTab === 'NEW_QUERY'
-                        ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#1f6feb]/65 shadow-md shadow-[#58a6ff]/5 font-extrabold scale-[1.02]'
-                        : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#58a6ff] border-[#30363d]/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">New Query</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#58a6ff]"></span>
-                    </div>
-                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
-                      {queryRecords.filter(q => q.status === 'New Query').length}
-                    </span>
-                  </button>
-
-                  {/* IN PROCESS */}
-                  <button
-                    id="pipeline-btn-inprocess"
-                    onClick={() => handlePipelineTabChange('INPROCESS')}
-                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
-                      pipelineTab === 'INPROCESS'
-                        ? 'bg-amber-500/15 text-amber-500 border-amber-500/65 shadow-md shadow-amber-500/5 font-extrabold scale-[1.02]'
-                        : 'bg-[#161b22]/30 text-zinc-400 hover:text-amber-500 border-[#30363d]/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">In Process</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    </div>
-                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
-                      {queryRecords.filter(q => q.status === 'In Process').length}
-                    </span>
-                  </button>
-
-                  {/* WON */}
-                  <button
-                    id="pipeline-btn-won"
-                    onClick={() => handlePipelineTabChange('WON')}
-                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
-                      pipelineTab === 'WON'
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/65 shadow-md shadow-emerald-400/5 font-extrabold scale-[1.02]'
-                        : 'bg-[#161b22]/30 text-zinc-400 hover:text-[#2ea44f] border-[#30363d]/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Won</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    </div>
-                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
-                      {queryRecords.filter(q => q.status === 'Won').length}
-                    </span>
-                  </button>
-
-                  {/* LOST */}
-                  <button
-                    id="pipeline-btn-lost"
-                    onClick={() => handlePipelineTabChange('LOST')}
-                    className={`p-3 md:p-3.5 rounded-xl text-left border transition-all duration-300 cursor-pointer flex flex-col justify-between h-[100px] w-full ${
-                      pipelineTab === 'LOST'
-                        ? 'bg-red-500/15 text-red-100 border-red-500/65 shadow-md shadow-red-500/5 font-extrabold scale-[1.02]'
-                        : 'bg-[#161b22]/30 text-[#8b949e] hover:text-[#cf222e] border-[#30363d]/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Lost</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                    </div>
-                    <span className="text-xl font-black font-mono text-white mt-1 leading-none">
-                      {queryRecords.filter(q => q.status === 'Lost').length}
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              {/* ACTIVE TAB: INBOX DATA TABLE */}
-              {activeModule === 'inbox' && (
-                <div className="bg-[#161b22]/40 border border-[#30363d]/60 rounded-2xl overflow-hidden shadow-xl">
-                  {/* Table Header block */}
-                  <div className="p-4 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]/60">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <InboxIcon size={16} className="text-[#58a6ff]" />
-                      <span>Security Inbox System</span>
-                    </h3>
-                    <span className="text-[10px] font-mono px-2.5 py-0.5 rounded border border-zinc-800 text-zinc-400 bg-zinc-950 font-bold">
-                      {processedData.length} Matches
-                    </span>
-                  </div>
-
-                  {currentItems.length === 0 ? (
-                    inboxTickets.length === 0 ? (
-                      <div className="py-24 px-6 text-center flex flex-col items-center justify-center max-w-md mx-auto">
-                        <div className="relative mb-6">
-                          <div className="absolute inset-0 bg-[#58a6ff]/5 w-16 h-16 rounded-full blur-xl mx-auto -translate-y-2"></div>
-                          <div className="w-14 h-14 bg-[#161b22] border border-[#30363d]/80 rounded-2xl flex items-center justify-center text-[#58a6ff]/80 shadow-xl mx-auto relative transition-all hover:scale-105 duration-300">
-                            <InboxIcon size={24} className="animate-pulse" />
-                          </div>
-                        </div>
-                        <h4 className="text-sm font-bold text-white mb-2 tracking-wide font-mono uppercase">No Inquiries Found</h4>
-                        <p className="text-xs text-[#8b949e] font-sans font-light leading-relaxed">
-                          Your corporate portal has no customer inquiries or routing messages saved in the database right now.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="py-20 text-center text-xs text-[#8b949e] flex flex-col items-center justify-center">
-                        <AlertCircle size={28} className="mx-auto mb-3 text-zinc-600" />
-                        <p className="font-semibold text-zinc-200 text-sm">No matching search entries found</p>
-                        <p className="text-zinc-500 mt-1.5 font-light max-w-xs leading-relaxed">
-                          No tickets match the search query "<span className="text-white font-mono">{searchTerm}</span>" under the selected filters.
-                        </p>
-                        <button
-                          onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
-                          className="mt-4 text-xs font-semibold text-[#58a6ff] hover:underline cursor-pointer transition-colors"
-                        >
-                          Reset search filters
-                        </button>
-                      </div>
-                    )
-                  ) : (
-                    <>
-                      {/* Desktop View Table: Shown on Medium and above screens */}
-                      <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left text-xs font-sans">
-                          <thead className="bg-[#0c1017] text-zinc-500 border-b border-[#30363d] text-[10px] font-bold uppercase tracking-wider font-mono">
-                            <tr>
-                              <th className="p-4 pl-6 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('name')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Name</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('email')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Email</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('company')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Company</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('service')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Service</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('message')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Message</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                              <th className="p-4 cursor-pointer hover:text-white select-none" onClick={() => toggleSort('date')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Date</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                              <th className="p-4 cursor-pointer hover:text-white select-none pr-6" onClick={() => toggleSort('status')}>
-                                <div className="flex items-center gap-1">
-                                  <span>Status</span>
-                                  <ArrowUpDown size={10} className="text-zinc-650" />
-                                </div>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#30363d]/45">
-                            {currentItems.map((ticket) => (
-                              <tr 
-                                key={ticket.id} 
-                                onClick={() => handleOpenView(ticket)}
-                                className="hover:bg-[#161b22]/60 transition-all duration-150 cursor-pointer group"
-                                title="Click to view details"
-                              >
-                                <td className="p-4 pl-6 font-semibold text-white">{ticket.name}</td>
-                                <td className="p-4 text-zinc-400 font-mono text-[11px]">{ticket.email}</td>
-                                <td className="p-4 text-zinc-300 font-medium font-mono text-[11px]">{ticket.company || 'N/A'}</td>
-                                <td className="p-4 text-zinc-450 font-bold font-mono text-[10px] text-[#58a6ff]">{ticket.service || 'General Inquiry'}</td>
-                                <td className="p-4 text-zinc-350 font-light truncate max-w-[200px]" title={ticket.message}>
-                                  {ticket.message}
-                                </td>
-                                <td className="p-4 text-zinc-450 font-mono text-[10px] whitespace-nowrap">{ticket.date}</td>
-                                <td className="p-4 pr-6">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
-                                    ticket.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                    ticket.status === 'In Process' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                                    ticket.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40' :
-                                    'bg-red-950/20 text-red-410 border-red-900/40'
-                                  }`}>
-                                    <span className={`w-1 h-1 rounded-full ${
-                                      ticket.status === 'New Query' ? 'bg-blue-400' :
-                                      ticket.status === 'In Process' ? 'bg-amber-500' :
-                                      ticket.status === 'Won' ? 'bg-emerald-400' :
-                                      'bg-red-500'
-                                    }`} />
-                                    {ticket.status}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Mobile View Cards: Shown on Mobile/Tablet screens */}
-                      <div className="block md:hidden divide-y divide-[#30363d]/30">
-                        {currentItems.map((ticket) => (
-                          <div 
-                            key={ticket.id} 
-                            onClick={() => handleOpenView(ticket)}
-                            className="p-4 space-y-2 select-none hover:bg-[#161b22]/40 active:bg-[#161b22]/70 transition-all duration-150 cursor-pointer"
-                            title="Click to view details"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-semibold text-white text-xs truncate max-w-[150px]">{ticket.name}</span>
-                              <span className="text-[9px] font-mono text-zinc-500 shrink-0">{ticket.date}</span>
-                            </div>
-                            
-                            <div className="flex items-baseline justify-between gap-2 pt-0.5">
-                              <span className="text-[10px] text-[#58a6ff] font-bold font-mono tracking-tight">{ticket.service || 'General Inquiry'}</span>
-                              {ticket.company && (
-                                <span className="text-[10px] text-zinc-400 font-mono font-medium truncate max-w-[120px]" title={ticket.company}>
-                                  {ticket.company}
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="text-xs text-zinc-400 font-light line-clamp-2 pt-0.5">
-                              {ticket.message}
-                            </p>
-
-                            <div className="flex items-center justify-between pt-1">
-                              <span className="text-[10px] text-zinc-500 font-mono truncate max-w-[180px]" title={ticket.email}>
-                                {ticket.email}
-                              </span>
-                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase border shrink-0 ${
-                                ticket.status === 'New Query' ? 'bg-blue-950/25 text-blue-400 border-blue-900/40' :
-                                ticket.status === 'In Process' ? 'bg-amber-950/25 text-amber-500 border-amber-900/40' :
-                                ticket.status === 'Won' ? 'bg-emerald-950/25 text-emerald-400 border-emerald-900/40' :
-                                'bg-red-950/25 text-red-400 border-red-900/40'
-                              }`}>
-                                <span className={`w-1 h-1 rounded-full ${
-                                  ticket.status === 'New Query' ? 'bg-blue-400' :
-                                  ticket.status === 'In Process' ? 'bg-amber-500' :
-                                  ticket.status === 'Won' ? 'bg-emerald-400' :
-                                  'bg-red-500'
-                                }`} />
-                                {ticket.status}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Pagination control footer block */}
-                  <div className="p-4 border-t border-[#30363d] flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#161b22]/30">
-                    <div className="text-[11px] font-mono text-zinc-500">
-                      Showing <span className="text-zinc-300 font-bold">{processedData.length > 0 ? indexOfFirstItem + 1 : 0}</span> to <span className="text-zinc-300 font-bold">{Math.min(indexOfLastItem, processedData.length)}</span> of <span className="text-zinc-300 font-bold">{processedData.length}</span> records
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handlePrevPage}
-                        disabled={currentPage === 1}
-                        className="p-2 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                      >
-                        <ChevronLeft size={14} />
-                      </button>
-                      <span className="text-xs font-mono font-bold text-white bg-[#161b22] px-3.5 py-1.5 border border-[#30363d] rounded-xl select-none">
-                        Page {currentPage} / {totalPages}
-                      </span>
-                      <button
-                        onClick={handleNextPage}
-                        disabled={currentPage === totalPages}
-                        className="p-2 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ACTIVE TAB: QUERY MANAGEMENT LIST TABLE */}
-              {activeModule === 'queries' && (
-                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/60 z-[100] lg:hidden backdrop-blur-sm"
+                  />
                   
-                  {/* Left Column of Splitting: Queries List and Table */}
-                  <div className="flex flex-col justify-between bg-[#161b22]/40 border border-[#30363d]/60 rounded-2xl overflow-hidden shadow-xl min-h-[460px] w-full">
-                    
-                    <div>
-                      <div className="p-4 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]/60">
-                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                          <MessageSquare size={16} className="text-[#58a6ff]" />
-                          <span>Direct Support Queries</span>
-                        </h3>
-                        <span className="text-[10px] font-mono px-2.5 py-0.5 rounded border border-zinc-800 text-zinc-400 bg-zinc-950 font-bold">
-                          {processedData.length} Found
-                        </span>
-                      </div>
-
-                      {currentItems.length === 0 ? (
-                        queryRecords.length === 0 ? (
-                          <div className="py-20 px-6 text-center flex flex-col items-center justify-center max-w-sm mx-auto">
-                            <div className="relative mb-5">
-                              <div className="absolute inset-0 bg-[#58a6ff]/5 w-14 h-14 rounded-full blur-xl mx-auto -translate-y-2"></div>
-                              <div className="w-12 h-12 bg-[#161b22] border border-[#30363d]/80 rounded-2xl flex items-center justify-center text-purple-400 shadow-xl mx-auto relative transition-all hover:scale-105 duration-300">
-                                <MessageSquare size={20} className="animate-pulse" />
-                              </div>
-                            </div>
-                            <h4 className="text-xs font-extrabold text-white mb-2 tracking-wide font-mono uppercase">No Active Queries</h4>
-                            <p className="text-[11px] text-[#8b949e] font-sans font-light leading-relaxed mb-5">
-                              No service tickets or technical support logs are cached inside the current router partition.
-                            </p>
-                            <button
-                              onClick={() => saveQueryRecords(DEFAULT_QUERY_RECORDS)}
-                              className="px-4 py-2 bg-purple-950/40 hover:bg-purple-800/80 text-purple-300 hover:text-white border border-purple-800/40 rounded-xl text-[10px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                            >
-                              Reset support queries
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="py-16 text-center text-xs text-[#8b949e] flex flex-col items-center justify-center">
-                            <ShieldAlert size={24} className="mx-auto mb-2 text-zinc-500" />
-                            <p className="font-semibold text-zinc-200">No matching search queries</p>
-                            <p className="text-zinc-500 text-[11px] font-mono mt-1 max-w-[200px]">"{searchTerm}"</p>
-                            <button
-                              onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
-                              className="mt-3 text-[11px] font-semibold text-[#58a6ff] hover:underline cursor-pointer transition-colors"
-                            >
-                              Reset filters
-                            </button>
-                          </div>
-                        )
-                      ) : (
-                        <>
-                          {/* Desktop Query Table - Shown on medium and above screens */}
-                          <div className="hidden md:block overflow-x-auto">
-                            <table className="w-full text-left text-xs font-sans">
-                              <thead className="bg-[#0c1017] text-zinc-500 border-b border-[#30363d] text-[10px] font-bold uppercase tracking-wider font-mono">
-                                <tr>
-                                  <th className="p-3 pl-4 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('id')}>
-                                    <div className="flex items-center gap-1">
-                                      <span>Query ID</span>
-                                      <ArrowUpDown size={9} className="text-zinc-650" />
-                                    </div>
-                                  </th>
-                                  <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('customerName')}>
-                                    <div className="flex items-center gap-1">
-                                      <span>Client</span>
-                                      <ArrowUpDown size={9} className="text-zinc-650" />
-                                    </div>
-                                  </th>
-                                  <th className="p-3 cursor-pointer hover:text-white select-none whitespace-nowrap" onClick={() => toggleSort('priority')}>
-                                    <div className="flex items-center gap-1">
-                                      <span>Priority</span>
-                                      <ArrowUpDown size={9} className="text-zinc-650" />
-                                    </div>
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-[#30363d]/40">
-                                {currentItems.map((record) => (
-                                  <tr 
-                                    key={record.id} 
-                                    onClick={() => setSelectedQuery(record)}
-                                    className={`hover:bg-[#161b22]/35 transition-colors cursor-pointer ${selectedQuery?.id === record.id ? 'bg-[#58a6ff]/5 border-l-2 border-[#58a6ff]' : ''}`}
-                                  >
-                                    <td className="p-3 pl-4 font-mono font-bold text-[#58a6ff] whitespace-nowrap">{record.id}</td>
-                                    <td className="p-3 font-semibold text-zinc-100 truncate max-w-[150px]">{record.customerName}</td>
-                                    <td className="p-3 whitespace-nowrap">
-                                      <span className={`inline-block px-1.5 py-0.5 rounded font-mono text-[8.5px] font-extrabold uppercase border ${
-                                        record.priority === 'Critical' ? 'bg-red-950/20 text-red-400 border-red-900/40' :
-                                        record.priority === 'High' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                                        record.priority === 'Medium' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                        'bg-zinc-900 text-zinc-400 border-zinc-800'
-                                      }`}>
-                                        {record.priority}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          {/* Mobile Query Cards List - Shown on Mobile/Tablet screens */}
-                          <div className="block md:hidden divide-y divide-[#30363d]/30">
-                            {currentItems.map((record) => (
-                              <div 
-                                key={record.id} 
-                                onClick={() => {
-                                  setSelectedQuery(record);
-                                  // Open details view overlay on mobile screens immediately
-                                  if (window.innerWidth < 1024) {
-                                    handleOpenView(record);
-                                  }
-                                }}
-                                className={`p-4 space-y-2 select-none hover:bg-[#161b22]/40 active:bg-[#161b22]/70 transition-all duration-150 cursor-pointer ${
-                                  selectedQuery?.id === record.id ? 'bg-[#58a6ff]/5 border-l-2 border-[#58a6ff]' : ''
-                                }`}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="font-mono font-bold text-[#58a6ff] text-xs">{record.id}</span>
-                                  <span className={`inline-block px-1.5 py-0.5 rounded font-mono text-[8px] font-extrabold uppercase border ${
-                                    record.priority === 'Critical' ? 'bg-red-950/20 text-red-400 border-red-900/40' :
-                                    record.priority === 'High' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                                    record.priority === 'Medium' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                                    'bg-zinc-900 text-zinc-400 border-zinc-800'
-                                  }`}>
-                                    {record.priority}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-0.5">
-                                  <div>
-                                    <span className="text-[8px] font-mono text-zinc-500 uppercase block font-bold leading-none">Client</span>
-                                    <span className="font-semibold text-zinc-100 text-xs">{record.customerName}</span>
-                                  </div>
-                                  <div className="text-right">
-                                    <span className="text-[8px] font-mono text-zinc-500 uppercase block font-bold leading-none">Classification</span>
-                                    <span className="text-[10px] font-mono font-bold text-zinc-400">{record.category}</span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-0.5 text-[10px]">
-                                  <span className="text-zinc-400 font-light truncate max-w-[150px]">
-                                    <span className="text-zinc-550 text-[8px] uppercase font-bold font-mono tracking-wider mr-1">Owner:</span>
-                                    {record.assignedTo}
-                                  </span>
-                                  <span className="text-zinc-500 font-mono text-[9px]">
-                                    {record.createdDate}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-1">
-                                  <span className="text-[9px] text-[#8b949e] font-mono uppercase font-bold">Query Status</span>
-                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase border ${
-                                    record.status === 'New Query' ? 'bg-blue-950/25 text-blue-400 border-blue-900/40' :
-                                    record.status === 'In Process' ? 'bg-amber-950/25 text-amber-500 border-amber-900/40' :
-                                    record.status === 'Won' ? 'bg-emerald-950/25 text-emerald-400 border-emerald-900/40' :
-                                    'bg-red-950/25 text-red-400 border-red-900/40'
-                                  }`}>
-                                    {record.status}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Pagination in kompakten list footer */}
-                    <div className="p-3 border-t border-[#30363d] flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-[#161b22]/30">
-                      <div className="text-[10px] font-mono text-zinc-500 text-center sm:text-left">
-                        Showing <span className="text-zinc-300 font-bold">{processedData.length > 0 ? indexOfFirstItem + 1 : 0}</span>-{Math.min(indexOfLastItem, processedData.length)} of {processedData.length}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={handlePrevPage}
-                          disabled={currentPage === 1}
-                          className="p-1 px-1.5 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white disabled:opacity-20 rounded transition-all cursor-pointer"
-                        >
-                          <ChevronLeft size={11} />
-                        </button>
-                        <span className="text-[10px] font-mono font-bold text-white select-none">
-                          {currentPage}/{totalPages}
-                        </span>
-                        <button
-                          onClick={handleNextPage}
-                          disabled={currentPage === totalPages}
-                          className="p-1 px-1.5 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white disabled:opacity-20 rounded transition-all cursor-pointer"
-                        >
-                          <ChevronRight size={11} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
+                  <motion.div
+                    initial={{ x: '-100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '-100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                    className="fixed top-0 left-0 bottom-0 w-72 max-w-[85vw] z-[101] lg:hidden shadow-2xl"
+                  >
+                    <MarketingSidebar 
+                      marketingUser={marketingUser}
+                      activeModule={activeModule}
+                      setActiveModule={setActiveModule}
+                      searchTerm={searchTerm}
+                      setSearchTerm={setSearchTerm}
+                      statusFilter={statusFilter}
+                      setStatusFilter={setStatusFilter}
+                      pipelineTab={pipelineTab}
+                      handlePipelineTabChange={handlePipelineTabChange}
+                      inboxCount={inboxCount}
+                      queryCount={queryRecords.length}
+                      newQueryCount={newQueryCount}
+                      inProcessCount={inProcessCount}
+                      wonCount={wonCount}
+                      lostCount={lostCount}
+                      onOpenAdmin={onOpenAdmin}
+                      onOpenAdd={handleOpenAdd}
+                      onExitPortal={onExitPortal}
+                      handleLogout={handleLogout}
+                      setCurrentPage={setCurrentPage}
+                      isMobileDrawer={true}
+                      onCloseMobileDrawer={() => setIsSidebarOpen(false)}
+                      portalTheme={portalTheme}
+                      setPortalTheme={setPortalTheme}
+                    />
+                  </motion.div>
                 </>
               )}
+            </AnimatePresence>
 
-            </div>
+            {/* ERP Left Sidebar Navigation (Fixed width ~260px / w-64) */}
+            <aside className={`hidden lg:flex w-64 shrink-0 h-full flex-col select-none border-r transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'border-slate-800/80 bg-[#0d1117]'}`}>
+              <MarketingSidebar 
+                marketingUser={marketingUser}
+                activeModule={activeModule}
+                setActiveModule={setActiveModule}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                pipelineTab={pipelineTab}
+                handlePipelineTabChange={handlePipelineTabChange}
+                inboxCount={inboxCount}
+                queryCount={queryRecords.length}
+                newQueryCount={newQueryCount}
+                inProcessCount={inProcessCount}
+                wonCount={wonCount}
+                lostCount={lostCount}
+                onOpenAdmin={onOpenAdmin}
+                onOpenAdd={handleOpenAdd}
+                onExitPortal={onExitPortal}
+                handleLogout={handleLogout}
+                setCurrentPage={setCurrentPage}
+                portalTheme={portalTheme}
+                setPortalTheme={setPortalTheme}
+              />
+            </aside>
 
-            {/* DETAILS PANEL (Column 3) */}
-            {activeModule === 'queries' && (
-              <div className="bg-[#161b22]/70 border border-[#30363d] rounded-2xl p-5 shadow-2xl flex flex-col min-h-[460px] justify-between h-auto w-full">
-                    
-                    {selectedQuery ? (
-                      <div className="space-y-5 h-full flex flex-col justify-between">
-                        
-                        <div className="space-y-4">
-                          {/* ID + Priority top indicators */}
-                          <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
-                            <div>
-                              <span className="text-[#58a6ff] font-mono font-black text-xs block">{selectedQuery.id}</span>
-                              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{selectedQuery.category}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
-                                selectedQuery.priority === 'Critical' ? 'bg-red-950/30 text-red-400 border-red-900/40' :
-                                selectedQuery.priority === 'High' ? 'bg-amber-950/30 text-amber-500 border-amber-900/40' :
-                                selectedQuery.priority === 'Medium' ? 'bg-blue-950/30 text-blue-400 border-blue-900/40' :
-                                'bg-zinc-900 text-zinc-400 border-zinc-800'
-                              }`}>
-                                {selectedQuery.priority}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Client Detail Block */}
-                          <div className="grid grid-cols-2 gap-3 pt-1">
-                            <div>
-                              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Client Name</span>
-                              <span className="text-xs font-semibold text-white block mt-0.5">{selectedQuery.customerName}</span>
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Assigned Staff</span>
-                              <span className="text-xs font-mono font-bold text-[#58a6ff] block mt-0.5">{selectedQuery.assignedTo}</span>
-                            </div>
-                          </div>
-
-                          {/* Dates and status row */}
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Created Date</span>
-                              <span className="text-xs font-mono text-zinc-300 block mt-0.5">{selectedQuery.createdDate}</span>
-                            </div>
-                            <div>
-                              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Current Status</span>
-                              <div className="relative inline-block mt-0.5">
-                                <button
-                                  onClick={() => setIsChangingStatus(!isChangingStatus)}
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[9.5px] font-mono font-black uppercase border cursor-pointer hover:brightness-125 hover:border-zinc-500/80 transition-all ${
-                                    selectedQuery.status === 'New Query' ? 'bg-blue-950/25 text-blue-400 border-blue-900/50' :
-                                    selectedQuery.status === 'In Process' ? 'bg-amber-950/25 text-amber-500 border-amber-900/50' :
-                                    selectedQuery.status === 'Won' ? 'bg-emerald-950/25 text-emerald-400 border-emerald-900/50' :
-                                    'bg-red-950/25 text-red-500 border-red-900/50'
-                                  }`}
-                                  title="Click to Change Status"
-                                >
-                                  <span className={`w-1.5 h-1.5 rounded-full ${
-                                    selectedQuery.status === 'New Query' ? 'bg-blue-400' :
-                                    selectedQuery.status === 'In Process' ? 'bg-amber-500' :
-                                    selectedQuery.status === 'Won' ? 'bg-emerald-400' :
-                                    'bg-red-500'
-                                  }`} />
-                                  <span>{selectedQuery.status}</span>
-                                  <ChevronDown size={10} className="text-zinc-400 ml-0.5 shrink-0" />
-                                </button>
-
-                                {isChangingStatus && (
-                                  <>
-                                    <div 
-                                      className="fixed inset-0 z-30" 
-                                      onClick={() => setIsChangingStatus(false)} 
-                                    />
-                                    <div className="absolute left-0 mt-1.5 w-32 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-40 overflow-hidden font-mono text-[9px] divide-y divide-[#30363d]/50">
-                                      {(['New Query', 'In Process', 'Won', 'Lost'] as const).map((statusOption) => (
-                                        <button
-                                          key={statusOption}
-                                          onClick={() => {
-                                            handleUpdateStatus(statusOption);
-                                            setIsChangingStatus(false);
-                                          }}
-                                          className={`w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-[#21262d] transition-colors cursor-pointer ${
-                                            selectedQuery.status === statusOption ? 'text-[#58a6ff] bg-[#1f6feb]/5 font-bold' : 'text-zinc-300'
-                                          }`}
-                                        >
-                                          <span className={`w-1.5 h-1.5 rounded-full ${
-                                            statusOption === 'New Query' ? 'bg-blue-400' :
-                                            statusOption === 'In Process' ? 'bg-amber-500' :
-                                            statusOption === 'Won' ? 'bg-emerald-400' :
-                                            'bg-red-500'
-                                          }`} />
-                                          <span>{statusOption.toUpperCase()}</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                          {/* Query Description Area */}
-                          <div className="pt-2">
-                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold mb-1.5">Query Summary Description</span>
-                            <div className="bg-[#0d1117] border border-[#30363d]/50 p-3.5 rounded-xl text-xs text-zinc-300 font-light leading-relaxed font-sans max-h-[120px] overflow-y-auto">
-                              {selectedQuery.description}
-                            </div>
-                          </div>
-
-                          {/* Administrative Notes / Comments Section */}
-                          <div className="pt-3 border-t border-[#30363d]/40">
-                            <NotesAndDetailsWidget 
-                              itemId={selectedQuery.id}
-                              notesText={selectedQuery.notes}
-                              isInbox={false}
-                              onSave={handleSaveNotes}
-                              author={marketingUser?.username || 'Admin Staff'}
-                            />
-                          </div>
-
-                        {/* Interactive edit and helper dispatch panel */}
-                        <div className="pt-4 border-t border-[#30363d]/70 flex items-center justify-end gap-3.5 mt-4">
-                          <button
-                            onClick={() => handleOpenEdit(selectedQuery)}
-                            className="px-4 py-2 bg-[#21262d] hover:bg-[#30363d] text-white border border-[#30363d] rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Edit2 size={12} />
-                            <span>Edit Query</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => handleDeleteItem(selectedQuery.id)}
-                            className="px-4 py-2 bg-red-950/30 text-red-400 hover:text-white hover:bg-red-800/80 border border-red-900/30 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Trash2 size={12} />
-                            <span>Remove</span>
-                          </button>
-                        </div>
-
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-20 text-center h-full text-[#8b949e]">
-                        <Info size={32} className="text-zinc-600 mb-3" />
-                        <h4 className="text-sm font-bold text-white mb-1">Details Panel Clear</h4>
-                        <p className="text-xs font-light max-w-xs leading-relaxed">No Query is currently active. Select any query record from the directory list on the left to display its full parameters.</p>
-                      </div>
-                    )}
-
+            {/* Right-Side Scrollable Content Area */}
+            <main className={`flex-1 h-full overflow-y-auto p-4 lg:p-6 space-y-4 transition-colors ${portalTheme === 'white' ? 'bg-[#F8FAFC]' : 'bg-[#090d13]'}`}>
+              {/* ERP Breadcrumb & Status Header */}
+              <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#161b22]/70 border-slate-800'}`}>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className={`lg:hidden p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${portalTheme === 'white' ? 'text-slate-600 hover:text-slate-900 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-slate-400 hover:text-white bg-[#0d1117] border-slate-800 hover:bg-[#21262d]'}`}
+                    title="Open Navigation"
+                  >
+                    <Menu size={15} />
+                  </button>
+                  <div className="flex items-center gap-2 text-xs font-mono">
+                    <span className="text-slate-500 font-bold uppercase">ERP</span>
+                    <span className={portalTheme === 'white' ? 'text-slate-300' : 'text-slate-700'}>/</span>
+                    <span className={`font-bold uppercase ${portalTheme === 'white' ? 'text-slate-700' : 'text-slate-400'}`}>Marketing</span>
+                    <span className={portalTheme === 'white' ? 'text-slate-300' : 'text-slate-700'}>/</span>
+                    <span className="text-sky-600 dark:text-sky-400 font-bold uppercase">
+                      {activeModule === 'inbox' ? 'Inbox' : 'Query Hub & Metrics'}
+                    </span>
                   </div>
+                </div>
 
+                <div className="flex items-center gap-2 font-mono text-[11px]">
+                  {/* Theme Switcher in header */}
+                  <button
+                    onClick={() => setPortalTheme(prev => prev === 'white' ? 'dark' : 'white')}
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer ${portalTheme === 'white' ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' : 'bg-[#161b22] border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'}`}
+                    title="Toggle Portal Theme"
+                  >
+                    {portalTheme === 'white' ? (
+                      <>
+                        <Sun size={12} className="text-amber-500" />
+                        <span className="font-bold">White Theme</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon size={12} className="text-sky-400" />
+                        <span className="font-bold">Dark Theme</span>
+                      </>
+                    )}
+                  </button>
+
+                  {searchTerm && (
+                    <span className={`px-2 py-0.5 rounded border font-bold flex items-center gap-1 ${portalTheme === 'white' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-950/40 text-sky-400 border-sky-800/60'}`}>
+                      Search: "{searchTerm}"
+                      <button onClick={() => { setSearchTerm(''); setCurrentPage(1); }} className="hover:opacity-80 cursor-pointer"><X size={10} /></button>
+                    </span>
+                  )}
+                  {statusFilter !== 'all' && (
+                    <span className={`px-2 py-0.5 rounded border font-bold flex items-center gap-1 ${portalTheme === 'white' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-950/40 text-amber-400 border-amber-800/60'}`}>
+                      Status: {statusFilter}
+                      <button onClick={() => { setStatusFilter('all'); setCurrentPage(1); }} className="hover:opacity-80 cursor-pointer"><X size={10} /></button>
+                    </span>
+                  )}
+                  <span className={`px-2 py-0.5 rounded border font-semibold ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
+                    {processedData.length} records
+                  </span>
+                </div>
+              </div>
+
+              {/* Dynamic Module Workspace */}
+              {activeModule === 'inbox' ? (
+                <MarketingInboxTable 
+                  currentItems={currentItems as InboxTicket[]}
+                  processedData={processedData as InboxTicket[]}
+                  totalTicketsCount={inboxTickets.length}
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  setStatusFilter={setStatusFilter}
+                  toggleSort={toggleSort}
+                  handleOpenView={handleOpenView}
+                  handlePrevPage={handlePrevPage}
+                  handleNextPage={handleNextPage}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  indexOfFirstItem={indexOfFirstItem}
+                  indexOfLastItem={indexOfLastItem}
+                  portalTheme={portalTheme}
+                />
+              ) : (
+                <MarketingQueriesView 
+                  pipelineTab={pipelineTab}
+                  handlePipelineTabChange={handlePipelineTabChange}
+                  newQueryCount={newQueryCount}
+                  inProcessCount={inProcessCount}
+                  wonCount={wonCount}
+                  lostCount={lostCount}
+                  currentItems={currentItems as QueryRecord[]}
+                  processedData={processedData as QueryRecord[]}
+                  totalQueriesCount={queryRecords.length}
+                  selectedQuery={selectedQuery}
+                  setSelectedQuery={setSelectedQuery}
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  setStatusFilter={setStatusFilter}
+                  toggleSort={toggleSort}
+                  handleOpenAdd={handleOpenAdd}
+                  handleOpenEdit={handleOpenEdit}
+                  handleOpenView={handleOpenView}
+                  handleDeleteItem={handleDeleteItem}
+                  handleUpdateStatus={handleUpdateStatus}
+                  isChangingStatus={isChangingStatus}
+                  setIsChangingStatus={setIsChangingStatus}
+                  onSaveNotes={handleSaveNotes}
+                  marketingUser={marketingUser}
+                  handlePrevPage={handlePrevPage}
+                  handleNextPage={handleNextPage}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  indexOfFirstItem={indexOfFirstItem}
+                  indexOfLastItem={indexOfLastItem}
+                  portalTheme={portalTheme}
+                />
               )}
-
+            </main>
           </div>
 
-          {/* VIEW OVERLAY MODAL */}
+                    {/* VIEW OVERLAY MODAL */}
           <AnimatePresence>
-            {showViewModal && (activeModule === 'inbox' ? selectedTicket : selectedQuery) && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {showViewModal && activeModule === 'inbox' && selectedTicket && (
+              <div className={`fixed inset-0 z-[100] overflow-y-auto p-4 md:p-12 w-full h-full ${portalTheme === 'white' ? 'bg-slate-50' : 'bg-[#0d1117]'}`}>
                 <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setShowViewModal(false)}
-                  className="absolute inset-0 bg-black/80 backdrop-blur-md" 
-                />
-                
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="relative w-full max-w-lg bg-[#0d1117] border border-[#30363d] rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className={`relative w-full max-w-4xl mx-auto rounded-3xl p-6 md:p-10 shadow-2xl space-y-6 border ${
+                    portalTheme === 'white'
+                      ? 'bg-white border-slate-200 text-slate-800 shadow-xl'
+                      : 'bg-[#161b22] border-[#30363d] text-white shadow-2xl'
+                  }`}
                 >
                   <button 
                     onClick={() => setShowViewModal(false)}
-                    className="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors"
+                    className={`absolute top-5 right-5 transition-colors cursor-pointer ${
+                      portalTheme === 'white' ? 'text-slate-400 hover:text-slate-700' : 'text-zinc-500 hover:text-white'
+                    }`}
                   >
                     <X size={18} />
                   </button>
 
                   {/* Header Title with ID */}
                   <div>
-                    <span className="text-[10px] font-mono uppercase bg-[#161b22] border border-[#30363d] text-[#58a6ff] font-bold px-2 py-0.5 rounded">
-                      Document Details: {activeModule === 'inbox' ? selectedTicket?.id : selectedQuery?.id}
+                    <span className={`text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded border ${
+                      portalTheme === 'white'
+                        ? 'bg-sky-50 border-sky-200 text-sky-700'
+                        : 'bg-[#161b22] border-[#30363d] text-[#58a6ff]'
+                    }`}>
+                      Document Details: {selectedTicket?.id}
                     </span>
-                    <h3 className="text-xl font-bold text-white mt-3 leading-snug font-sans">
-                      {activeModule === 'inbox' ? selectedTicket?.subject : `Customer Query File`}
+                    <h3 className={`text-xl font-bold mt-3 leading-snug font-sans ${
+                      portalTheme === 'white' ? 'text-slate-900' : 'text-white'
+                    }`}>
+                      {selectedTicket?.subject}
                     </h3>
                   </div>
-
-                  {activeModule === 'inbox' ? (
-                    /* INBOX SPECIFIC DETAIL LAYOUT */
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 border-b border-[#30363d]/40 pb-4">
+                  {/* INBOX SPECIFIC DETAIL LAYOUT */}
+                  <div className="space-y-4">
+                      <div className={`grid grid-cols-2 gap-4 pb-4 border-b ${
+                        portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'
+                      }`}>
                         <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Contact Name</span>
-                          <span className="text-xs font-semibold text-white block mt-0.5">{selectedTicket?.name}</span>
+                          <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                          }`}>Contact Name</span>
+                          <span className={`text-xs font-semibold block mt-0.5 ${
+                            portalTheme === 'white' ? 'text-slate-800' : 'text-white'
+                          }`}>{selectedTicket?.name}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Email Address</span>
-                          <span className="text-xs font-mono text-[#58a6ff] block mt-0.5 truncate">{selectedTicket?.email}</span>
+                          <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                          }`}>Email Address</span>
+                          <span className={`text-xs font-mono block mt-0.5 truncate ${
+                            portalTheme === 'white' ? 'text-sky-700' : 'text-[#58a6ff]'
+                          }`}>{selectedTicket?.email}</span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 border-b border-[#30363d]/40 pb-4">
+                      <div className={`grid grid-cols-2 gap-4 pb-4 border-b ${
+                        portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'
+                      }`}>
                         <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Receipt Date</span>
-                          <span className="text-xs font-mono text-zinc-300 block mt-0.5">{selectedTicket?.date}</span>
+                          <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                          }`}>Receipt Date</span>
+                          <span className={`text-xs font-mono block mt-0.5 ${
+                            portalTheme === 'white' ? 'text-slate-600' : 'text-zinc-300'
+                          }`}>{selectedTicket?.date}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Action Status</span>
+                          <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                          }`}>Action Status</span>
                           <span className="inline-block mt-0.5">
                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
-                              selectedTicket?.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                              selectedTicket?.status === 'In Process' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                              selectedTicket?.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40' :
-                              'bg-red-950/20 text-red-500 border-red-900/40'
+                              selectedTicket?.status === 'New Query' ? (portalTheme === 'white' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-blue-950/20 text-blue-400 border-blue-900/40') :
+                              selectedTicket?.status === 'In Process' ? (portalTheme === 'white' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-950/20 text-amber-500 border-amber-900/40') :
+                              selectedTicket?.status === 'Won' ? (portalTheme === 'white' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40') :
+                              (portalTheme === 'white' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-950/20 text-red-500 border-red-900/40')
                             }`}>
                               {selectedTicket?.status}
                             </span>
@@ -2023,21 +1281,31 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       </div>
 
                       <div>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold mb-1.5">Full Message Text</span>
-                        <div className="bg-[#161b22]/80 border border-[#30363d]/40 p-4 rounded-xl text-xs text-zinc-300 font-light leading-relaxed whitespace-pre-wrap font-sans max-h-[160px] overflow-y-auto">
+                        <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
+                          portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                        }`}>Full Message Text</span>
+                        <div className={`p-4 rounded-xl text-xs font-light leading-relaxed whitespace-pre-wrap font-sans max-h-[160px] overflow-y-auto border ${
+                          portalTheme === 'white'
+                            ? 'bg-slate-50 border-slate-200 text-slate-700'
+                            : 'bg-[#161b22]/80 border-[#30363d]/40 text-zinc-300'
+                        }`}>
                           {selectedTicket?.message}
                         </div>
                       </div>
 
                       {/* Action Routing Options (Convert to Query / Mark as Lost) */}
-                      <div className="pt-3 border-t border-[#30363d]/40">
-                        <span className="text-[9px] font-mono text-[#58a6ff] uppercase tracking-widest block font-bold mb-2 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#58a6ff]"></span>
+                      <div className={`pt-3 border-t ${
+                        portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'
+                      }`}>
+                        <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold mb-2 flex items-center gap-1.5 ${
+                          portalTheme === 'white' ? 'text-sky-700' : 'text-[#58a6ff]'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${portalTheme === 'white' ? 'bg-sky-600' : 'bg-[#58a6ff]'}`}></span>
                           Routing Operations
                         </span>
                         <div className="grid grid-cols-2 gap-3">
                           <button
-                            onClick={() => selectedTicket && handleMoveInboxToQuery(selectedTicket, 'New Query')}
+                            onClick={() => selectedTicket && handleMoveInboxToQuery(selectedTicket)}
                             className="px-4 py-2 bg-[#2ea44f] hover:bg-[#2c974b] text-white border border-[#2ea44f]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
                           >
                             <span>✓ Convert to Query</span>
@@ -2052,7 +1320,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       </div>
 
                       {/* Administrative Notes / Comments Section */}
-                      <div className="pt-3 border-t border-[#30363d]/40">
+                      <div className={`pt-3 border-t ${portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'}`}>
                         {selectedTicket && (
                           <NotesAndDetailsWidget 
                             itemId={selectedTicket.id}
@@ -2060,93 +1328,77 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             isInbox={true}
                             onSave={handleSaveNotes}
                             author={marketingUser?.username || 'Admin Staff'}
+                            portalTheme={portalTheme}
                           />
                         )}
                       </div>
                     </div>
-                  ) : (
-                    /* QUERY SPECIFIC DETAIL LAYOUT */
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 border-b border-[#30363d]/40 pb-4">
-                        <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Customer Client</span>
-                          <span className="text-xs font-semibold text-white block mt-0.5">{selectedQuery?.customerName}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Category</span>
-                          <span className="text-xs font-mono text-[#58a6ff] block mt-0.5">{selectedQuery?.category}</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 border-b border-[#30363d]/40 pb-4">
-                        <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Priority Status</span>
-                          <span className="block mt-0.5">
-                            <span className={`inline-flex px-1.5 py-0.5 rounded font-mono text-[9px] font-extrabold uppercase border ${
-                              selectedQuery?.priority === 'Critical' ? 'bg-red-950/30 text-red-400 border-red-900/40' :
-                              selectedQuery?.priority === 'High' ? 'bg-amber-950/30 text-amber-500 border-amber-900/40' :
-                              selectedQuery?.priority === 'Medium' ? 'bg-blue-950/30 text-blue-400 border-blue-900/40' :
-                              'bg-zinc-900 text-zinc-400 border-zinc-800'
-                            }`}>
-                              {selectedQuery?.priority}
-                            </span>
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Assigned Support Staff</span>
-                          <span className="text-xs font-semibold text-zinc-300 block mt-0.5">{selectedQuery?.assignedTo}</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 border-b border-[#30363d]/40 pb-4">
-                        <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Created Date</span>
-                          <span className="text-xs font-mono text-zinc-300 block mt-0.5">{selectedQuery?.createdDate}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Query Lifecycle State</span>
-                          <span className="block mt-0.5">
-                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
-                              selectedQuery?.status === 'New Query' ? 'bg-blue-950/20 text-blue-400 border-blue-900/40' :
-                              selectedQuery?.status === 'In Process' ? 'bg-amber-950/20 text-amber-500 border-amber-900/40' :
-                              selectedQuery?.status === 'Won' ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40' :
-                              'bg-red-950/20 text-red-500 border-red-900/40'
-                            }`}>
-                              {selectedQuery?.status}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold mb-1.5">Issue Description / Diagnostics</span>
-                        <div className="bg-[#161b22]/80 border border-[#30363d]/40 p-4 rounded-xl text-xs text-zinc-300 font-light leading-relaxed whitespace-pre-wrap font-sans max-h-[160px] overflow-y-auto font-sans">
-                          {selectedQuery?.description}
-                        </div>
-                      </div>
-
-                      {/* Administrative Notes / Comments Section */}
-                      <div className="pt-3 border-t border-[#30363d]/40">
-                        {selectedQuery && (
-                          <NotesAndDetailsWidget 
-                            itemId={selectedQuery.id}
-                            notesText={selectedQuery.notes}
-                            isInbox={false}
-                            onSave={handleSaveNotes}
-                            author={marketingUser?.username || 'Admin Staff'}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Close dialogue button bottom */}
-                  <div className="pt-4 border-t border-[#30363d] flex justify-end">
+                  <div className={`pt-4 border-t flex justify-end ${
+                    portalTheme === 'white' ? 'border-slate-200' : 'border-[#30363d]'
+                  }`}>
                     <button
                       onClick={() => setShowViewModal(false)}
-                      className="px-5 py-2 bg-[#21262d] hover:bg-[#30363d] text-white border border-[#30363d] rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                      className={`px-5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                        portalTheme === 'white'
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                          : 'bg-[#21262d] hover:bg-[#30363d] text-white border-[#30363d]'
+                      }`}
                     >
                       Dismiss View
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* DELETE CONFIRMATION MODAL */}
+          <AnimatePresence>
+            {deleteCandidateId && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setDeleteCandidateId(null)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+                />
+                
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className={`relative w-full max-w-sm border rounded-3xl p-6 shadow-2xl space-y-5 text-center ${
+                    portalTheme === 'white' ? 'bg-white border-red-200' : 'bg-[#0d1117] border-red-900/40'
+                  }`}
+                >
+                  <div className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto ${
+                    portalTheme === 'white' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-red-950/40 border-red-800/60 text-red-400'
+                  }`}>
+                    <Trash2 size={20} />
+                  </div>
+                  <div>
+                    <h3 className={`text-base font-bold ${portalTheme === 'white' ? 'text-slate-900' : 'text-white'}`}>Delete Record</h3>
+                    <p className={`text-xs mt-1.5 font-light leading-relaxed ${portalTheme === 'white' ? 'text-slate-500' : 'text-[#8b949e]'}`}>
+                      Are you sure you want to permanently remove this inquiry record? This action cannot be reversed.
+                    </p>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => setDeleteCandidateId(null)}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                        portalTheme === 'white' ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-[#21262d] hover:bg-[#30363d] text-white'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => confirmAndDeleteItem(deleteCandidateId)}
+                      className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-mono font-bold transition-all shadow-lg shadow-red-600/30 cursor-pointer"
+                    >
+                      Confirm Delete
                     </button>
                   </div>
                 </motion.div>
@@ -2170,7 +1422,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="relative w-full max-w-lg bg-[#0d1117] border border-[#30363d] rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto"
+                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-[#0d1117] border-[#30363d]'}`}
                 >
                   <button 
                     onClick={() => setShowEditModal(false)}
@@ -2185,7 +1437,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       <Edit2 size={16} />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white tracking-tight">Modify Parameters</h3>
+                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-white'}`}>Modify Parameters</h3>
                       <p className="text-[10px] uppercase font-mono tracking-widest text-[#8b949e] mt-0.5">Record ID: {activeModule === 'inbox' ? selectedTicket?.id : selectedQuery?.id}</p>
                     </div>
                   </div>
@@ -2203,7 +1455,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               required
                               value={editFormValues.name || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, name: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                           <div>
@@ -2213,7 +1465,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               required
                               value={editFormValues.email || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, email: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                         </div>
@@ -2225,7 +1477,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             required
                             value={editFormValues.subject || ''}
                             onChange={(e) => setEditFormValues({ ...editFormValues, subject: e.target.value })}
-                            className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                           />
                         </div>
 
@@ -2235,9 +1487,9 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             <input
                               type="date"
                               required
+                              disabled
                               value={editFormValues.date || ''}
-                              onChange={(e) => setEditFormValues({ ...editFormValues, date: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none font-mono cursor-not-allowed opacity-70 transition-colors ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-[#161b22] border-zinc-800 text-zinc-500'}`}
                             />
                           </div>
                           <div>
@@ -2245,7 +1497,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             <select
                               value={editFormValues.status || 'New Query'}
                               onChange={(e) => setEditFormValues({ ...editFormValues, status: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-300"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -2262,7 +1514,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             required
                             value={editFormValues.message || ''}
                             onChange={(e) => setEditFormValues({ ...editFormValues, message: e.target.value })}
-                            className="w-full bg-[#161b22] border border-zinc-800 rounded-xl p-4 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                           />
                         </div>
                       </>
@@ -2277,7 +1529,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               required
                               value={editFormValues.customerName || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, customerName: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                           <div>
@@ -2287,7 +1539,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               required
                               value={editFormValues.category || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, category: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                         </div>
@@ -2298,7 +1550,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             <select
                               value={editFormValues.priority || 'Medium'}
                               onChange={(e) => setEditFormValues({ ...editFormValues, priority: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-300"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             >
                               <option value="Low">Low</option>
                               <option value="Medium">Medium</option>
@@ -2313,7 +1565,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               required
                               value={editFormValues.assignedTo || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, assignedTo: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-sans font-bold"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-sans font-bold ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                         </div>
@@ -2324,9 +1576,9 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             <input
                               type="date"
                               required
+                              disabled
                               value={editFormValues.createdDate || ''}
-                              onChange={(e) => setEditFormValues({ ...editFormValues, createdDate: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none font-mono cursor-not-allowed opacity-70 transition-colors ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-[#161b22] border-zinc-800 text-zinc-500'}`}
                             />
                           </div>
                           <div>
@@ -2334,7 +1586,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             <select
                               value={editFormValues.status || 'New Query'}
                               onChange={(e) => setEditFormValues({ ...editFormValues, status: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-[#8b949e] outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -2351,7 +1603,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             required
                             value={editFormValues.description || ''}
                             onChange={(e) => setEditFormValues({ ...editFormValues, description: e.target.value })}
-                            className="w-full bg-[#161b22] border border-zinc-800 rounded-xl p-4 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                           />
                         </div>
                       </>
@@ -2361,7 +1613,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       <button
                         type="button"
                         onClick={() => setShowEditModal(false)}
-                        className="px-5 py-2.5 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors"
+                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-[#21262d] border-[#30363d] text-zinc-400 hover:text-white'}`}
                       >
                         Cancel
                       </button>
@@ -2396,7 +1648,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="relative w-full max-w-lg bg-[#0d1117] border border-[#30363d] rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto"
+                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-[#0d1117] border-[#30363d]'}`}
                 >
                   <button 
                     onClick={() => setShowAddModal(false)}
@@ -2411,7 +1663,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       <Plus size={18} />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white tracking-tight">Create Mock Record</h3>
+                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-white'}`}>Create Mock Record</h3>
                       <p className="text-[10px] uppercase font-mono tracking-widest text-[#8b949e] mt-0.5">Assigned ID: {addFormValues.id}</p>
                     </div>
                   </div>
@@ -2430,7 +1682,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               placeholder="e.g. Liam Sterling"
                               value={addFormValues.name || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, name: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                           <div>
@@ -2441,7 +1693,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               placeholder="l.sterling@corp.com"
                               value={addFormValues.email || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, email: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                         </div>
@@ -2454,7 +1706,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             placeholder="Inquiring about White-Label SaaS models"
                             value={addFormValues.subject || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, subject: e.target.value })}
-                            className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                           />
                         </div>
 
@@ -2474,7 +1726,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             <select
                               value={addFormValues.status || 'New Query'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, status: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-300"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -2492,7 +1744,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             placeholder="Type simulated query message here..."
                             value={addFormValues.message || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, message: e.target.value })}
-                            className="w-full bg-[#161b22] border border-zinc-800 rounded-xl p-4 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                           />
                         </div>
                       </>
@@ -2508,7 +1760,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               placeholder="e.g. Diana Prince"
                               value={addFormValues.customerName || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, customerName: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                           <div>
@@ -2519,7 +1771,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               placeholder="e.g. Enterprise AI"
                               value={addFormValues.category || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, category: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                         </div>
@@ -2546,7 +1798,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                               placeholder="e.g. Vishal"
                               value={addFormValues.assignedTo || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, assignedTo: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                             />
                           </div>
                         </div>
@@ -2585,7 +1837,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                             placeholder="Type query documentation / logs summary here..."
                             value={addFormValues.description || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, description: e.target.value })}
-                            className="w-full bg-[#161b22] border border-zinc-800 rounded-xl p-4 text-xs text-white outline-none focus:border-[#58a6ff]/50"
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
                           />
                         </div>
                       </>
@@ -2595,7 +1847,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser }: Marke
                       <button
                         type="button"
                         onClick={() => setShowAddModal(false)}
-                        className="px-5 py-2.5 bg-[#21262d] border border-[#30363d] text-zinc-400 hover:text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors"
+                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-[#21262d] border-[#30363d] text-zinc-400 hover:text-white'}`}
                       >
                         Cancel
                       </button>
