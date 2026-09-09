@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
-import { testimonialService, Testimonial } from '../services/testimonialService';
+import { testimonialService, Testimonial, DEFAULT_TESTIMONIALS } from '../services/testimonialService';
 import { projectService } from '../services/projectService';
 
 export const TestimonialSection: React.FC = () => {
@@ -19,7 +19,11 @@ export const TestimonialSection: React.FC = () => {
     const unsubscribe = testimonialService.subscribeToTestimonials((items) => {
       // Filter active testimonials for landing page
       const activeItems = items.filter(t => t.isActive !== false);
-      setTestimonials(activeItems);
+      if (activeItems.length === 0) {
+        setTestimonials(DEFAULT_TESTIMONIALS.map((t, idx) => ({ id: `default-${idx}`, ...t })) as Testimonial[]);
+      } else {
+        setTestimonials(activeItems);
+      }
       setIsLoading(false);
     });
 

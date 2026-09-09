@@ -43,6 +43,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /marketing_queries/{queryId} {
+      allow read, write: if true;
+    }
+
     match /admins/{adminId} {
       allow read: if isAdmin();
       allow get: if isSignedIn() && request.auth.uid == adminId;

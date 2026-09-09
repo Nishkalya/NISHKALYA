@@ -39,6 +39,8 @@ import {
   orderBy, 
   doc, 
   addDoc, 
+  setDoc,
+  getDocs,
   updateDoc, 
   deleteDoc, 
   serverTimestamp 
@@ -102,7 +104,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
   // Active module ('inbox' or 'queries') - Default to Open Inbox module automatically!
   const [activeModule, setActiveModule] = useState<'inbox' | 'queries'>('inbox');
 
-  // Datasets synchronized with localStorage
+  // Datasets synchronized with Firestore
   const [inboxTickets, setInboxTickets] = useState<InboxTicket[]>([]);
   const [queryRecords, setQueryRecords] = useState<QueryRecord[]>([]);
 
@@ -142,50 +144,88 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
   const [queryNotesText, setQueryNotesText] = useState<Record<string, string>>({});
 
   // Clear all data table records and start from 0
-  const handleClearAllData = () => {
+  const handleClearAllData = async () => {
+    try {
+      const q = collection(db, 'marketing_queries');
+      const snap = await getDocs(q);
+      const batchPromises = snap.docs.map(d => deleteDoc(doc(db, 'marketing_queries', d.id)));
+      await Promise.all(batchPromises);
+    } catch (e) {
+      console.error("Failed to clear queries in Firestore:", e);
+    }
     setQueryRecords([]);
     setSelectedQuery(null);
-    localStorage.setItem('nishkalya_marketing_queries', JSON.stringify([]));
+    localStorage.removeItem('nishkalya_marketing_queries');
+
     if (activeModule === 'inbox') {
+      try {
+        const qMsg = collection(db, 'messages');
+        const snapMsg = await getDocs(qMsg);
+        const batchMsg = snapMsg.docs.map(d => deleteDoc(doc(db, 'messages', d.id)));
+        await Promise.all(batchMsg);
+      } catch (e) {
+        console.error("Failed to clear messages in Firestore:", e);
+      }
       setInboxTickets([]);
       setSelectedTicket(null);
-      localStorage.setItem('nishkalya_marketing_inbox', JSON.stringify([]));
+      localStorage.removeItem('nishkalya_marketing_inbox');
     }
     setCurrentPage(1);
   };
 
-  // Initialize and synchronize localStorage starting cleanly from 0
+  // Real-time Firestore synchronization for Marketing Queries
   useEffect(() => {
     if (marketingUser) {
-      const hasWipedLegacyMock = localStorage.getItem('nishkalya_marketing_zero_init_v3');
-      if (!hasWipedLegacyMock) {
-        localStorage.setItem('nishkalya_marketing_queries', JSON.stringify([]));
-        localStorage.setItem('nishkalya_marketing_inbox', JSON.stringify([]));
-        localStorage.setItem('nishkalya_marketing_zero_init_v3', 'true');
-        setQueryRecords([]);
-        setSelectedQuery(null);
-      } else {
-        const storedQueries = localStorage.getItem('nishkalya_marketing_queries');
-        if (storedQueries) {
-          try {
-            const parsed = JSON.parse(storedQueries);
-            const mapped = parsed.map((q: any) => {
-              let s: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
-              if (q.status === 'New' || q.status === 'New Query' || q.status === 'Open') s = 'New Query';
-              else if (q.status === 'In Progress' || q.status === 'In Process' || q.status === 'Investigating' || q.status === 'Escalated') s = 'In Process';
-              else if (q.status === 'Won' || q.status === 'Closed' || q.status === 'Resolved') s = 'Won';
-              else if (q.status === 'Lost') s = 'Lost';
-              return { ...q, status: s };
-            });
-            setQueryRecords(mapped);
-          } catch {
-            setQueryRecords([]);
-          }
-        } else {
+      const q = collection(db, 'marketing_queries');
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
           setQueryRecords([]);
-          localStorage.setItem('nishkalya_marketing_queries', JSON.stringify([]));
+          return;
         }
-      }
+
+        const queries = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          let s: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
+          if (data.status === 'In Process') s = 'In Process';
+          else if (data.status === 'Won') s = 'Won';
+          else if (data.status === 'Lost') s = 'Lost';
+
+          let p: 'Low' | 'Medium' | 'High' | 'Critical' = 'Medium';
+          if (['Low', 'Medium', 'High', 'Critical'].includes(data.priority)) {
+            p = data.priority;
+          }
+
+          const createdDate = data.createdDate || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+
+          return {
+            id: docSnap.id,
+            customerName: data.customerName || 'Anonymous',
+            category: data.category || 'General Inquiry',
+            priority: p,
+            assignedTo: data.assignedTo || 'Vishal',
+            createdDate,
+            status: s,
+            description: data.description || '',
+            notes: data.notes || '',
+            _rawCreatedAt: data.createdAt?.seconds || 0
+          } as QueryRecord & { _rawCreatedAt: number };
+        });
+
+        // Sort descending by creation timestamp
+        queries.sort((a, b) => b._rawCreatedAt - a._rawCreatedAt);
+
+        setQueryRecords(queries);
+
+        // Live update active selection
+        setSelectedQuery(prev => {
+          if (!prev) return queries.length > 0 ? queries[0] : null;
+          const matching = queries.find(q => q.id === prev.id);
+          return matching || (queries.length > 0 ? queries[0] : null);
+        });
+      }, (error) => {
+        console.error('Firestore marketing_queries subscribe error:', error);
+      });
+      return () => unsubscribe();
     }
   }, [marketingUser]);
 
@@ -194,8 +234,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     if (marketingUser) {
       const q = collection(db, 'messages');
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const msgs = snapshot.docs.map(doc => {
-          const data = doc.data();
+        const msgs = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
           
           let currentStatus: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
           if (data.status === 'unread' || data.status === 'Open' || data.status === 'New') {
@@ -213,7 +253,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
             : new Date().toISOString().split('T')[0];
 
           return {
-            id: doc.id,
+            id: docSnap.id,
             name: data.name || 'Anonymous',
             email: data.email || 'No Email',
             company: data.company || 'N/A',
@@ -233,6 +273,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         msgs.sort((a, b) => b._rawCreatedAt - a._rawCreatedAt);
 
         setInboxTickets(msgs);
+
+        // Live update active selection
+        setSelectedTicket(prev => {
+          if (!prev) return msgs.length > 0 ? msgs[0] : null;
+          const matching = msgs.find(m => m.id === prev.id);
+          return matching || (msgs.length > 0 ? msgs[0] : null);
+        });
       }, (error) => {
         console.error('Firestore messages subscribe error:', error);
         setInboxTickets([]);
@@ -264,29 +311,6 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     setSortDirection('asc');
     setCurrentPage(1);
   }, [activeModule, queryRecords, inboxTickets]);
-
-  // Save updates helper
-  const saveInboxTickets = (updated: InboxTicket[]) => {
-    setInboxTickets(updated);
-    localStorage.setItem('nishkalya_marketing_inbox', JSON.stringify(updated));
-  };
-
-  const saveQueryRecords = (updated: QueryRecord[]) => {
-    setQueryRecords(updated);
-    localStorage.setItem('nishkalya_marketing_queries', JSON.stringify(updated));
-
-    // Update active selection if its data changed
-    if (selectedQuery) {
-      const stillExists = updated.find(q => q.id === selectedQuery.id);
-      if (stillExists) {
-        setSelectedQuery(stillExists);
-      } else if (updated.length > 0) {
-        setSelectedQuery(updated[0]);
-      } else {
-        setSelectedQuery(null);
-      }
-    }
-  };
 
   // Auth Functions
   const handleLogin = async (e: React.FormEvent) => {
@@ -485,14 +509,28 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           email: editFormValues.email || '',
           service: editFormValues.subject || '',
           message: editFormValues.message || '',
-          status: dbStatus
+          status: dbStatus,
+          updatedAt: serverTimestamp()
         });
       } catch (err) {
         console.error("Failed to update message in Firestore:", err);
       }
     } else if (activeModule === 'queries' && selectedQuery) {
-      const updated = queryRecords.map(q => q.id === selectedQuery.id ? { ...q, ...editFormValues } : q);
-      saveQueryRecords(updated);
+      try {
+        const docRef = doc(db, 'marketing_queries', selectedQuery.id);
+        await updateDoc(docRef, {
+          customerName: editFormValues.customerName || selectedQuery.customerName,
+          category: editFormValues.category || selectedQuery.category,
+          priority: editFormValues.priority || selectedQuery.priority,
+          status: editFormValues.status || selectedQuery.status,
+          assignedTo: editFormValues.assignedTo || selectedQuery.assignedTo,
+          description: editFormValues.description ?? selectedQuery.description,
+          updatedAt: serverTimestamp()
+        });
+        setSelectedQuery(prev => prev ? { ...prev, ...editFormValues } : null);
+      } catch (err) {
+        console.error("Failed to update query in Firestore:", err);
+      }
     }
     setShowEditModal(false);
   };
@@ -509,9 +547,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         console.error("Failed to delete message from Firestore:", err);
       }
     } else {
-      const updated = queryRecords.filter(q => q.id !== id);
-      saveQueryRecords(updated);
-      if (selectedQuery?.id === id) setSelectedQuery(null);
+      try {
+        await deleteDoc(doc(db, 'marketing_queries', id));
+        if (selectedQuery?.id === id) setSelectedQuery(null);
+      } catch (err) {
+        console.error("Failed to delete query from Firestore:", err);
+      }
     }
     setDeleteCandidateId(null);
     // Readjust current page if it's out of bounds
@@ -534,7 +575,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         if (dbStatus === 'New Query') dbStatus = 'unread';
         else if (dbStatus === 'In Process') dbStatus = 'read';
 
-        await updateDoc(docRef, { status: dbStatus });
+        await updateDoc(docRef, { status: dbStatus, updatedAt: serverTimestamp() });
         setSelectedTicket({
           ...selectedTicket,
           status: statusVal
@@ -543,24 +584,26 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         console.error("Failed to update status in Firestore:", err);
       }
     } else if (activeModule === 'queries' && selectedQuery) {
-      const updated = queryRecords.map(q => q.id === selectedQuery.id ? { ...q, status: statusVal } : q);
-      saveQueryRecords(updated);
-      setSelectedQuery({
-        ...selectedQuery,
-        status: statusVal
-      });
+      try {
+        const docRef = doc(db, 'marketing_queries', selectedQuery.id);
+        await updateDoc(docRef, { status: statusVal, updatedAt: serverTimestamp() });
+        setSelectedQuery(prev => prev ? { ...prev, status: statusVal } : null);
+      } catch (err) {
+        console.error("Failed to update status in Firestore:", err);
+      }
     }
   };
 
   // Helper to update priority directly from the detail view
-  const handleUpdatePriority = (priorityVal: 'Low' | 'Medium' | 'High' | 'Critical') => {
+  const handleUpdatePriority = async (priorityVal: 'Low' | 'Medium' | 'High' | 'Critical') => {
     if (selectedQuery) {
-      const updated = queryRecords.map(q => q.id === selectedQuery.id ? { ...q, priority: priorityVal } : q);
-      saveQueryRecords(updated);
-      setSelectedQuery({
-        ...selectedQuery,
-        priority: priorityVal
-      });
+      try {
+        const docRef = doc(db, 'marketing_queries', selectedQuery.id);
+        await updateDoc(docRef, { priority: priorityVal, updatedAt: serverTimestamp() });
+        setSelectedQuery(prev => prev ? { ...prev, priority: priorityVal } : null);
+      } catch (err) {
+        console.error("Failed to update priority in Firestore:", err);
+      }
     }
   };
 
@@ -569,18 +612,22 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     if (isInbox) {
       try {
         const docRef = doc(db, 'messages', id);
-        await updateDoc(docRef, { notes: notesText });
+        await updateDoc(docRef, { notes: notesText, updatedAt: serverTimestamp() });
         if (selectedTicket && selectedTicket.id === id) {
-          setSelectedTicket({ ...selectedTicket, notes: notesText });
+          setSelectedTicket(prev => prev ? { ...prev, notes: notesText } : null);
         }
       } catch (err) {
         console.error("Failed to save note in Firestore:", err);
       }
     } else {
-      const updated = queryRecords.map(q => q.id === id ? { ...q, notes: notesText } : q);
-      saveQueryRecords(updated);
-      if (selectedQuery && selectedQuery.id === id) {
-        setSelectedQuery({ ...selectedQuery, notes: notesText });
+      try {
+        const docRef = doc(db, 'marketing_queries', id);
+        await updateDoc(docRef, { notes: notesText, updatedAt: serverTimestamp() });
+        if (selectedQuery && selectedQuery.id === id) {
+          setSelectedQuery(prev => prev ? { ...prev, notes: notesText } : null);
+        }
+      } catch (err) {
+        console.error("Failed to save query note in Firestore:", err);
       }
     }
   };
@@ -588,26 +635,23 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
   // Convert inbox message to query management (New Query or Lost)
   const handleMoveInboxToQuery = async (ticket: InboxTicket, statusVal: 'New Query' | 'Lost' = 'New Query') => {
     const newId = `QRY-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newQuery: QueryRecord = {
-      id: newId,
+    const newQueryData = {
       customerName: ticket.name,
       category: ticket.service && ticket.service !== 'Select a service' ? ticket.service : 'General Inquiry',
-      priority: 'Medium',
-      assignedTo: 'Vishal',
+      priority: 'Medium' as const,
+      assignedTo: marketingUser?.username || 'Vishal',
       createdDate: ticket.date,
       status: statusVal,
       description: `Subject: ${ticket.subject}\n\nMessage: ${ticket.message}`,
-      notes: ticket.notes || ''
+      notes: ticket.notes || '',
+      createdAt: serverTimestamp()
     };
 
-    const updatedQueries = [newQuery, ...queryRecords];
-    saveQueryRecords(updatedQueries);
-    setSelectedQuery(newQuery);
-
     try {
+      await setDoc(doc(db, 'marketing_queries', newId), newQueryData);
       const docRef = doc(db, 'messages', ticket.id);
       let dbStatus = statusVal === 'Lost' ? 'lost' : 'read';
-      await updateDoc(docRef, { status: dbStatus });
+      await updateDoc(docRef, { status: dbStatus, updatedAt: serverTimestamp() });
     } catch (err) {
       console.error("Failed to update message status during conversion:", err);
     }
@@ -680,13 +724,24 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         console.error("Failed to add message to Firestore:", err);
       }
     } else {
-      const newQuery: QueryRecord = {
-        ...addFormValues,
-        status: addFormValues.status || 'New Query',
-        priority: addFormValues.priority || 'Medium'
-      };
-      saveQueryRecords([newQuery, ...queryRecords]);
-      setSelectedQuery(newQuery);
+      try {
+        const newId = addFormValues.id || `QRY-${Math.floor(1000 + Math.random() * 9000)}`;
+        const queryData = {
+          customerName: addFormValues.customerName || 'Anonymous',
+          category: addFormValues.category || 'General Inquiry',
+          priority: addFormValues.priority || 'Medium',
+          status: addFormValues.status || 'New Query',
+          assignedTo: addFormValues.assignedTo || marketingUser?.username || 'Vishal',
+          createdDate: addFormValues.createdDate || new Date().toISOString().split('T')[0],
+          description: addFormValues.description || '',
+          notes: '',
+          createdAt: serverTimestamp()
+        };
+        await setDoc(doc(db, 'marketing_queries', newId), queryData);
+        setSelectedQuery({ id: newId, ...queryData } as any);
+      } catch (err) {
+        console.error("Failed to add query to Firestore:", err);
+      }
     }
     setShowAddModal(false);
   };

@@ -129,6 +129,24 @@
         "bio": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "MarketingQuery": {
+      "title": "MarketingQuery",
+      "description": "Customer query in the marketing pipeline matrix",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "status": { "type": "string", "enum": ["New Query", "In Process", "Won", "Lost"] },
+        "assignedTo": { "type": "string" },
+        "createdDate": { "type": "string" },
+        "description": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerName", "category", "priority", "status"]
     }
   },
   "firestore": {
@@ -155,6 +173,10 @@
     "messages": {
       "schema": "Message",
       "description": "Collection of customer inquiries and marketing inbox tickets"
+    },
+    "marketing_queries": {
+      "schema": "MarketingQuery",
+      "description": "Collection of marketing pipeline queries"
     },
     "config": {
       "schema": "Config",
