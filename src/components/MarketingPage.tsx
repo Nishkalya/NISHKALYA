@@ -47,6 +47,12 @@ import { db } from '../lib/firebase';
 import MarketingSidebar from './marketing/MarketingSidebar';
 import MarketingInboxTable from './marketing/MarketingInboxTable';
 import MarketingQueriesView from './marketing/MarketingQueriesView';
+import NotesAndDetailsWidget, {
+  CommentItem,
+  NotesData,
+  parseNotesData,
+  serializeNotesData
+} from './marketing/NotesAndDetailsWidget';
 
 // Interface Definitions
 interface InboxTicket {
@@ -85,222 +91,6 @@ interface MarketingPageProps {
 const DEFAULT_INBOX_TICKETS: InboxTicket[] = [];
 
 const DEFAULT_QUERY_RECORDS: QueryRecord[] = [];
-
-// Interface for the structured data
-interface CommentItem {
-  id: string;
-  author: string;
-  text: string;
-  timestamp: string;
-}
-
-interface NotesData {
-  comments: CommentItem[];
-  subtasks: {
-    assess: boolean;
-    callback: boolean;
-    quote: boolean;
-    audit: boolean;
-  };
-  channel: string;
-  region: string;
-  estimatedHours?: number;
-  contactPreference?: string;
-}
-
-// Parsing helper with safe fallback
-const parseNotesData = (notesText: string | undefined): NotesData => {
-  const defaultVal: NotesData = {
-    comments: [],
-    subtasks: { assess: false, callback: false, quote: false, audit: false },
-    channel: 'Inbound Webhook',
-    region: 'North America (US-East)',
-    estimatedHours: 8,
-    contactPreference: 'Email / Portal'
-  };
-
-  if (!notesText) return defaultVal;
-  const text = notesText.trim();
-  
-  // Clean JSON checks
-  if (text.startsWith('{') && text.endsWith('}')) {
-    try {
-      const parsed = JSON.parse(text);
-      return {
-        comments: parsed.comments || [],
-        subtasks: {
-          assess: parsed.subtasks?.assess || false,
-          callback: parsed.subtasks?.callback || false,
-          quote: parsed.subtasks?.quote || false,
-          audit: parsed.subtasks?.audit || false,
-        },
-        channel: parsed.channel || defaultVal.channel,
-        region: parsed.region || defaultVal.region,
-        estimatedHours: parsed.estimatedHours || defaultVal.estimatedHours,
-        contactPreference: parsed.contactPreference || defaultVal.contactPreference
-      };
-    } catch (e) {
-      // JSON parse error, fallback
-    }
-  } else if (text.startsWith('[') && text.endsWith(']')) {
-    try {
-      const parsedComments = JSON.parse(text);
-      return {
-        ...defaultVal,
-        comments: parsedComments
-      };
-    } catch (e) {
-      // fallback
-    }
-  }
-
-  // legacy plain text string converted to initial comment item
-  return {
-    ...defaultVal,
-    comments: [{
-      id: 'legacy-init',
-      author: 'Audit System',
-      text: notesText,
-      timestamp: 'Original Entry'
-    }]
-  };
-};
-
-// Serializing helper
-const serializeNotesData = (data: NotesData): string => {
-  return JSON.stringify(data);
-};
-
-function NotesAndDetailsWidget({
-  itemId,
-  notesText,
-  isInbox,
-  onSave,
-  author,
-  portalTheme = 'white'
-}: {
-  itemId: string;
-  notesText: string | undefined;
-  isInbox: boolean;
-  onSave: (id: string, notesText: string, isInbox: boolean) => Promise<void>;
-  author: string;
-  portalTheme?: 'white' | 'dark';
-}) {
-  const isWhite = portalTheme === 'white';
-  const data = parseNotesData(notesText);
-  const [draft, setDraft] = useState('');
-
-  // Trigger whenever sub-settings are modified
-  const updateNotesField = async (updatedData: NotesData) => {
-    const serialized = serializeNotesData(updatedData);
-    await onSave(itemId, serialized, isInbox);
-  };
-
-  const handleAddComment = async () => {
-    if (!draft.trim()) return;
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const newComment: CommentItem = {
-      id: `CMT-${Math.floor(100000 + Math.random() * 900000)}`,
-      author: author || 'System Representative',
-      text: draft.trim(),
-      timestamp: formattedDate
-    };
-    const updatedData: NotesData = {
-      ...data,
-      comments: [newComment, ...data.comments] // Latest first
-    };
-    setDraft('');
-    await updateNotesField(updatedData);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAddComment();
-    }
-  };
-
-  return (
-    <div className="space-y-4 font-sans text-xs">
-      
-      {/* 2. Interactive Comments Thread Timeline */}
-      <div className="space-y-2">
-        <label className={`text-[9px] font-mono uppercase tracking-widest block font-bold flex items-center gap-1 ${
-          isWhite ? 'text-slate-600' : 'text-zinc-500'
-        }`}>
-          <MessageSquare size={10} className={isWhite ? 'text-amber-600' : 'text-amber-400'} />
-          Comments Log / Thread History ({data.comments.length})
-        </label>
-
-        {/* Input Textarea with enter listener */}
-        <div className="relative">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type comment log... (Press Enter or Click 'Add Comment')"
-            className={`w-full border rounded-xl p-2 px-3 pb-8 text-xs outline-none focus:border-amber-500/50 min-h-[58px] font-sans resize-none transition-all duration-200 ${
-              isWhite
-                ? 'bg-slate-50 border-slate-300 text-slate-800 placeholder-slate-400'
-                : 'bg-[#161b22]/80 border-[#30363d]/80 text-zinc-200 placeholder-zinc-500'
-            }`}
-          />
-          <div className="absolute right-2 bottom-1.5 flex items-center gap-2">
-            <span className={`text-[7.5px] font-mono tracking-wider ${isWhite ? 'text-slate-400' : 'text-zinc-500'}`}>
-              ENTER TO SEND
-            </span>
-            <button
-              onClick={handleAddComment}
-              className={`p-1 px-2.5 rounded-lg text-[10px] font-mono font-bold uppercase transition-all duration-200 cursor-pointer flex items-center gap-1 border ${
-                isWhite
-                  ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300'
-                  : 'bg-amber-950/20 hover:bg-amber-800/85 text-amber-400 hover:text-white border-amber-900/40'
-              }`}
-            >
-              <span>Add Comment</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Thread timeline log output */}
-        <div className={`max-h-[160px] overflow-y-auto space-y-1.5 pr-1 divide-y ${
-          isWhite ? 'divide-slate-200' : 'divide-[#30363d]/20'
-        }`}>
-          {data.comments.length === 0 ? (
-            <div className={`italic font-sans text-[11px] text-center py-2 ${
-              isWhite ? 'text-slate-400' : 'text-zinc-500'
-            }`}>
-              No comments logged yet. Use box above to start logging.
-            </div>
-          ) : (
-            data.comments.map((comment) => (
-              <div key={comment.id} className="pt-2 text-[11px] space-y-0.5">
-                <div className="flex items-center justify-between text-[10px]">
-                  <div className="flex items-center gap-1">
-                    <div className={`w-4 h-4 rounded-full font-bold font-mono text-[8px] flex items-center justify-center border ${
-                      isWhite
-                        ? 'bg-sky-100 text-sky-700 border-sky-300'
-                        : 'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/20'
-                    }`}>
-                      {comment.author.charAt(0).toUpperCase()}
-                    </div>
-                    <span className={`font-mono font-bold ${isWhite ? 'text-slate-800' : 'text-zinc-300'}`}>{comment.author}</span>
-                  </div>
-                  <span className={`text-[9px] p-0.5 font-mono ${isWhite ? 'text-slate-400' : 'text-zinc-500'}`}>{comment.timestamp}</span>
-                </div>
-                <p className={`font-sans pl-5 whitespace-pre-wrap leading-relaxed ${
-                  isWhite ? 'text-slate-600' : 'text-zinc-400'
-                }`}>{comment.text}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-    </div>
-  );
-}
 
 export default function MarketingPage({ marketingUser, setMarketingUser, onOpenAdmin, onExitPortal }: MarketingPageProps) {
   // Login states
@@ -762,6 +552,18 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     }
   };
 
+  // Helper to update priority directly from the detail view
+  const handleUpdatePriority = (priorityVal: 'Low' | 'Medium' | 'High' | 'Critical') => {
+    if (selectedQuery) {
+      const updated = queryRecords.map(q => q.id === selectedQuery.id ? { ...q, priority: priorityVal } : q);
+      saveQueryRecords(updated);
+      setSelectedQuery({
+        ...selectedQuery,
+        priority: priorityVal
+      });
+    }
+  };
+
   // Save notes handler
   const handleSaveNotes = async (id: string, notesText: string, isInbox: boolean) => {
     if (isInbox) {
@@ -1074,9 +876,9 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
             </aside>
 
             {/* Right-Side Scrollable Content Area */}
-            <main className={`flex-1 h-full overflow-y-auto p-4 lg:p-6 space-y-4 transition-colors ${portalTheme === 'white' ? 'bg-[#F8FAFC]' : 'bg-[#090d13]'}`}>
+            <main className={`flex-1 h-full overflow-hidden p-3 lg:p-4 flex flex-col space-y-3 min-h-0 transition-colors ${portalTheme === 'white' ? 'bg-[#F8FAFC]' : 'bg-[#090d13]'}`}>
               {/* ERP Breadcrumb & Status Header */}
-              <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#161b22]/70 border-slate-800'}`}>
+              <div className={`shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-3 rounded-xl border transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#161b22]/70 border-slate-800'}`}>
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
@@ -1175,6 +977,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   handleOpenView={handleOpenView}
                   handleDeleteItem={handleDeleteItem}
                   handleUpdateStatus={handleUpdateStatus}
+                  handleUpdatePriority={handleUpdatePriority}
                   isChangingStatus={isChangingStatus}
                   setIsChangingStatus={setIsChangingStatus}
                   onSaveNotes={handleSaveNotes}

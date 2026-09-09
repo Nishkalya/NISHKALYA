@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   MessageSquare, 
   ArrowUpDown, 
@@ -47,6 +47,7 @@ interface MarketingQueriesViewProps {
   handleOpenView: (record: QueryRecord) => void;
   handleDeleteItem: (id: string) => void;
   handleUpdateStatus: (status: 'New Query' | 'In Process' | 'Won' | 'Lost') => void;
+  handleUpdatePriority?: (priority: 'Low' | 'Medium' | 'High' | 'Critical') => void;
   isChangingStatus: boolean;
   setIsChangingStatus: (val: boolean) => void;
   onSaveNotes: (id: string, notesText: string, isInbox: boolean) => Promise<void>;
@@ -81,6 +82,7 @@ export default function MarketingQueriesView({
   handleOpenView,
   handleDeleteItem,
   handleUpdateStatus,
+  handleUpdatePriority,
   isChangingStatus,
   setIsChangingStatus,
   onSaveNotes,
@@ -94,14 +96,15 @@ export default function MarketingQueriesView({
   portalTheme = 'white'
 }: MarketingQueriesViewProps) {
   const isWhite = portalTheme === 'white';
+  const [isChangingPriority, setIsChangingPriority] = useState(false);
 
   if (selectedQuery) {
     return (
-      <div className={`rounded-2xl p-6 md:p-8 shadow-2xl space-y-6 w-full border ${
+      <div className={`rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xl space-y-4 w-full border flex-1 min-h-0 flex flex-col overflow-y-auto max-h-full ${
         isWhite ? 'bg-white border-slate-200' : 'bg-[#161b22] border-slate-800'
       }`}>
         {/* Back Button & Header */}
-        <div className={`flex items-center justify-between border-b pb-4 ${
+        <div className={`flex items-center justify-between border-b pb-3 shrink-0 ${
           isWhite ? 'border-slate-100' : 'border-slate-800'
         }`}>
           <button
@@ -116,6 +119,18 @@ export default function MarketingQueriesView({
             <span>Back to Queries Directory</span>
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenEdit(selectedQuery)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                isWhite 
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200' 
+                  : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-slate-700'
+              }`}
+              title="Edit Query Record"
+            >
+              <Edit2 size={12} />
+              <span>Edit</span>
+            </button>
             <span className={`text-xs font-mono font-bold px-3 py-1 rounded-xl border ${
               isWhite
                 ? 'text-sky-700 bg-sky-50 border-sky-200'
@@ -126,75 +141,162 @@ export default function MarketingQueriesView({
           </div>
         </div>
 
-        {/* Full Query Detail Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            {/* Core Details Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-4">
+        {/* Full Query Detail Content - Structured Top to Bottom (Down Side) */}
+        <div className="flex flex-col flex-1 min-h-0 space-y-4">
+          {/* Top Section: Query Metadata & Description */}
+          <div className="space-y-4 shrink-0">
+            {/* Core Details Grid - Full Width Horizontal Layout */}
+            <div className={`p-4 rounded-xl border grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 ${
+              isWhite ? 'bg-slate-50/60 border-slate-200' : 'bg-[#0d1117]/60 border-slate-800'
+            }`}>
               <div>
-                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
+                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1 ${
                   isWhite ? 'text-slate-500' : 'text-slate-400'
                 }`}>Client</span>
-                <span className={`text-base font-semibold ${
+                <span className={`text-sm font-semibold block truncate ${
                   isWhite ? 'text-slate-900' : 'text-white'
                 }`}>{selectedQuery.customerName}</span>
               </div>
               
               <div>
-                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
+                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1 ${
                   isWhite ? 'text-slate-500' : 'text-slate-400'
                 }`}>Category</span>
-                <span className={`text-sm font-semibold ${
+                <span className={`text-sm font-semibold block truncate ${
                   isWhite ? 'text-slate-700' : 'text-slate-200'
                 }`}>{selectedQuery.category}</span>
               </div>
 
               <div>
-                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
+                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1 ${
                   isWhite ? 'text-slate-500' : 'text-slate-400'
                 }`}>Assigned Staff</span>
-                <span className={`text-sm font-mono font-bold ${
+                <span className={`text-sm font-mono font-bold block truncate ${
                   isWhite ? 'text-sky-600' : 'text-sky-400'
                 }`}>{selectedQuery.assignedTo}</span>
               </div>
 
               <div>
-                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
+                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1 ${
                   isWhite ? 'text-slate-500' : 'text-slate-400'
                 }`}>Created Date</span>
-                <span className={`text-sm font-mono ${
+                <span className={`text-sm font-mono block ${
                   isWhite ? 'text-slate-600' : 'text-slate-300'
                 }`}>{selectedQuery.createdDate}</span>
               </div>
 
-              <div className="sm:col-span-2">
-                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
+              {/* Priority / Urgency Button */}
+              <div>
+                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1 ${
+                  isWhite ? 'text-slate-500' : 'text-slate-400'
+                }`}>Priority / Urgency</span>
+                <div className="relative inline-block w-full">
+                  <button
+                    onClick={() => {
+                      setIsChangingPriority(!isChangingPriority);
+                      setIsChangingStatus(false);
+                    }}
+                    className={`w-full inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold uppercase border cursor-pointer hover:brightness-105 transition-all shadow-sm ${
+                      (selectedQuery.priority || 'Medium') === 'Critical' 
+                        ? (isWhite ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-950/40 text-red-400 border-red-800/60') 
+                        : (selectedQuery.priority || 'Medium') === 'High'
+                        ? (isWhite ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-950/40 text-amber-400 border-amber-800/60')
+                        : (selectedQuery.priority || 'Medium') === 'Medium'
+                        ? (isWhite ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-950/40 text-sky-400 border-sky-800/60')
+                        : (isWhite ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700')
+                    }`}
+                    title="Change Priority / Urgency"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        (selectedQuery.priority || 'Medium') === 'Critical' ? (isWhite ? 'bg-red-500 animate-pulse' : 'bg-red-400 animate-pulse') :
+                        (selectedQuery.priority || 'Medium') === 'High' ? (isWhite ? 'bg-amber-500' : 'bg-amber-400') :
+                        (selectedQuery.priority || 'Medium') === 'Medium' ? (isWhite ? 'bg-sky-500' : 'bg-sky-400') :
+                        (isWhite ? 'bg-slate-400' : 'bg-slate-500')
+                      }`} />
+                      <span className="truncate">
+                        {(selectedQuery.priority || 'Medium') === 'Critical' ? 'Urgent / Critical' : (selectedQuery.priority || 'Medium')}
+                      </span>
+                    </div>
+                    <ChevronDown size={13} className={`${isWhite ? 'text-slate-500' : 'text-slate-400'} shrink-0`} />
+                  </button>
+
+                  {isChangingPriority && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setIsChangingPriority(false)} />
+                      <div className={`absolute right-0 mt-1.5 w-44 border rounded-xl shadow-2xl z-40 overflow-hidden font-mono text-xs divide-y ${
+                        isWhite ? 'bg-white border-slate-200 divide-slate-100' : 'bg-[#161b22] border-slate-800 divide-slate-800'
+                      }`}>
+                        {(['Critical', 'High', 'Medium', 'Low'] as const).map((priorityOption) => (
+                          <button
+                            key={priorityOption}
+                            onClick={() => {
+                              if (handleUpdatePriority) {
+                                handleUpdatePriority(priorityOption);
+                              } else {
+                                setSelectedQuery({ ...selectedQuery, priority: priorityOption });
+                              }
+                              setIsChangingPriority(false);
+                            }}
+                            className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                              isWhite 
+                                ? ((selectedQuery.priority || 'Medium') === priorityOption ? 'bg-slate-100 font-bold text-slate-900' : 'text-slate-700 hover:bg-slate-50')
+                                : ((selectedQuery.priority || 'Medium') === priorityOption ? 'bg-[#21262d] font-bold text-white' : 'text-slate-300 hover:bg-[#21262d]/60')
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${
+                                priorityOption === 'Critical' ? 'bg-red-500' :
+                                priorityOption === 'High' ? 'bg-amber-500' :
+                                priorityOption === 'Medium' ? 'bg-sky-500' :
+                                'bg-slate-400'
+                              }`} />
+                              <span>{priorityOption === 'Critical' ? 'Critical / Urgent' : priorityOption}</span>
+                            </div>
+                            {(selectedQuery.priority || 'Medium') === priorityOption && (
+                              <span className={`text-[10px] ${isWhite ? 'text-sky-600' : 'text-sky-400'}`}>✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1 ${
                   isWhite ? 'text-slate-500' : 'text-slate-400'
                 }`}>Current Status</span>
-                <div className="relative inline-block">
+                <div className="relative inline-block w-full">
                   <button
-                    onClick={() => setIsChangingStatus(!isChangingStatus)}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase border cursor-pointer hover:brightness-110 transition-all ${
+                    onClick={() => {
+                      setIsChangingStatus(!isChangingStatus);
+                      setIsChangingPriority(false);
+                    }}
+                    className={`w-full inline-flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono font-bold uppercase border cursor-pointer hover:brightness-105 transition-all ${
                       selectedQuery.status === 'New Query' ? (isWhite ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-950/40 text-sky-400 border-sky-800/60') :
                       selectedQuery.status === 'In Process' ? (isWhite ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-950/40 text-amber-400 border-amber-800/60') :
                       selectedQuery.status === 'Won' ? (isWhite ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-950/40 text-emerald-400 border-emerald-800/60') :
                       (isWhite ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-950/40 text-red-400 border-red-800/60')
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full ${
-                      selectedQuery.status === 'New Query' ? (isWhite ? 'bg-sky-500' : 'bg-sky-400') :
-                      selectedQuery.status === 'In Process' ? (isWhite ? 'bg-amber-500' : 'bg-amber-400') :
-                      selectedQuery.status === 'Won' ? (isWhite ? 'bg-emerald-500' : 'bg-emerald-400') :
-                      (isWhite ? 'bg-red-500' : 'bg-red-400')
-                    }`} />
-                    <span>{selectedQuery.status}</span>
-                    <ChevronDown size={14} className={`${isWhite ? 'text-slate-500' : 'text-slate-400'} ml-2`} />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
+                        selectedQuery.status === 'New Query' ? (isWhite ? 'bg-sky-500' : 'bg-sky-400') :
+                        selectedQuery.status === 'In Process' ? (isWhite ? 'bg-amber-500' : 'bg-amber-400') :
+                        selectedQuery.status === 'Won' ? (isWhite ? 'bg-emerald-500' : 'bg-emerald-400') :
+                        (isWhite ? 'bg-red-500' : 'bg-red-400')
+                      }`} />
+                      <span className="truncate">{selectedQuery.status}</span>
+                    </div>
+                    <ChevronDown size={13} className={`${isWhite ? 'text-slate-500' : 'text-slate-400'} shrink-0`} />
                   </button>
 
                   {isChangingStatus && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setIsChangingStatus(false)} />
-                      <div className={`absolute left-0 mt-2 w-48 border rounded-xl shadow-2xl z-40 overflow-hidden font-mono text-xs divide-y ${
+                      <div className={`absolute right-0 mt-1.5 w-48 border rounded-xl shadow-2xl z-40 overflow-hidden font-mono text-xs divide-y ${
                         isWhite ? 'bg-white border-slate-200 divide-slate-100' : 'bg-[#161b22] border-slate-800 divide-slate-800'
                       }`}>
                         {(['New Query', 'In Process', 'Won', 'Lost'] as const).map((statusOption) => (
@@ -204,7 +306,7 @@ export default function MarketingQueriesView({
                               handleUpdateStatus(statusOption);
                               setIsChangingStatus(false);
                             }}
-                            className={`w-full text-left px-4 py-3 flex items-center gap-2.5 transition-colors cursor-pointer ${
+                            className={`w-full text-left px-4 py-2.5 flex items-center gap-2.5 transition-colors cursor-pointer ${
                               isWhite 
                                 ? (selectedQuery.status === statusOption ? 'text-sky-700 bg-sky-50 font-bold' : 'text-slate-700 hover:bg-slate-50')
                                 : (selectedQuery.status === statusOption ? 'text-sky-400 bg-sky-500/10 font-bold' : 'text-slate-300 hover:bg-[#21262d]')
@@ -226,11 +328,12 @@ export default function MarketingQueriesView({
               </div>
             </div>
 
+            {/* Description Box */}
             <div>
-              <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-2 ${
+              <span className={`text-[10px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
                 isWhite ? 'text-slate-500' : 'text-slate-400'
               }`}>Query Description</span>
-              <div className={`p-5 rounded-2xl text-sm font-light leading-relaxed border shadow-sm whitespace-pre-wrap ${
+              <div className={`p-3.5 rounded-xl text-xs font-light leading-relaxed border shadow-sm whitespace-pre-wrap max-h-32 overflow-y-auto ${
                 isWhite 
                   ? 'bg-slate-50/50 text-slate-800 border-slate-200' 
                   : 'bg-[#0d1117] text-slate-200 border-slate-800'
@@ -240,36 +343,18 @@ export default function MarketingQueriesView({
             </div>
           </div>
 
-          {/* Right Column: Actions & Notes */}
-          <div className={`space-y-8 border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between ${
-            isWhite ? 'border-slate-100' : 'border-slate-800'
+          {/* Down Side: Full-Width Notes & Workspace Div */}
+          <div className={`pt-3 border-t flex-1 min-h-0 flex flex-col ${
+            isWhite ? 'border-slate-200' : 'border-slate-800'
           }`}>
-            <div className="space-y-4">
-              <button
-                onClick={() => handleOpenEdit(selectedQuery)}
-                className={`w-full px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer border shadow-sm ${
-                  isWhite
-                    ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200'
-                    : 'bg-[#21262d] hover:bg-[#30363d] text-slate-200 border-slate-700'
-                }`}
-              >
-                <Edit2 size={14} />
-                <span>Edit Query Record</span>
-              </button>
-            </div>
-
-            <div className={`pt-4 border-t ${
-              isWhite ? 'border-slate-100' : 'border-slate-800'
-            }`}>
-              <NotesAndDetailsWidget 
-                itemId={selectedQuery.id}
-                notesText={selectedQuery.notes}
-                isInbox={false}
-                onSave={onSaveNotes}
-                author={marketingUser?.username || 'Representative'}
-                portalTheme={portalTheme}
-              />
-            </div>
+            <NotesAndDetailsWidget 
+              itemId={selectedQuery.id}
+              notesText={selectedQuery.notes}
+              isInbox={false}
+              onSave={onSaveNotes}
+              author={marketingUser?.username || 'Representative'}
+              portalTheme={portalTheme}
+            />
           </div>
         </div>
       </div>
@@ -277,12 +362,12 @@ export default function MarketingQueriesView({
   }
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="flex flex-col flex-1 min-h-0 w-full space-y-3">
       {/* 3 Pipeline Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-3 w-full font-mono">
+      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-2.5 w-full font-mono shrink-0">
         <button
           onClick={() => handlePipelineTabChange('NEW_QUERY')}
-          className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-20 ${
+          className={`p-2.5 sm:p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-16 ${
             pipelineTab === 'NEW_QUERY'
               ? (isWhite ? 'bg-sky-50 text-sky-700 border-sky-200 shadow-sm' : 'bg-sky-500/10 text-sky-400 border-sky-500/60 shadow-sm')
               : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200 shadow-sm' : 'bg-[#161b22]/70 hover:bg-[#161b22] text-slate-400 border-slate-800')
@@ -292,14 +377,14 @@ export default function MarketingQueriesView({
             <span className="text-[10px] uppercase tracking-wider font-bold">New Query</span>
             <span className={`w-2 h-2 rounded-full animate-pulse ${isWhite ? 'bg-sky-500' : 'bg-sky-400'}`}></span>
           </div>
-          <span className={`text-xl font-bold tracking-tight ${
+          <span className={`text-lg font-bold tracking-tight ${
             pipelineTab === 'NEW_QUERY' ? (isWhite ? 'text-sky-800' : 'text-white') : (isWhite ? 'text-slate-800' : 'text-white')
           }`}>{newQueryCount}</span>
         </button>
 
         <button
           onClick={() => handlePipelineTabChange('WON')}
-          className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-20 ${
+          className={`p-2.5 sm:p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-16 ${
             pipelineTab === 'WON'
               ? (isWhite ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/60 shadow-sm')
               : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200 shadow-sm' : 'bg-[#161b22]/70 hover:bg-[#161b22] text-slate-400 border-slate-800')
@@ -309,14 +394,14 @@ export default function MarketingQueriesView({
             <span className="text-[10px] uppercase tracking-wider font-bold">Won</span>
             <span className={`w-2 h-2 rounded-full ${isWhite ? 'bg-emerald-500' : 'bg-emerald-400'}`}></span>
           </div>
-          <span className={`text-xl font-bold tracking-tight ${
+          <span className={`text-lg font-bold tracking-tight ${
             pipelineTab === 'WON' ? (isWhite ? 'text-emerald-800' : 'text-white') : (isWhite ? 'text-slate-800' : 'text-white')
           }`}>{wonCount}</span>
         </button>
 
         <button
           onClick={() => handlePipelineTabChange('LOST')}
-          className={`p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-20 ${
+          className={`p-2.5 sm:p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-16 ${
             pipelineTab === 'LOST'
               ? (isWhite ? 'bg-red-50 text-red-700 border-red-200 shadow-sm' : 'bg-red-500/10 text-red-400 border-red-500/60 shadow-sm')
               : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200 shadow-sm' : 'bg-[#161b22]/70 hover:bg-[#161b22] text-slate-400 border-slate-800')
@@ -326,21 +411,21 @@ export default function MarketingQueriesView({
             <span className="text-[10px] uppercase tracking-wider font-bold">Lost</span>
             <span className={`w-2 h-2 rounded-full ${isWhite ? 'bg-red-500' : 'bg-red-400'}`}></span>
           </div>
-          <span className={`text-xl font-bold tracking-tight ${
+          <span className={`text-lg font-bold tracking-tight ${
             pipelineTab === 'LOST' ? (isWhite ? 'text-red-800' : 'text-white') : (isWhite ? 'text-slate-800' : 'text-white')
           }`}>{lostCount}</span>
         </button>
       </div>
 
       {/* Direct Support Queries Table (Full Width) */}
-      <div className="w-full">
+      <div className="w-full flex-1 min-h-0 flex flex-col">
         
         {/* Support Queries Table */}
-        <div className={`border rounded-xl overflow-hidden flex flex-col justify-between min-h-[520px] w-full ${
+        <div className={`border rounded-xl overflow-hidden flex flex-col justify-between flex-1 min-h-0 w-full ${
           isWhite ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#161b22]/70 border-slate-800 shadow-xl'
         }`}>
-          <div>
-            <div className={`p-4 border-b flex items-center justify-between ${
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className={`shrink-0 p-3 sm:p-3.5 border-b flex items-center justify-between ${
               isWhite ? 'bg-slate-50 border-slate-200' : 'bg-[#161b22] border-slate-800'
             }`}>
               <div className="flex items-center gap-2">
@@ -397,9 +482,9 @@ export default function MarketingQueriesView({
             ) : (
               <>
                 {/* Desktop Query Table */}
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 min-h-0">
                   <table className="w-full text-left text-xs font-sans">
-                    <thead className={`border-b text-[10px] font-bold uppercase tracking-wider font-mono ${
+                    <thead className={`border-b text-[10px] font-bold uppercase tracking-wider font-mono sticky top-0 z-10 ${
                       isWhite ? 'bg-slate-50 text-slate-500 border-slate-200' : 'bg-[#0c1017] text-slate-400 border-slate-800'
                     }`}>
                       <tr>
@@ -490,7 +575,7 @@ export default function MarketingQueriesView({
                 </div>
 
                 {/* Mobile View Cards */}
-                <div className={`block md:hidden divide-y ${isWhite ? 'divide-slate-200' : 'divide-slate-800'}`}>
+                <div className={`block md:hidden overflow-y-auto flex-1 min-h-0 divide-y ${isWhite ? 'divide-slate-200' : 'divide-slate-800'}`}>
                   {currentItems.map((record) => (
                     <div 
                       key={record.id} 
@@ -525,7 +610,7 @@ export default function MarketingQueriesView({
           </div>
 
           {/* Pagination Footer */}
-          <div className={`p-3.5 border-t flex flex-col sm:flex-row items-center justify-between gap-3 ${
+          <div className={`shrink-0 p-2.5 sm:p-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2.5 ${
             isWhite ? 'bg-slate-50 border-slate-200' : 'bg-[#161b22] border-slate-800'
           }`}>
             <div className={`text-[11px] font-mono ${isWhite ? 'text-slate-500' : 'text-slate-400'}`}>

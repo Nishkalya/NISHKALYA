@@ -56,12 +56,12 @@ export default function MarketingInboxTable({
   const isWhite = portalTheme === 'white';
 
   return (
-    <div className={`border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between min-h-[520px] w-full transition-colors ${
+    <div className={`border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between flex-1 min-h-0 w-full transition-colors ${
       isWhite ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#161b22]/70 border-slate-800 text-slate-100'
     }`}>
-      <div>
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Table Title Bar */}
-        <div className={`p-4 border-b flex items-center justify-between transition-colors ${
+        <div className={`shrink-0 p-3 sm:p-3.5 border-b flex items-center justify-between transition-colors ${
           isWhite ? 'bg-slate-50/80 border-slate-200' : 'bg-[#161b22] border-slate-800'
         }`}>
           <div className="flex items-center gap-2">
@@ -111,9 +111,9 @@ export default function MarketingInboxTable({
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 min-h-0">
               <table className="w-full text-left text-xs font-sans">
-                <thead className={`border-b text-[10px] font-bold uppercase tracking-wider font-mono ${
+                <thead className={`border-b text-[10px] font-bold uppercase tracking-wider font-mono sticky top-0 z-10 ${
                   isWhite ? 'bg-slate-100/90 text-slate-700 border-slate-200' : 'bg-[#0c1017] text-slate-400 border-slate-800'
                 }`}>
                   <tr>
@@ -197,7 +197,7 @@ export default function MarketingInboxTable({
             </div>
 
             {/* Mobile View Cards */}
-            <div className={`block md:hidden divide-y ${isWhite ? 'divide-slate-200' : 'divide-slate-800'}`}>
+            <div className={`block md:hidden overflow-y-auto flex-1 min-h-0 divide-y ${isWhite ? 'divide-slate-200' : 'divide-slate-800'}`}>
               {currentItems.map((ticket) => (
                 <div 
                   key={ticket.id} 
@@ -252,7 +252,7 @@ export default function MarketingInboxTable({
       </div>
 
       {/* Pagination Footer */}
-      <div className={`p-3.5 border-t flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors ${
+      <div className={`shrink-0 p-2.5 sm:p-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2.5 transition-colors ${
         isWhite ? 'bg-slate-50/90 border-slate-200' : 'bg-[#161b22] border-slate-800'
       }`}>
         <div className={`text-[11px] font-mono ${isWhite ? 'text-slate-600' : 'text-slate-400'}`}>
