@@ -759,17 +759,17 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         <div className="h-full w-full overflow-hidden flex items-center justify-center p-4 relative z-10">
           <div className="absolute inset-0 bg-gradient-to-tr from-[#58a6ff]/10 to-transparent blur-3xl -z-10 rounded-full w-72 h-72 mx-auto"></div>
           
-          <div className="bg-[#161b22]/90 border border-[#30363d] p-8 md:p-10 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col">
-            <div className="text-center mb-8">
-              <div className="w-12 h-12 bg-[#58a6ff]/10 border border-[#30363d] rounded-2xl flex items-center justify-center text-[#58a6ff] mx-auto mb-4 shadow-xl">
+          <div className={`w-full max-w-sm p-8 md:p-10 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col max-h-full overflow-y-auto ${portalTheme === 'white' ? 'bg-white border border-slate-200' : 'bg-white/90 border border-slate-200'}`}>
+            <div className="text-center mb-8 shrink-0">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl ${portalTheme === 'white' ? 'bg-sky-50 border border-sky-100 text-sky-600' : 'bg-[#58a6ff]/10 border border-slate-200 text-blue-600'}`}>
                 <Lock size={22} />
               </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Marketing Portal</h2>
-              <p className="text-xs text-[#8b949e] mt-1 font-mono uppercase tracking-wider">Secure Access Authorization</p>
+              <h2 className={`text-2xl font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Marketing Portal</h2>
+              <p className={`text-xs mt-1 font-mono uppercase tracking-wider ${portalTheme === 'white' ? 'text-slate-500' : 'text-slate-500'}`}>Secure Access Authorization</p>
             </div>
 
             {loginError && (
-              <div className="flex items-start gap-3 bg-red-950/40 border border-red-900/60 p-4 rounded-xl text-xs text-red-400 mb-6 font-sans">
+              <div className={`flex items-start gap-3 p-4 rounded-xl text-xs mb-6 font-sans ${portalTheme === 'white' ? 'bg-red-50 border border-red-100 text-red-600' : 'bg-red-950/40 border border-red-900/60 text-red-400'}`}>
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
                 <div>
                   <span className="font-bold uppercase tracking-wider block mb-0.5">Access Denied</span>
@@ -780,7 +780,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 font-mono">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 font-mono">
                   User ID
                 </label>
                 <div className="relative">
@@ -793,13 +793,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter unique ID"
-                    className="w-full bg-[#0d1117] border border-zinc-800 rounded-xl pl-11 pr-4 py-3 text-sm text-white outline-none focus:border-[#58a6ff]/50 transition-colors"
+                    className={`w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-sky-500/50' : 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-[#58a6ff]/50'}`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 font-mono">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 font-mono">
                   Password
                 </label>
                 <div className="relative">
@@ -812,7 +812,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-[#0d1117] border border-zinc-800 rounded-xl pl-11 pr-4 py-3 text-sm text-white outline-none focus:border-[#58a6ff]/50 transition-colors"
+                    className={`w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-sky-500/50' : 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-[#58a6ff]/50'}`}
                   />
                 </div>
               </div>
@@ -820,7 +820,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full mt-2 bg-[#1f6feb] hover:bg-[#238636] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:shadow-emerald-950/20"
+                className={`w-full mt-2 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg ${portalTheme === 'white' ? 'bg-sky-600 hover:bg-sky-700 text-slate-900 shadow-sky-600/20' : 'bg-[#1f6feb] hover:bg-[#238636] text-white hover:shadow-emerald-950/20'}`}
               >
                 {isSubmitting ? (
                   <span className="inline-block animate-pulse">Authenticating...</span>
@@ -834,13 +834,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
             </form>
 
             {onOpenAdmin && (
-              <div className="flex flex-col gap-2.5 pt-5 mt-5 border-t border-[#30363d]/60">
+              <div className="flex flex-col gap-2.5 pt-5 mt-5 border-t border-slate-200/60">
                 <button
                   type="button"
                   onClick={onOpenAdmin}
-                  className="w-full py-3 bg-[#0d1117] hover:bg-[#21262d] text-zinc-300 hover:text-white border border-[#30363d] hover:border-[#58a6ff]/50 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                  className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-[#58a6ff]/50 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                 >
-                  <Shield size={14} className="text-[#58a6ff]" />
+                  <Shield size={14} className="text-blue-600" />
                   <span>Admin Login</span>
                 </button>
               </div>
@@ -902,7 +902,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
             </AnimatePresence>
 
             {/* ERP Left Sidebar Navigation (Fixed width ~260px / w-64) */}
-            <aside className={`hidden lg:flex w-64 shrink-0 h-full flex-col select-none border-r transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'border-slate-800/80 bg-[#0d1117]'}`}>
+            <aside className={`hidden lg:flex w-64 shrink-0 h-full flex-col select-none border-r transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'border-slate-800/80 bg-slate-50'}`}>
               <MarketingSidebar 
                 marketingUser={marketingUser}
                 activeModule={activeModule}
@@ -932,11 +932,11 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
             {/* Right-Side Scrollable Content Area */}
             <main className={`flex-1 h-full overflow-hidden p-3 lg:p-4 flex flex-col space-y-3 min-h-0 transition-colors ${portalTheme === 'white' ? 'bg-[#F8FAFC]' : 'bg-[#090d13]'}`}>
               {/* ERP Breadcrumb & Status Header */}
-              <div className={`shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-3 rounded-xl border transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#161b22]/70 border-slate-800'}`}>
+              <div className={`shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 p-3 rounded-xl border transition-colors ${portalTheme === 'white' ? 'bg-white border-slate-200 shadow-sm' : 'bg-white/70 border-slate-800'}`}>
                 <div className="flex items-center gap-2.5">
                   <button
                     onClick={() => setIsSidebarOpen(true)}
-                    className={`lg:hidden p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${portalTheme === 'white' ? 'text-slate-600 hover:text-slate-900 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-slate-400 hover:text-white bg-[#0d1117] border-slate-800 hover:bg-[#21262d]'}`}
+                    className={`lg:hidden p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${portalTheme === 'white' ? 'text-slate-600 hover:text-slate-900 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-slate-400 hover:text-slate-900 bg-slate-50 border-slate-800 hover:bg-slate-100'}`}
                     title="Open Navigation"
                   >
                     <Menu size={15} />
@@ -956,7 +956,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   {/* Theme Switcher in header */}
                   <button
                     onClick={() => setPortalTheme(prev => prev === 'white' ? 'dark' : 'white')}
-                    className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer ${portalTheme === 'white' ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' : 'bg-[#161b22] border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'}`}
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer ${portalTheme === 'white' ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' : 'bg-white border-slate-800 text-slate-300 hover:text-slate-900 hover:bg-slate-800'}`}
                     title="Toggle Portal Theme"
                   >
                     {portalTheme === 'white' ? (
@@ -1051,7 +1051,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     {/* VIEW OVERLAY MODAL */}
           <AnimatePresence>
             {showViewModal && activeModule === 'inbox' && selectedTicket && (
-              <div className={`fixed inset-0 z-[100] overflow-y-auto p-4 md:p-12 w-full h-full ${portalTheme === 'white' ? 'bg-slate-50' : 'bg-[#0d1117]'}`}>
+              <div className={`fixed inset-0 z-[100] overflow-y-auto p-4 md:p-12 w-full h-full ${portalTheme === 'white' ? 'bg-slate-50' : 'bg-slate-50'}`}>
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1059,13 +1059,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   className={`relative w-full max-w-4xl mx-auto rounded-3xl p-6 md:p-10 shadow-2xl space-y-6 border ${
                     portalTheme === 'white'
                       ? 'bg-white border-slate-200 text-slate-800 shadow-xl'
-                      : 'bg-[#161b22] border-[#30363d] text-white shadow-2xl'
+                      : 'bg-white border-slate-200 text-slate-900 shadow-2xl'
                   }`}
                 >
                   <button 
                     onClick={() => setShowViewModal(false)}
                     className={`absolute top-5 right-5 transition-colors cursor-pointer ${
-                      portalTheme === 'white' ? 'text-slate-400 hover:text-slate-700' : 'text-zinc-500 hover:text-white'
+                      portalTheme === 'white' ? 'text-slate-400 hover:text-slate-700' : 'text-slate-500 hover:text-slate-900'
                     }`}
                   >
                     <X size={18} />
@@ -1076,12 +1076,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     <span className={`text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded border ${
                       portalTheme === 'white'
                         ? 'bg-sky-50 border-sky-200 text-sky-700'
-                        : 'bg-[#161b22] border-[#30363d] text-[#58a6ff]'
+                        : 'bg-white border-slate-200 text-blue-600'
                     }`}>
                       Document Details: {selectedTicket?.id}
                     </span>
                     <h3 className={`text-xl font-bold mt-3 leading-snug font-sans ${
-                      portalTheme === 'white' ? 'text-slate-900' : 'text-white'
+                      portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'
                     }`}>
                       {selectedTicket?.subject}
                     </h3>
@@ -1089,40 +1089,40 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   {/* INBOX SPECIFIC DETAIL LAYOUT */}
                   <div className="space-y-4">
                       <div className={`grid grid-cols-2 gap-4 pb-4 border-b ${
-                        portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'
+                        portalTheme === 'white' ? 'border-slate-100' : 'border-slate-200/40'
                       }`}>
                         <div>
                           <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
-                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-slate-500'
                           }`}>Contact Name</span>
                           <span className={`text-xs font-semibold block mt-0.5 ${
-                            portalTheme === 'white' ? 'text-slate-800' : 'text-white'
+                            portalTheme === 'white' ? 'text-slate-800' : 'text-slate-900'
                           }`}>{selectedTicket?.name}</span>
                         </div>
                         <div>
                           <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
-                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-slate-500'
                           }`}>Email Address</span>
                           <span className={`text-xs font-mono block mt-0.5 truncate ${
-                            portalTheme === 'white' ? 'text-sky-700' : 'text-[#58a6ff]'
+                            portalTheme === 'white' ? 'text-sky-700' : 'text-blue-600'
                           }`}>{selectedTicket?.email}</span>
                         </div>
                       </div>
 
                       <div className={`grid grid-cols-2 gap-4 pb-4 border-b ${
-                        portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'
+                        portalTheme === 'white' ? 'border-slate-100' : 'border-slate-200/40'
                       }`}>
                         <div>
                           <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
-                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-slate-500'
                           }`}>Receipt Date</span>
                           <span className={`text-xs font-mono block mt-0.5 ${
-                            portalTheme === 'white' ? 'text-slate-600' : 'text-zinc-300'
+                            portalTheme === 'white' ? 'text-slate-600' : 'text-slate-700'
                           }`}>{selectedTicket?.date}</span>
                         </div>
                         <div>
                           <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${
-                            portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                            portalTheme === 'white' ? 'text-slate-400' : 'text-slate-500'
                           }`}>Action Status</span>
                           <span className="inline-block mt-0.5">
                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
@@ -1139,12 +1139,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
                       <div>
                         <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold mb-1.5 ${
-                          portalTheme === 'white' ? 'text-slate-400' : 'text-zinc-500'
+                          portalTheme === 'white' ? 'text-slate-400' : 'text-slate-500'
                         }`}>Full Message Text</span>
                         <div className={`p-4 rounded-xl text-xs font-light leading-relaxed whitespace-pre-wrap font-sans max-h-[160px] overflow-y-auto border ${
                           portalTheme === 'white'
                             ? 'bg-slate-50 border-slate-200 text-slate-700'
-                            : 'bg-[#161b22]/80 border-[#30363d]/40 text-zinc-300'
+                            : 'bg-white/80 border-slate-200/40 text-slate-700'
                         }`}>
                           {selectedTicket?.message}
                         </div>
@@ -1152,10 +1152,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
                       {/* Action Routing Options (Convert to Query / Mark as Lost) */}
                       <div className={`pt-3 border-t ${
-                        portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'
+                        portalTheme === 'white' ? 'border-slate-100' : 'border-slate-200/40'
                       }`}>
                         <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold mb-2 flex items-center gap-1.5 ${
-                          portalTheme === 'white' ? 'text-sky-700' : 'text-[#58a6ff]'
+                          portalTheme === 'white' ? 'text-sky-700' : 'text-blue-600'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${portalTheme === 'white' ? 'bg-sky-600' : 'bg-[#58a6ff]'}`}></span>
                           Routing Operations
@@ -1163,13 +1163,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                         <div className="grid grid-cols-2 gap-3">
                           <button
                             onClick={() => selectedTicket && handleMoveInboxToQuery(selectedTicket)}
-                            className="px-4 py-2 bg-[#2ea44f] hover:bg-[#2c974b] text-white border border-[#2ea44f]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+                            className="px-4 py-2 bg-[#2ea44f] hover:bg-[#2c974b] text-slate-900 border border-[#2ea44f]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
                           >
                             <span>✓ Convert to Query</span>
                           </button>
                           <button
                             onClick={() => selectedTicket && handleMoveInboxToQuery(selectedTicket, 'Lost')}
-                            className="px-4 py-2 bg-[#cf222e] hover:bg-[#b91c1c] text-white border border-[#cf222e]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+                            className="px-4 py-2 bg-[#cf222e] hover:bg-[#b91c1c] text-slate-900 border border-[#cf222e]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
                           >
                             <span>✗ Mark as Lost</span>
                           </button>
@@ -1177,7 +1177,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                       </div>
 
                       {/* Administrative Notes / Comments Section */}
-                      <div className={`pt-3 border-t ${portalTheme === 'white' ? 'border-slate-100' : 'border-[#30363d]/40'}`}>
+                      <div className={`pt-3 border-t ${portalTheme === 'white' ? 'border-slate-100' : 'border-slate-200/40'}`}>
                         {selectedTicket && (
                           <NotesAndDetailsWidget 
                             itemId={selectedTicket.id}
@@ -1193,14 +1193,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
                   {/* Close dialogue button bottom */}
                   <div className={`pt-4 border-t flex justify-end ${
-                    portalTheme === 'white' ? 'border-slate-200' : 'border-[#30363d]'
+                    portalTheme === 'white' ? 'border-slate-200' : 'border-slate-200'
                   }`}>
                     <button
                       onClick={() => setShowViewModal(false)}
                       className={`px-5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
                         portalTheme === 'white'
                           ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                          : 'bg-[#21262d] hover:bg-[#30363d] text-white border-[#30363d]'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-200'
                       }`}
                     >
                       Dismiss View
@@ -1228,7 +1228,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className={`relative w-full max-w-sm border rounded-3xl p-6 shadow-2xl space-y-5 text-center ${
-                    portalTheme === 'white' ? 'bg-white border-red-200' : 'bg-[#0d1117] border-red-900/40'
+                    portalTheme === 'white' ? 'bg-white border-red-200' : 'bg-slate-50 border-red-900/40'
                   }`}
                 >
                   <div className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto ${
@@ -1237,8 +1237,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     <Trash2 size={20} />
                   </div>
                   <div>
-                    <h3 className={`text-base font-bold ${portalTheme === 'white' ? 'text-slate-900' : 'text-white'}`}>Delete Record</h3>
-                    <p className={`text-xs mt-1.5 font-light leading-relaxed ${portalTheme === 'white' ? 'text-slate-500' : 'text-[#8b949e]'}`}>
+                    <h3 className={`text-base font-bold ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Delete Record</h3>
+                    <p className={`text-xs mt-1.5 font-light leading-relaxed ${portalTheme === 'white' ? 'text-slate-500' : 'text-slate-500'}`}>
                       Are you sure you want to permanently remove this inquiry record? This action cannot be reversed.
                     </p>
                   </div>
@@ -1246,7 +1246,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     <button
                       onClick={() => setDeleteCandidateId(null)}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                        portalTheme === 'white' ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-[#21262d] hover:bg-[#30363d] text-white'
+                        portalTheme === 'white' ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'
                       }`}
                     >
                       Cancel
@@ -1279,23 +1279,23 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-[#0d1117] border-[#30363d]'}`}
+                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200'}`}
                 >
                   <button 
                     onClick={() => setShowEditModal(false)}
-                    className="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors"
+                    className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 transition-colors"
                   >
                     <X size={18} />
                   </button>
 
                   {/* Icon and title header */}
-                  <div className="flex items-center gap-3 border-b border-[#30363d]/50 pb-4">
+                  <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
                     <div className="w-10 h-10 bg-amber-950/10 border border-amber-900/60 text-amber-500 rounded-xl flex items-center justify-center">
                       <Edit2 size={16} />
                     </div>
                     <div>
-                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-white'}`}>Modify Parameters</h3>
-                      <p className="text-[10px] uppercase font-mono tracking-widest text-[#8b949e] mt-0.5">Record ID: {activeModule === 'inbox' ? selectedTicket?.id : selectedQuery?.id}</p>
+                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Modify Parameters</h3>
+                      <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mt-0.5">Record ID: {activeModule === 'inbox' ? selectedTicket?.id : selectedQuery?.id}</p>
                     </div>
                   </div>
 
@@ -1306,55 +1306,55 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Contact Name</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Contact Name</label>
                             <input
                               type="text"
                               required
                               value={editFormValues.name || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, name: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Email Address</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Email Address</label>
                             <input
                               type="email"
                               required
                               value={editFormValues.email || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, email: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Subject Header</label>
+                          <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Subject Header</label>
                           <input
                             type="text"
                             required
                             value={editFormValues.subject || ''}
                             onChange={(e) => setEditFormValues({ ...editFormValues, subject: e.target.value })}
-                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Creation Date</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Creation Date</label>
                             <input
                               type="date"
                               required
                               disabled
                               value={editFormValues.date || ''}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none font-mono cursor-not-allowed opacity-70 transition-colors ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-[#161b22] border-zinc-800 text-zinc-500'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none font-mono cursor-not-allowed opacity-70 transition-colors ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-white border-slate-200 text-slate-500'}`}
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Status State</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Status State</label>
                             <select
                               value={editFormValues.status || 'New Query'}
                               onChange={(e) => setEditFormValues({ ...editFormValues, status: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -1365,13 +1365,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Inquiry Message</label>
+                          <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Inquiry Message</label>
                           <textarea
                             rows={4}
                             required
                             value={editFormValues.message || ''}
                             onChange={(e) => setEditFormValues({ ...editFormValues, message: e.target.value })}
-                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                           />
                         </div>
                       </>
@@ -1380,34 +1380,34 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Customer Name</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Customer Name</label>
                             <input
                               type="text"
                               required
                               value={editFormValues.customerName || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, customerName: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Classification Category</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Classification Category</label>
                             <input
                               type="text"
                               required
                               value={editFormValues.category || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, category: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Priority Urgency</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Priority Urgency</label>
                             <select
                               value={editFormValues.priority || 'Medium'}
                               onChange={(e) => setEditFormValues({ ...editFormValues, priority: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             >
                               <option value="Low">Low</option>
                               <option value="Medium">Medium</option>
@@ -1416,34 +1416,34 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Assigned Engineer</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Assigned Engineer</label>
                             <input
                               type="text"
                               required
                               value={editFormValues.assignedTo || ''}
                               onChange={(e) => setEditFormValues({ ...editFormValues, assignedTo: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-sans font-bold ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-sans font-bold ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Created Date</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Created Date</label>
                             <input
                               type="date"
                               required
                               disabled
                               value={editFormValues.createdDate || ''}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none font-mono cursor-not-allowed opacity-70 transition-colors ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-[#161b22] border-zinc-800 text-zinc-500'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none font-mono cursor-not-allowed opacity-70 transition-colors ${portalTheme === 'white' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-white border-slate-200 text-slate-500'}`}
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Query Status State</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Query Status State</label>
                             <select
                               value={editFormValues.status || 'New Query'}
                               onChange={(e) => setEditFormValues({ ...editFormValues, status: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -1454,23 +1454,23 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Diagnostic Report / Description</label>
+                          <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Diagnostic Report / Description</label>
                           <textarea
                             rows={4}
                             required
                             value={editFormValues.description || ''}
                             onChange={(e) => setEditFormValues({ ...editFormValues, description: e.target.value })}
-                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                           />
                         </div>
                       </>
                     )}
 
-                    <div className="pt-4 border-t border-[#30363d] flex justify-end gap-3.5">
+                    <div className="pt-4 border-t border-slate-200 flex justify-end gap-3.5">
                       <button
                         type="button"
                         onClick={() => setShowEditModal(false)}
-                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-[#21262d] border-[#30363d] text-zinc-400 hover:text-white'}`}
+                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-900'}`}
                       >
                         Cancel
                       </button>
@@ -1505,23 +1505,23 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-[#0d1117] border-[#30363d]'}`}
+                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200'}`}
                 >
                   <button 
                     onClick={() => setShowAddModal(false)}
-                    className="absolute top-5 right-5 text-zinc-500 hover:text-white transition-colors"
+                    className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 transition-colors"
                   >
                     <X size={18} />
                   </button>
 
                   {/* Icon and title header */}
-                  <div className="flex items-center gap-3 border-b border-[#30363d]/50 pb-4">
+                  <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
                     <div className="w-10 h-10 bg-emerald-950/20 border border-emerald-900/60 text-emerald-400 rounded-xl flex items-center justify-center">
                       <Plus size={18} />
                     </div>
                     <div>
-                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-white'}`}>Create Mock Record</h3>
-                      <p className="text-[10px] uppercase font-mono tracking-widest text-[#8b949e] mt-0.5">Assigned ID: {addFormValues.id}</p>
+                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Create Mock Record</h3>
+                      <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mt-0.5">Assigned ID: {addFormValues.id}</p>
                     </div>
                   </div>
 
@@ -1532,58 +1532,58 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Contact Name</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Contact Name</label>
                             <input
                               type="text"
                               required
                               placeholder="e.g. Liam Sterling"
                               value={addFormValues.name || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, name: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Email Address</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Email Address</label>
                             <input
                               type="email"
                               required
                               placeholder="l.sterling@corp.com"
                               value={addFormValues.email || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, email: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Subject Header</label>
+                          <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Subject Header</label>
                           <input
                             type="text"
                             required
                             placeholder="Inquiring about White-Label SaaS models"
                             value={addFormValues.subject || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, subject: e.target.value })}
-                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Creation Date</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Creation Date</label>
                             <input
                               type="date"
                               required
                               value={addFormValues.date || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, date: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono"
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Status State</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Status State</label>
                             <select
                               value={addFormValues.status || 'New Query'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, status: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -1594,14 +1594,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Inquiry Message</label>
+                          <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Inquiry Message</label>
                           <textarea
                             rows={3}
                             required
                             placeholder="Type simulated query message here..."
                             value={addFormValues.message || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, message: e.target.value })}
-                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                           />
                         </div>
                       </>
@@ -1610,36 +1610,36 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Customer Name</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Customer Name</label>
                             <input
                               type="text"
                               required
                               placeholder="e.g. Diana Prince"
                               value={addFormValues.customerName || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, customerName: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Classification Category</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Classification Category</label>
                             <input
                               type="text"
                               required
                               placeholder="e.g. Enterprise AI"
                               value={addFormValues.category || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, category: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Priority Urgency</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Priority Urgency</label>
                             <select
                               value={addFormValues.priority || 'Medium'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, priority: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-350"
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-350"
                             >
                               <option value="Low">Low</option>
                               <option value="Medium">Medium</option>
@@ -1648,35 +1648,35 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Assigned Engineer</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Assigned Engineer</label>
                             <input
                               type="text"
                               required
                               placeholder="e.g. Vishal"
                               value={addFormValues.assignedTo || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, assignedTo: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Created Date</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Created Date</label>
                             <input
                               type="date"
                               required
                               value={addFormValues.createdDate || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, createdDate: e.target.value })}
-                              className="w-full bg-[#161b22] border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono"
                             />
                           </div>
                           <div>
-                            <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Query Status State</label>
+                            <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Query Status State</label>
                             <select
                               value={addFormValues.status || 'New Query'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, status: e.target.value })}
-                              className="w-full bg-[#161b22] border border-[#30363d]/60 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-350"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-350"
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -1687,24 +1687,24 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                         </div>
 
                         <div>
-                          <label className="block text-[8.5px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5 font-mono">Diagnostic Report / Description</label>
+                          <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Diagnostic Report / Description</label>
                           <textarea
                             rows={3}
                             required
                             placeholder="Type query documentation / logs summary here..."
                             value={addFormValues.description || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, description: e.target.value })}
-                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#161b22] border-zinc-800 text-white'}`}
+                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
                           />
                         </div>
                       </>
                     )}
 
-                    <div className="pt-4 border-t border-[#30363d] flex justify-end gap-3.5">
+                    <div className="pt-4 border-t border-slate-200 flex justify-end gap-3.5">
                       <button
                         type="button"
                         onClick={() => setShowAddModal(false)}
-                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-[#21262d] border-[#30363d] text-zinc-400 hover:text-white'}`}
+                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-900'}`}
                       >
                         Cancel
                       </button>

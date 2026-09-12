@@ -7,11 +7,14 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply antialiased;
     background-image: none !important;
-    background-color: var(--bg-main) !important;
-    color: var(--text-secondary) !important;
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -21,34 +24,7 @@
    UI COLOR REDESIGN: CORPORATE THEME VARIABLES
    ========================================================== */
 
-:root, .theme-dark, .theme-personal, .marketing-portal-dark {
-  --bg-main: #0F172A;
-  --bg-panel: #111827;
-  --bg-card: #1E293B;
-  --border-color: #334155;
-
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-label: #94A3B8;
-  --text-muted: #64748B;
-
-  --btn-primary: #3B82F6;
-  --btn-primary-hover: #2563EB;
-  --btn-success: #10B981;
-  --btn-warning: #F59E0B;
-  --btn-danger: #EF4444;
-
-  --status-new: #3B82F6;
-  --status-progress: #F59E0B;
-  --status-won: #10B981;
-  --status-lost: #EF4444;
-
-  --theme-glow: rgba(59, 130, 246, 0.25);
-  --accent-color: #06B6D4;
-}
-
-.theme-white,
-.marketing-portal-white {
+:root, .theme-white, .marketing-portal-white {
   --bg-main: #FFFFFF;
   --bg-panel: #F8FAFC;
   --bg-card: #FFFFFF;
@@ -72,6 +48,32 @@
 
   --theme-glow: rgba(37, 99, 235, 0.15);
   --accent-color: #0284C7;
+}
+
+.theme-dark, .theme-personal, .marketing-portal-dark {
+  --bg-main: #0F172A;
+  --bg-panel: #111827;
+  --bg-card: #1E293B;
+  --border-color: #334155;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-label: #94A3B8;
+  --text-muted: #64748B;
+
+  --btn-primary: #3B82F6;
+  --btn-primary-hover: #2563EB;
+  --btn-success: #10B981;
+  --btn-warning: #F59E0B;
+  --btn-danger: #EF4444;
+
+  --status-new: #3B82F6;
+  --status-progress: #F59E0B;
+  --status-won: #10B981;
+  --status-lost: #EF4444;
+
+  --theme-glow: rgba(59, 130, 246, 0.25);
+  --accent-color: #06B6D4;
 }
 
 /* Scoped rules for White Marketing Portal */
@@ -144,247 +146,6 @@ body, html, #root {
   background-image: none !important;
 }
 
-/* 1. Background Utility Overrides */
-.bg-\[\#0d1117\], 
-.bg-\[\#010409\], 
-.bg-\[\#040406\], 
-.bg-\[\#050507\],
-.bg-black\/40,
-.bg-black\/95,
-.bg-[#0d1117],
-.bg-[#010409],
-.bg-[#040406],
-.bg-[#050507] {
-  background-color: var(--bg-main) !important;
-  background-image: none !important;
-}
-
-/* 2. Secondary Panels Overrides */
-.bg-\[\#161b22\],
-.bg-\[\#161b22\]\/95,
-.bg-\[\#161b22\]\/90,
-.bg-\[\#161b22\]\/80,
-.bg-\[\#161b22\]\/70,
-.bg-\[\#161b22\]\/60,
-.bg-\[\#161b22\]\/55,
-.bg-\[\#161b22\]\/50,
-.bg-\[\#161b22\]\/40,
-.bg-\[\#161b22\]\/30,
-.bg-\[\#161b22\]\/20,
-.bg-\[\#0c1017\],
-.bg-\[\#0c1017\]\/45,
-.bg-\[\#0d1117\]\/80,
-.bg-zinc-900,
-.bg-zinc-950,
-.bg-slate-900,
-.bg-slate-950,
-.bg-gray-900,
-.bg-gray-950,
-.bg-\[rgba\(13\,17\,23\,0\.7\)\],
-.bg-\[rgba\(88\,166\,255\,0\.03\)\],
-.bg-[#161b22],
-.bg-[#0c1017] {
-  background-color: var(--bg-panel) !important;
-  background-image: none !important;
-}
-
-/* 3. Cards & Modals Overrides */
-.bg-\[\#1f242c\],
-.bg-\[\#21262d\],
-.bg-\[\#0d1117\]\/85,
-.bg-[#1f242c],
-.bg-[#21262d],
-.bg-zinc-800,
-.bg-slate-800,
-.bg-gray-800,
-.modal-container,
-.modal-content {
-  background-color: var(--bg-card) !important;
-  background-image: none !important;
-}
-
-/* 4. Borders Overrides */
-.border-\[\#30363d\],
-.border-\[\#30363d\]\/85,
-.border-\[\#30363d\]\/80,
-.border-\[\#30363d\]\/60,
-.border-\[\#30363d\]\/50,
-.border-\[\#30363d\]\/45,
-.border-\[\#30363d\]\/40,
-.border-zinc-700,
-.border-zinc-800,
-.border-zinc-850,
-.border-slate-700,
-.border-slate-800,
-.border-gray-700,
-.border-gray-800,
-.border-[#30363d],
-.border-white\/5,
-.border-white\/10,
-.border-white\/20,
-hr {
-  border-color: var(--border-color) !important;
-}
-
-/* 5. Gimmick Gradients Overrides - Clean corporate backgrounds */
-.from-\[\#161b22\], .from-[#161b22] { --tw-gradient-from: var(--bg-panel) !important; }
-.to-\[\#0d1117\], .to-[#0d1117] { --tw-gradient-to: var(--bg-main) !important; }
-.to-\[\#010409\], .to-[#010409] { --tw-gradient-to: var(--bg-main) !important; }
-.from-\[\#161b22\]\/80 { --tw-gradient-from: var(--bg-panel) !important; }
-.to-\[\#0d1117\]\/80 { --tw-gradient-to: var(--bg-main) !important; }
-
-/* 6. Typography Overrides */
-/* Primary Text */
-.text-white,
-.text-zinc-100,
-.text-zinc-200,
-.text-slate-100,
-.text-slate-200,
-h1, h2, h3, h4, h5, h6,
-strong {
-  color: var(--text-primary) !important;
-}
-
-/* Secondary Text */
-.text-\[\#c9d1d9\],
-.text-zinc-300,
-.text-slate-300,
-.text-slate-350,
-.text-gray-200,
-.text-gray-300,
-p, li {
-  color: var(--text-secondary) !important;
-}
-
-/* Labels */
-.text-\[\#8b949e\],
-.text-zinc-400,
-.text-slate-400,
-.text-gray-400,
-.text-[#8b949e],
-label {
-  color: var(--text-label) !important;
-}
-
-/* Muted Text */
-.text-zinc-500,
-.text-slate-500,
-.text-gray-500,
-.text-white\/60,
-.text-white\/20,
-.text-white\/40,
-.text-zinc-450,
-.text-zinc-650 {
-  color: var(--text-muted) !important;
-}
-
-/* 7. Buttons Overrides */
-/* Primary Button & Hover */
-.bg-\[\#1f6feb\],
-.bg-blue-600,
-.bg-[#1f6feb],
-.bg-blue-500,
-button.text-[#58a6ff] {
-  background-color: var(--btn-primary) !important;
-  color: #FFFFFF !important;
-  border-color: var(--btn-primary) !important;
-  transition: all 0.15s ease-in-out !important;
-}
-.bg-\[\#1f6feb\]:hover,
-.bg-blue-600:hover,
-.bg-[#1f6feb]:hover,
-.bg-blue-500:hover {
-  background-color: var(--btn-primary-hover) !important;
-  border-color: var(--btn-primary-hover) !important;
-}
-
-/* Success Button */
-.bg-emerald-600,
-.bg-\[\#2ea44f\],
-.bg-[#2ea44f] {
-  background-color: var(--btn-success) !important;
-  color: #FFFFFF !important;
-  border-color: var(--btn-success) !important;
-}
-.bg-emerald-600:hover,
-.bg-\[\#2ea44f\]:hover,
-.bg-[#2ea44f]:hover {
-  background-color: var(--btn-success) !important;
-  border-color: var(--btn-success) !important;
-  opacity: 0.9 !important;
-}
-
-/* Warning Button */
-.bg-amber-600,
-.bg-\[\#f59e0b\],
-.bg-[#f59e0b] {
-  background-color: var(--btn-warning) !important;
-  color: #FFFFFF !important;
-  border-color: var(--btn-warning) !important;
-}
-
-/* Danger Button */
-.bg-red-600,
-.bg-red-950\/30,
-.bg-red-700,
-.bg-\[\#cf222e\],
-.bg-[#cf222e] {
-  background-color: var(--btn-danger) !important;
-  color: #FFFFFF !important;
-  border-color: var(--btn-danger) !important;
-}
-.bg-red-650:hover,
-.bg-red-600:hover,
-.bg-red-950\/30:hover,
-.bg-\[\#cf222e\]:hover,
-.bg-[#cf222e]:hover {
-  background-color: var(--btn-danger) !important;
-  border-color: var(--btn-danger) !important;
-  opacity: 0.9 !important;
-}
-
-/* Primary Color mapping for highlights, icons, active navs and interactive elements */
-.text-\[\#58a6ff\],
-.text-blue-500,
-.text-blue-600,
-.text-blue-400,
-.text-[#58a6ff],
-.text-[#0969da],
-.text-[#2563eb],
-span.text-\[\#58a6ff\],
-span.text-[#58a6ff] {
-  color: var(--btn-primary) !important;
-}
-
-.bg-\[\#58a6ff\]\/10,
-.bg-\[\#58a6ff\]\/5,
-.bg-\[\#58a6ff\]\/20,
-.bg-blue-600\/10,
-.bg-blue-600\/15,
-.bg-blue-600\/20,
-.bg-[rgba(59,130,246,0.1)],
-.bg-[rgba(59,130,246,0.15)],
-.bg-[rgba(59,130,246,0.2)] {
-  background-color: rgba(59, 130, 246, 0.1) !important;
-}
-
-.border-\[\#58a6ff\],
-.border-\[\#58a6ff\]\/50,
-.border-\[\#58a6ff\]\/20,
-.border-blue-500,
-.border-blue-630 {
-  border-color: var(--btn-primary) !important;
-}
-
-/* Service Card Subtle Blue Hover Glow Override */
-div[class*="[perspective:1000px]"] .group:hover div[class*="backface-visibility:hidden"],
-div[class*="[perspective:1000px]"]:hover div[class*="[backface-visibility:hidden]"],
-div[class*="[perspective:1000px]"]:hover .absolute {
-  border-color: var(--btn-primary) !important;
-  box-shadow: 0 0 25px rgba(59, 130, 246, 0.35) !important;
-}
-
-/* 8. Status Colors Overrides */
 /* New Query */
 .bg-blue-950\/20,
 .bg-blue-600\/15,
@@ -433,7 +194,7 @@ div[class*="[perspective:1000px]"]:hover .absolute {
 /* 9. Sidebar Overrides */
 /* Dark Navy Background, Active Menu Blue Highlight, White Text, Strong Contrast */
 .md\:col-span-3 .bg-\[\#161b22\]\/70,
-.md\:col-span-3 .bg-[#161b22] {
+.md\:col-span-3 .bg-white {
   background-color: var(--bg-panel) !important;
   border-color: var(--border-color) !important;
 }
@@ -522,19 +283,19 @@ input:focus, textarea:focus, select:focus {
 }
 
 .markdown-body {
-  @apply text-[#8b949e] font-normal leading-relaxed;
+  @apply text-slate-500 font-normal leading-relaxed;
 }
 
 .markdown-body h1 {
-  @apply text-xl md:text-2xl text-white font-semibold mb-6 mt-8 tracking-tight border-b border-[#30363d] pb-2;
+  @apply text-xl md:text-2xl text-slate-900 font-semibold mb-6 mt-8 tracking-tight border-b border-slate-200 pb-2;
 }
 
 .markdown-body h2 {
-  @apply text-lg md:text-xl text-white font-semibold mb-4 mt-8 tracking-tight;
+  @apply text-lg md:text-xl text-slate-900 font-semibold mb-4 mt-8 tracking-tight;
 }
 
 .markdown-body h3 {
-  @apply text-sm text-[#8b949e] font-semibold mb-3 mt-6 uppercase tracking-wider;
+  @apply text-sm text-slate-500 font-semibold mb-3 mt-6 uppercase tracking-wider;
 }
 
 .markdown-body p {
@@ -551,19 +312,19 @@ input:focus, textarea:focus, select:focus {
 
 .markdown-body li::before {
   content: "✓";
-  @apply text-[#238636] font-bold shrink-0;
+  @apply text-green-600 font-bold shrink-0;
 }
 
 .markdown-body code {
-  @apply font-mono text-[0.85em] bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 rounded text-[#58a6ff];
+  @apply font-mono text-[0.85em] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-blue-600;
 }
 
 .markdown-body pre {
-  @apply bg-[#0d1117] border border-[#30363d] rounded-xl p-5 my-6 overflow-x-auto;
+  @apply bg-slate-50 border border-slate-200 rounded-xl p-5 my-6 overflow-x-auto;
 }
 
 .markdown-body strong {
-  @apply text-[#f0f6fc] font-semibold;
+  @apply text-slate-900 font-semibold;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -585,7 +346,7 @@ input:focus, textarea:focus, select:focus {
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #30363d;
-  @apply rounded-full hover:bg-[#8b949e] transition-colors;
+  @apply rounded-full hover:bg-slate-200 transition-colors;
 }
 
 @layer utilities {

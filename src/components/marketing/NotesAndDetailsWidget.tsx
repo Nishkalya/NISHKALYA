@@ -376,7 +376,7 @@ export default function NotesAndDetailsWidget({
             className={`w-full p-3.5 rounded-xl border flex items-center justify-between transition-all cursor-pointer shadow-sm group ${
               isWhite
                 ? 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300'
-                : 'bg-[#161b22] hover:bg-[#21262d] text-slate-200 border-slate-800 hover:border-slate-700'
+                : 'bg-white hover:bg-slate-100 text-slate-200 border-slate-800 hover:border-slate-200'
             }`}
             title="Open Full Screen Workspace"
           >
@@ -438,7 +438,7 @@ export default function NotesAndDetailsWidget({
               className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase transition-all flex items-center gap-2 cursor-pointer border ${
                 currentTab === 'notes'
                   ? (isWhite ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-sm' : 'bg-amber-950/40 text-amber-400 border-amber-800/80 shadow-sm')
-                  : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200' : 'bg-[#161b22] hover:bg-[#21262d] text-slate-400 border-slate-800')
+                  : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200' : 'bg-white hover:bg-slate-100 text-slate-400 border-slate-800')
               }`}
             >
               <MessageSquare size={14} className={currentTab === 'notes' ? (isWhite ? 'text-amber-600' : 'text-amber-400') : 'text-slate-400'} />
@@ -458,7 +458,7 @@ export default function NotesAndDetailsWidget({
               className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase transition-all flex items-center gap-2 cursor-pointer border ${
                 currentTab === 'tasks'
                   ? (isWhite ? 'bg-sky-50 text-sky-800 border-sky-300 shadow-sm' : 'bg-sky-950/40 text-sky-400 border-sky-800/80 shadow-sm')
-                  : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200' : 'bg-[#161b22] hover:bg-[#21262d] text-slate-400 border-slate-800')
+                  : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200' : 'bg-white hover:bg-slate-100 text-slate-400 border-slate-800')
               }`}
             >
               <CheckSquare size={14} className={currentTab === 'tasks' ? (isWhite ? 'text-sky-600' : 'text-sky-400') : 'text-slate-400'} />
@@ -478,7 +478,7 @@ export default function NotesAndDetailsWidget({
               className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase transition-all flex items-center gap-2 cursor-pointer border ${
                 currentTab === 'files'
                   ? (isWhite ? 'bg-purple-50 text-purple-800 border-purple-300 shadow-sm' : 'bg-purple-950/40 text-purple-400 border-purple-800/80 shadow-sm')
-                  : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200' : 'bg-[#161b22] hover:bg-[#21262d] text-slate-400 border-slate-800')
+                  : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200' : 'bg-white hover:bg-slate-100 text-slate-400 border-slate-800')
               }`}
             >
               <Paperclip size={14} className={currentTab === 'files' ? (isWhite ? 'text-purple-600' : 'text-purple-400') : 'text-slate-400'} />
@@ -500,7 +500,7 @@ export default function NotesAndDetailsWidget({
           {/* Add Note Box - Toggleable to save screen space */}
           {isAddNoteOpen && (
             <div className={`p-3 rounded-xl border shadow-sm space-y-2.5 transition-all ${
-              isWhite ? 'bg-white border-slate-200' : 'bg-[#161b22] border-slate-800'
+              isWhite ? 'bg-white border-slate-200' : 'bg-white border-slate-800'
             }`}>
               <div className="flex items-center justify-between">
                 <label className={`text-[10px] font-mono uppercase tracking-widest font-bold flex items-center gap-1.5 ${
@@ -522,7 +522,7 @@ export default function NotesAndDetailsWidget({
                         className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase transition-all cursor-pointer border ${
                           selectedTag === tag
                             ? (isWhite ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-amber-950/60 text-amber-300 border-amber-700')
-                            : (isWhite ? 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100' : 'bg-[#0d1117] text-slate-400 border-slate-800 hover:text-slate-200')
+                            : (isWhite ? 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100' : 'bg-slate-50 text-slate-400 border-slate-800 hover:text-slate-200')
                         }`}
                       >
                         {tag}
@@ -551,7 +551,7 @@ export default function NotesAndDetailsWidget({
                   className={`w-full border rounded-xl p-3 pb-8 text-xs outline-none focus:border-amber-400 font-sans resize-none transition-all shadow-sm ${
                     isWhite
                       ? 'bg-slate-50/50 border-slate-300 text-slate-800 placeholder-slate-400'
-                      : 'bg-[#0d1117] border-slate-800 text-white placeholder-slate-500'
+                      : 'bg-slate-50 border-slate-800 text-slate-900 placeholder-slate-500'
                   }`}
                 />
                 <div className="absolute right-2.5 bottom-2 flex items-center gap-2">
@@ -587,7 +587,7 @@ export default function NotesAndDetailsWidget({
                 onClick={() => setIsAddNoteOpen(!isAddNoteOpen)}
                 className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border shadow-xs ${
                   isAddNoteOpen
-                    ? (isWhite ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700')
+                    ? (isWhite ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-200')
                     : (isWhite ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300' : 'bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 border-amber-800/80')
                 }`}
               >
@@ -601,7 +601,7 @@ export default function NotesAndDetailsWidget({
             }`}>
               {data.comments.length === 0 ? (
                 <div className={`p-6 text-center rounded-xl border border-dashed text-xs ${
-                  isWhite ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#161b22]/50 border-slate-800 text-slate-400'
+                  isWhite ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-white/50 border-slate-800 text-slate-400'
                 }`}>
                   <MessageSquare size={20} className="mx-auto mb-2 opacity-40" />
                   <p className="font-semibold">No notes logged yet.</p>
@@ -614,7 +614,7 @@ export default function NotesAndDetailsWidget({
                     className={`p-3.5 rounded-xl border shadow-sm transition-all group ${
                       isWhite
                         ? 'bg-white hover:bg-slate-50/80 border-slate-200'
-                        : 'bg-[#161b22] hover:bg-[#1c2128] border-slate-800'
+                        : 'bg-white hover:bg-[#1c2128] border-slate-800'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -636,7 +636,7 @@ export default function NotesAndDetailsWidget({
                             comment.tag === 'Urgent' ? 'bg-red-50 text-red-700 border-red-200' :
                             comment.tag === 'Tech' ? 'bg-sky-50 text-sky-700 border-sky-200' :
                             comment.tag === 'Call' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            (isWhite ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700')
+                            (isWhite ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-200')
                           }`}>
                             {comment.tag}
                           </span>
@@ -678,7 +678,7 @@ export default function NotesAndDetailsWidget({
         <div className="space-y-4">
           {/* Progress Bar Header */}
           <div className={`p-3 rounded-xl border shadow-sm space-y-2 ${
-            isWhite ? 'bg-white border-slate-200' : 'bg-[#161b22] border-slate-800'
+            isWhite ? 'bg-white border-slate-200' : 'bg-white border-slate-800'
           }`}>
             <div className="flex items-center justify-between text-xs font-mono">
               <span className={`font-bold uppercase tracking-wider ${isWhite ? 'text-slate-700' : 'text-slate-300'}`}>
@@ -700,7 +700,7 @@ export default function NotesAndDetailsWidget({
 
           {/* Add Task Input Form */}
           <div className={`p-3 rounded-xl border shadow-sm space-y-2.5 ${
-            isWhite ? 'bg-white border-slate-200' : 'bg-[#161b22] border-slate-800'
+            isWhite ? 'bg-white border-slate-200' : 'bg-white border-slate-800'
           }`}>
             <label className={`text-[10px] font-mono uppercase tracking-widest font-bold flex items-center gap-1.5 ${
               isWhite ? 'text-slate-700' : 'text-slate-300'
@@ -724,7 +724,7 @@ export default function NotesAndDetailsWidget({
                 className={`flex-1 border rounded-xl px-3 py-2 text-xs outline-none focus:border-sky-400 font-sans shadow-sm ${
                   isWhite
                     ? 'bg-slate-50/50 border-slate-300 text-slate-800 placeholder-slate-400'
-                    : 'bg-[#0d1117] border-slate-800 text-white placeholder-slate-500'
+                    : 'bg-slate-50 border-slate-800 text-slate-900 placeholder-slate-500'
                 }`}
               />
 
@@ -735,7 +735,7 @@ export default function NotesAndDetailsWidget({
                   className={`border rounded-xl px-2.5 py-2 text-xs font-mono font-bold outline-none cursor-pointer ${
                     isWhite
                       ? 'bg-slate-50 border-slate-300 text-slate-700'
-                      : 'bg-[#0d1117] border-slate-800 text-slate-300'
+                      : 'bg-slate-50 border-slate-800 text-slate-300'
                   }`}
                 >
                   <option value="Normal">Normal</option>
@@ -768,7 +768,7 @@ export default function NotesAndDetailsWidget({
             }`}>
               {data.tasks.length === 0 ? (
                 <div className={`p-6 text-center rounded-xl border border-dashed text-xs ${
-                  isWhite ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#161b22]/50 border-slate-800 text-slate-400'
+                  isWhite ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-white/50 border-slate-800 text-slate-400'
                 }`}>
                   <ListTodo size={20} className="mx-auto mb-2 opacity-40" />
                   <p className="font-semibold">No tasks logged.</p>
@@ -780,8 +780,8 @@ export default function NotesAndDetailsWidget({
                     key={task.id}
                     className={`p-3 rounded-xl border shadow-xs transition-all flex items-center justify-between gap-3 group ${
                       task.completed
-                        ? (isWhite ? 'bg-slate-50/70 border-slate-200 opacity-75' : 'bg-[#161b22]/40 border-slate-800/60 opacity-60')
-                        : (isWhite ? 'bg-white border-slate-200 hover:border-sky-300' : 'bg-[#161b22] border-slate-800 hover:border-slate-700')
+                        ? (isWhite ? 'bg-slate-50/70 border-slate-200 opacity-75' : 'bg-white/40 border-slate-800/60 opacity-60')
+                        : (isWhite ? 'bg-white border-slate-200 hover:border-sky-300' : 'bg-white border-slate-800 hover:border-slate-200')
                     }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -791,7 +791,7 @@ export default function NotesAndDetailsWidget({
                         className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 border ${
                           task.completed
                             ? 'bg-emerald-500 border-emerald-600 text-white'
-                            : (isWhite ? 'bg-white border-slate-300 hover:border-sky-500 text-transparent' : 'bg-[#0d1117] border-slate-700 hover:border-sky-400 text-transparent')
+                            : (isWhite ? 'bg-white border-slate-300 hover:border-sky-500 text-transparent' : 'bg-slate-50 border-slate-200 hover:border-sky-400 text-transparent')
                         }`}
                       >
                         <Check size={12} className={task.completed ? 'block' : 'opacity-0'} />
@@ -825,7 +825,7 @@ export default function NotesAndDetailsWidget({
                             ? 'bg-red-50 text-red-700 border-red-200'
                             : task.priority === 'High'
                             ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : (isWhite ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700')
+                            : (isWhite ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-200')
                         }`}>
                           {task.priority}
                         </span>
@@ -859,7 +859,7 @@ export default function NotesAndDetailsWidget({
             className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ${
               isDraggingFile
                 ? 'border-purple-500 bg-purple-50/30'
-                : (isWhite ? 'border-slate-300 hover:border-purple-400 bg-slate-50/50 hover:bg-slate-50' : 'border-slate-800 hover:border-purple-500 bg-[#161b22]/40 hover:bg-[#161b22]')
+                : (isWhite ? 'border-slate-300 hover:border-purple-400 bg-slate-50/50 hover:bg-slate-50' : 'border-slate-800 hover:border-purple-500 bg-white/40 hover:bg-white')
             }`}
           >
             <input
@@ -895,7 +895,7 @@ export default function NotesAndDetailsWidget({
             }`}>
               {data.attachedFiles.length === 0 ? (
                 <div className={`p-6 text-center rounded-xl border border-dashed text-xs ${
-                  isWhite ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#161b22]/50 border-slate-800 text-slate-400'
+                  isWhite ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-white/50 border-slate-800 text-slate-400'
                 }`}>
                   <Paperclip size={20} className="mx-auto mb-2 opacity-40" />
                   <p className="font-semibold">No files attached yet.</p>
@@ -906,7 +906,7 @@ export default function NotesAndDetailsWidget({
                   <div
                     key={file.id}
                     className={`p-3 rounded-xl border shadow-xs transition-all flex items-center justify-between gap-3 group ${
-                      isWhite ? 'bg-white border-slate-200 hover:border-purple-200' : 'bg-[#161b22] border-slate-800 hover:border-slate-700'
+                      isWhite ? 'bg-white border-slate-200 hover:border-purple-200' : 'bg-white border-slate-800 hover:border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -935,7 +935,7 @@ export default function NotesAndDetailsWidget({
                           className={`p-1.5 rounded-lg border text-xs font-mono font-bold transition-colors cursor-pointer flex items-center gap-1 ${
                             isWhite
                               ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-200'
                           }`}
                           title="Download File"
                         >
@@ -971,11 +971,11 @@ export default function NotesAndDetailsWidget({
       {isFullScreen && (
         <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md p-3 md:p-6 flex items-center justify-center animate-in fade-in duration-150">
           <div className={`w-full max-w-6xl h-[92vh] flex flex-col rounded-2xl shadow-2xl border overflow-hidden ${
-            isWhite ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-[#0d1117] border-slate-800 text-white'
+            isWhite ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-50 border-slate-800 text-slate-900'
           }`}>
             {/* Fullscreen Workspace Header */}
             <div className={`p-4 md:px-6 border-b flex items-center justify-between shrink-0 ${
-              isWhite ? 'bg-white border-slate-200' : 'bg-[#161b22] border-slate-800'
+              isWhite ? 'bg-white border-slate-200' : 'bg-white border-slate-800'
             }`}>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
@@ -1003,7 +1003,7 @@ export default function NotesAndDetailsWidget({
                   className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
                     isWhite
                       ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
-                      : 'bg-[#21262d] hover:bg-[#30363d] text-white border-slate-700'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-200'
                   }`}
                 >
                   <Minimize2 size={13} />

@@ -3,7 +3,7 @@ import { Project } from './services/projectService';
 export const DEFAULT_CONFIG = {
   hero: {
     badge: "Architecting the Future",
-    heading: "Design. Code. <span class=\"text-[#58a6ff] italic\">Evolve.</span>",
+    heading: "Design. Code. <span class=\"text-blue-600 italic\">Evolve.</span>",
     subheading: "A multidisciplinary studio focusing on high-fidelity user experiences and next-generation AI integrations.",
     stats: [
       { label: "Products Shipped", value: "24+" },
@@ -18,7 +18,7 @@ export const DEFAULT_CONFIG = {
   },
   about: {
     badge: "The Architect",
-    heading: "Bridging the gap between <span class=\"text-[#58a6ff]\">Vision</span> and Execution.",
+    heading: "Bridging the gap between <span class=\"text-blue-600\">Vision</span> and Execution.",
     skills: ["AI Strategy", "React Mastery", "System Design", "Product Engineering", "UI/UX Architecture"],
     paragraphs: [
       "With over a decade of experience across the full digital stack, I specialize in building systems that aren't just functional, but emotionally resonant. My approach combines the rigor of engineering with the nuance of high-end design.",
@@ -34,7 +34,7 @@ export const DEFAULT_CONFIG = {
   ],
   process: {
     badge: "How we work",
-    heading: "Simple approach. <span class=\"text-[#58a6ff] italic\">Dependable results.</span>",
+    heading: "Simple approach. <span class=\"text-blue-600 italic\">Dependable results.</span>",
     subheading: "Four focused phases to take you from idea to impact.",
     steps: [
       { step: "01", title: "Understand your vision", desc: "Whether you are beginning your first digital journey or expanding an existing one, we start by listening deeply." },
@@ -45,7 +45,7 @@ export const DEFAULT_CONFIG = {
   },
   techStack: {
     badge: "The Ecosystem",
-    heading: "Built on a Foundation of <span class=\"text-[#58a6ff] italic\">World-Class</span> Technology",
+    heading: "Built on a Foundation of <span class=\"text-blue-600 italic\">World-Class</span> Technology",
     subheading: "We leverage the most advanced frameworks and AI models to ensure your product is scalable, secure, and future-proof from day one.",
     items: [
       { label: "Frontend", value: "React / Next.js / Tailwind" },

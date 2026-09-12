@@ -57,16 +57,16 @@ export default function MarketingInboxTable({
 
   return (
     <div className={`border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between flex-1 min-h-0 w-full transition-colors ${
-      isWhite ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#161b22]/70 border-slate-800 text-slate-100'
+      isWhite ? 'bg-white border-slate-200 text-slate-800' : 'bg-white/70 border-slate-800 text-slate-100'
     }`}>
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Table Title Bar */}
         <div className={`shrink-0 p-3 sm:p-3.5 border-b flex items-center justify-between transition-colors ${
-          isWhite ? 'bg-slate-50/80 border-slate-200' : 'bg-[#161b22] border-slate-800'
+          isWhite ? 'bg-slate-50/80 border-slate-200' : 'bg-white border-slate-800'
         }`}>
           <div className="flex items-center gap-2">
             <InboxIcon size={16} className={isWhite ? 'text-sky-600' : 'text-sky-400'} />
-            <h3 className={`text-sm font-bold tracking-tight ${isWhite ? 'text-slate-900' : 'text-white'}`}>
+            <h3 className={`text-sm font-bold tracking-tight ${isWhite ? 'text-slate-900' : 'text-slate-900'}`}>
               Inbox Records
             </h3>
           </div>
@@ -82,12 +82,12 @@ export default function MarketingInboxTable({
           totalTicketsCount === 0 ? (
             <div className="py-24 px-6 text-center flex flex-col items-center justify-center max-w-sm mx-auto">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md mx-auto mb-4 border ${
-                isWhite ? 'bg-slate-100 border-slate-200 text-sky-600' : 'bg-[#161b22] border-slate-800 text-sky-400'
+                isWhite ? 'bg-slate-100 border-slate-200 text-sky-600' : 'bg-white border-slate-800 text-sky-400'
               }`}>
                 <InboxIcon size={22} className="animate-pulse" />
               </div>
               <h4 className={`text-xs font-extrabold mb-1.5 tracking-wide font-mono uppercase ${
-                isWhite ? 'text-slate-900' : 'text-white'
+                isWhite ? 'text-slate-900' : 'text-slate-900'
               }`}>Inbox Clear</h4>
               <p className={`text-xs font-light leading-relaxed font-sans ${
                 isWhite ? 'text-slate-500' : 'text-slate-400'
@@ -117,38 +117,38 @@ export default function MarketingInboxTable({
                   isWhite ? 'bg-slate-100/90 text-slate-700 border-slate-200' : 'bg-[#0c1017] text-slate-400 border-slate-800'
                 }`}>
                   <tr>
-                    <th className={`p-3.5 pl-5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-white'}`} onClick={() => toggleSort('name')}>
+                    <th className={`p-3.5 pl-5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-slate-900'}`} onClick={() => toggleSort('name')}>
                       <div className="flex items-center gap-1.5">
                         <span>Contact Name</span>
                         <ArrowUpDown size={10} className={isWhite ? 'text-slate-400' : 'text-slate-600'} />
                       </div>
                     </th>
-                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-white'}`} onClick={() => toggleSort('email')}>
+                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-slate-900'}`} onClick={() => toggleSort('email')}>
                       <div className="flex items-center gap-1.5">
                         <span>Email</span>
                         <ArrowUpDown size={10} className={isWhite ? 'text-slate-400' : 'text-slate-600'} />
                       </div>
                     </th>
-                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-white'}`} onClick={() => toggleSort('company')}>
+                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-slate-900'}`} onClick={() => toggleSort('company')}>
                       <div className="flex items-center gap-1.5">
                         <span>Company</span>
                         <ArrowUpDown size={10} className={isWhite ? 'text-slate-400' : 'text-slate-600'} />
                       </div>
                     </th>
-                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-white'}`} onClick={() => toggleSort('service')}>
+                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-slate-900'}`} onClick={() => toggleSort('service')}>
                       <div className="flex items-center gap-1.5">
                         <span>Service</span>
                         <ArrowUpDown size={10} className={isWhite ? 'text-slate-400' : 'text-slate-600'} />
                       </div>
                     </th>
                     <th className="p-3.5 whitespace-nowrap">Message Preview</th>
-                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-white'}`} onClick={() => toggleSort('date')}>
+                    <th className={`p-3.5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-slate-900'}`} onClick={() => toggleSort('date')}>
                       <div className="flex items-center gap-1.5">
                         <span>Receipt Date</span>
                         <ArrowUpDown size={10} className={isWhite ? 'text-slate-400' : 'text-slate-600'} />
                       </div>
                     </th>
-                    <th className={`p-3.5 pr-5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-white'}`} onClick={() => toggleSort('status')}>
+                    <th className={`p-3.5 pr-5 cursor-pointer select-none whitespace-nowrap ${isWhite ? 'hover:text-slate-900' : 'hover:text-slate-900'}`} onClick={() => toggleSort('status')}>
                       <div className="flex items-center gap-1.5">
                         <span>Status</span>
                         <ArrowUpDown size={10} className={isWhite ? 'text-slate-400' : 'text-slate-600'} />
@@ -162,11 +162,11 @@ export default function MarketingInboxTable({
                       key={ticket.id} 
                       onClick={() => handleOpenView(ticket)}
                       className={`transition-colors cursor-pointer group ${
-                        isWhite ? 'hover:bg-slate-50/90' : 'hover:bg-[#161b22]'
+                        isWhite ? 'hover:bg-slate-50/90' : 'hover:bg-white'
                       }`}
                       title="Click to view details"
                     >
-                      <td className={`p-3.5 pl-5 font-semibold whitespace-nowrap ${isWhite ? 'text-slate-900' : 'text-white'}`}>{ticket.name}</td>
+                      <td className={`p-3.5 pl-5 font-semibold whitespace-nowrap ${isWhite ? 'text-slate-900' : 'text-slate-900'}`}>{ticket.name}</td>
                       <td className={`p-3.5 font-mono text-[11px] whitespace-nowrap ${isWhite ? 'text-slate-600' : 'text-slate-400'}`}>{ticket.email}</td>
                       <td className={`p-3.5 font-mono text-[11px] whitespace-nowrap ${isWhite ? 'text-slate-700' : 'text-slate-300'}`}>{ticket.company || 'N/A'}</td>
                       <td className={`p-3.5 font-bold font-mono text-[10px] whitespace-nowrap ${isWhite ? 'text-sky-600' : 'text-sky-400'}`}>{ticket.service || 'General Inquiry'}</td>
@@ -203,12 +203,12 @@ export default function MarketingInboxTable({
                   key={ticket.id} 
                   onClick={() => handleOpenView(ticket)}
                   className={`p-3.5 space-y-1.5 select-none transition-colors cursor-pointer ${
-                    isWhite ? 'hover:bg-slate-50 active:bg-slate-100' : 'hover:bg-[#161b22] active:bg-[#21262d]'
+                    isWhite ? 'hover:bg-slate-50 active:bg-slate-100' : 'hover:bg-white active:bg-slate-100'
                   }`}
                   title="Click to view details"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`font-semibold text-xs truncate max-w-[160px] ${isWhite ? 'text-slate-900' : 'text-white'}`}>{ticket.name}</span>
+                    <span className={`font-semibold text-xs truncate max-w-[160px] ${isWhite ? 'text-slate-900' : 'text-slate-900'}`}>{ticket.name}</span>
                     <span className={`text-[9px] font-mono shrink-0 ${isWhite ? 'text-slate-500' : 'text-slate-500'}`}>{ticket.date}</span>
                   </div>
                   
@@ -253,10 +253,10 @@ export default function MarketingInboxTable({
 
       {/* Pagination Footer */}
       <div className={`shrink-0 p-2.5 sm:p-3 border-t flex flex-col sm:flex-row items-center justify-between gap-2.5 transition-colors ${
-        isWhite ? 'bg-slate-50/90 border-slate-200' : 'bg-[#161b22] border-slate-800'
+        isWhite ? 'bg-slate-50/90 border-slate-200' : 'bg-white border-slate-800'
       }`}>
         <div className={`text-[11px] font-mono ${isWhite ? 'text-slate-600' : 'text-slate-400'}`}>
-          Showing <span className={`font-bold ${isWhite ? 'text-slate-900' : 'text-white'}`}>{processedData.length > 0 ? indexOfFirstItem + 1 : 0}</span> to <span className={`font-bold ${isWhite ? 'text-slate-900' : 'text-white'}`}>{Math.min(indexOfLastItem, processedData.length)}</span> of <span className={`font-bold ${isWhite ? 'text-slate-900' : 'text-white'}`}>{processedData.length}</span> records
+          Showing <span className={`font-bold ${isWhite ? 'text-slate-900' : 'text-slate-900'}`}>{processedData.length > 0 ? indexOfFirstItem + 1 : 0}</span> to <span className={`font-bold ${isWhite ? 'text-slate-900' : 'text-slate-900'}`}>{Math.min(indexOfLastItem, processedData.length)}</span> of <span className={`font-bold ${isWhite ? 'text-slate-900' : 'text-slate-900'}`}>{processedData.length}</span> records
         </div>
 
         <div className="flex items-center gap-2">
@@ -266,13 +266,13 @@ export default function MarketingInboxTable({
             className={`p-1.5 border rounded-lg transition-all cursor-pointer flex items-center justify-center disabled:opacity-30 ${
               isWhite
                 ? 'bg-white border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100 disabled:hover:text-slate-700'
-                : 'bg-[#21262d] border-slate-800 text-slate-400 hover:text-white disabled:hover:text-slate-400'
+                : 'bg-slate-100 border-slate-800 text-slate-400 hover:text-slate-900 disabled:hover:text-slate-400'
             }`}
           >
             <ChevronLeft size={13} />
           </button>
           <span className={`text-xs font-mono font-bold px-3 py-1 border rounded-lg select-none ${
-            isWhite ? 'text-slate-900 bg-white border-slate-200' : 'text-white bg-[#0d1117] border-slate-800'
+            isWhite ? 'text-slate-900 bg-white border-slate-200' : 'text-slate-900 bg-slate-50 border-slate-800'
           }`}>
             Page {currentPage} / {totalPages}
           </span>
@@ -282,7 +282,7 @@ export default function MarketingInboxTable({
             className={`p-1.5 border rounded-lg transition-all cursor-pointer flex items-center justify-center disabled:opacity-30 ${
               isWhite
                 ? 'bg-white border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100 disabled:hover:text-slate-700'
-                : 'bg-[#21262d] border-slate-800 text-slate-400 hover:text-white disabled:hover:text-slate-400'
+                : 'bg-slate-100 border-slate-800 text-slate-400 hover:text-slate-900 disabled:hover:text-slate-400'
             }`}
           >
             <ChevronRight size={13} />

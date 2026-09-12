@@ -103,7 +103,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${isHovered ? '-8px' : '0px'})`,
           transition: isHovered ? 'none' : 'transform 300ms cubic-bezier(0.25, 1, 0.5, 1)',
         }}
-        className="relative overflow-hidden cursor-pointer select-none rounded-[24px] bg-gradient-to-br from-[#0a0f1d] via-[#070b13] to-[#04060b] border border-[#1f293d] hover:border-[#58a6ff]/50 shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_0_35px_rgba(88,166,255,0.25)] flex flex-col justify-between p-6 h-[460px] md:h-[480px] w-full max-w-sm mx-auto group duration-300"
+        className="relative overflow-hidden cursor-pointer select-none rounded-[24px] bg-gradient-to-br from-white via-slate-50 to-blue-50/30 border border-slate-200 hover:border-blue-400/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_10px_30px_rgba(37,99,235,0.12)] flex flex-col justify-between p-6 h-[460px] md:h-[480px] w-full max-w-sm mx-auto group duration-300"
       >
         {/* Holographic light sweep / moving reflection overlay */}
         <div 
@@ -125,8 +125,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         <div className="flex items-center justify-between z-20 relative">
           {/* Card Branding or Credit Type */}
           <div className="flex items-center gap-2">
-            <Cpu size={14} className="text-[#58a6ff] opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-            <span className="text-[10px] font-bold text-[#8b949e] uppercase tracking-[0.25em] font-sans">
+            <Cpu size={14} className="text-blue-600 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.25em] font-sans">
               CYBER PLATINUM
             </span>
           </div>
@@ -134,7 +134,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           {/* Golden EMV Chip & Contactless sign */}
           <div className="flex items-center gap-3">
             {/* Contactless waves symbol */}
-            <svg className="w-4 h-4 text-white/20 group-hover:text-[#58a6ff]/40 rotate-90 transition-colors pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg className="w-4 h-4 text-slate-900/20 group-hover:text-blue-600/40 rotate-90 transition-colors pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M5 12h.01" />
               <path d="M12 12a5 5 0 0 0-5-5" />
               <path d="M19 12a10 10 0 0 0-10-10" />
@@ -157,25 +157,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {/* ================= MIDDLE SECTION ================= */}
         <div className="flex-1 flex flex-col justify-center py-6 z-20 relative text-left">
           {/* [ Project Category ] Bracketed Style */}
-          <div className="mb-2 text-[#58a6ff] text-[10px] font-bold uppercase tracking-[0.2em] font-mono flex items-center gap-1">
+          <div className="mb-2 text-blue-600 text-[10px] font-bold uppercase tracking-[0.2em] font-mono flex items-center gap-1">
             <span>[</span>
             <span>{project.category || "DEVELOPMENT"}</span>
             <span>]</span>
           </div>
 
           {/* PROJECT NAME (Large bold heading) */}
-          <h3 className="text-xl md:text-2xl font-extrabold text-white uppercase tracking-tight leading-tight group-hover:text-[#58a6ff] transition-colors duration-300 font-sans mb-3">
+          <h3 className="text-xl md:text-2xl font-extrabold text-slate-900 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors duration-300 font-sans mb-3">
             {project.title}
           </h3>
 
           {/* Short 2-line description */}
-          <p className="text-[#8b949e] text-xs font-light tracking-wide leading-relaxed line-clamp-2 mb-4 h-10">
+          <p className="text-slate-500 text-xs font-light tracking-wide leading-relaxed line-clamp-2 mb-4 h-10">
             {project.desc}
           </p>
 
           {/* ATM Style Card Monospace Project Number at the top-right of information block */}
           <div className="mt-2 pt-2 border-t border-white/[0.04] group-hover:border-[#58a6ff]/10">
-            <span className="text-[11px] font-mono tracking-[0.22em] text-white/50 group-hover:text-white/80 transition-colors">
+            <span className="text-[11px] font-mono tracking-[0.22em] text-slate-900/50 group-hover:text-slate-900/80 transition-colors">
               {cardNo}
             </span>
           </div>
@@ -188,7 +188,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             {displayTags.map((tag, i) => (
               <span
                 key={i}
-                className="inline-flex items-center px-2 py-0.5 rounded bg-[#0d121f]/90 border border-white/[0.06] group-hover:border-[#58a6ff]/20 text-[9px] font-mono tracking-wider text-white/50 group-hover:text-[#58a6ff] transition-all uppercase"
+                className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 group-hover:border-blue-300 text-[9px] font-mono tracking-wider text-slate-600 group-hover:text-blue-600 transition-all uppercase"
               >
                 {tag}
               </span>
@@ -203,7 +203,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 e.stopPropagation();
                 onClick();
               }}
-              className="flex-1 py-2 px-3 bg-gradient-to-r from-[#162235] to-[#111a28] hover:from-[#58a6ff] hover:to-[#1a73e8] border border-[#303d52] hover:border-[#58a6ff] text-[10px] font-bold tracking-widest uppercase text-white hover:text-black rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 hover:shadow-[0_0_15px_rgba(88,166,255,0.4)]"
+              className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 border border-blue-500 text-[10px] font-bold tracking-widest uppercase text-white rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md"
             >
               <ExternalLink size={11} className="shrink-0" />
               View Project
@@ -217,7 +217,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              className="py-2 px-3 bg-[#0d1117] hover:bg-[#161b22] border border-[#21262d] hover:border-white/40 text-[10px] font-bold tracking-widest uppercase text-[#8b949e] hover:text-white rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shrink-0"
+              className="py-2 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] font-bold tracking-widest uppercase text-slate-700 rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 shrink-0"
             >
               <Github size={11} className="shrink-0" />
               GitHub

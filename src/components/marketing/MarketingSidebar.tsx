@@ -94,7 +94,7 @@ export default function MarketingSidebar({
               <button 
                 onClick={onCloseMobileDrawer}
                 className={`p-1 rounded ${
-                  isWhite ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  isWhite ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-800'
                 }`}
               >
                 <X size={14} />
@@ -103,12 +103,12 @@ export default function MarketingSidebar({
           </div>
         </div>
         <h1 className={`text-sm font-extrabold tracking-tight ${
-          isWhite ? 'text-slate-900' : 'text-white'
+          isWhite ? 'text-slate-900' : 'text-slate-900'
         }`}>Marketing Portal</h1>
         <div className={`flex items-center gap-1.5 mt-2.5 px-2.5 py-1.5 rounded-lg border ${
           isWhite 
             ? 'bg-slate-50 border-slate-200' 
-            : 'bg-[#161b22] border-slate-800'
+            : 'bg-white border-slate-800'
         }`}>
           <span className={`text-[10px] font-mono uppercase font-semibold ${
             isWhite ? 'text-slate-500' : 'text-slate-400'
@@ -123,7 +123,7 @@ export default function MarketingSidebar({
 
       {/* 2. Global Portal Search */}
       <div className={`p-3 border-b transition-colors ${
-        isWhite ? 'border-slate-200 bg-slate-50/70' : 'border-slate-800 bg-[#0d1117]'
+        isWhite ? 'border-slate-200 bg-slate-50/70' : 'border-slate-800 bg-slate-50'
       }`}>
         <div className="relative">
           <Search size={13} className={`absolute left-2.5 top-2.5 ${
@@ -140,14 +140,14 @@ export default function MarketingSidebar({
             className={`w-full rounded-lg pl-8 pr-7 py-1.5 text-xs outline-none transition-colors font-sans border ${
               isWhite
                 ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-sky-500 focus:ring-1 focus:ring-sky-500'
-                : 'bg-[#161b22] border-slate-800 text-white placeholder-slate-500 focus:border-sky-500'
+                : 'bg-white border-slate-800 text-slate-900 placeholder-slate-500 focus:border-sky-500'
             }`}
           />
           {searchTerm && (
             <button 
               onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
               className={`absolute right-2 top-2 ${
-                isWhite ? 'text-slate-400 hover:text-slate-700' : 'text-slate-500 hover:text-white'
+                isWhite ? 'text-slate-400 hover:text-slate-700' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <X size={12} />
@@ -178,7 +178,7 @@ export default function MarketingSidebar({
                 : 'bg-sky-500/10 text-sky-400 border border-sky-500/40 shadow-sm'
               : isWhite
                 ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#161b22] border border-transparent'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white border border-transparent'
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -212,7 +212,7 @@ export default function MarketingSidebar({
                 : 'bg-sky-500/10 text-sky-400 border border-sky-500/40 shadow-sm'
               : isWhite
                 ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#161b22] border border-transparent'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white border border-transparent'
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -336,7 +336,7 @@ export default function MarketingSidebar({
             className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border shadow-xs ${
               isWhite
                 ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-800 hover:text-slate-950'
-                : 'bg-[#161b22] hover:bg-[#21262d] border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white'
+                : 'bg-white hover:bg-slate-100 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-slate-900'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -356,7 +356,7 @@ export default function MarketingSidebar({
             className={`w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer border ${
               isWhite
                 ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900'
-                : 'bg-[#161b22] hover:bg-[#21262d] border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white'
+                : 'bg-white hover:bg-slate-100 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-slate-900'
             }`}
           >
             <ArrowLeft size={13} />

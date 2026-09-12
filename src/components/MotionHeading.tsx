@@ -29,7 +29,7 @@ export const MotionHeading: React.FC<MotionHeadingProps> = ({
 }) => {
   if (!html) return null;
 
-  // Pattern split: match HTML tags (e.g. <span class="text-[#58a6ff]">), non-tag words, and consecutive whitespaces
+  // Pattern split: match HTML tags (e.g. <span class="text-blue-600">), non-tag words, and consecutive whitespaces
   const tokens = html.match(/(<[^>]+>|[^<>\s]+|\s+)/g) || [html];
 
   let currentSpanClass = '';
