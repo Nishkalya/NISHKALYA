@@ -352,13 +352,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
   };
 
   // Process and Filter Data
-  const activeInboxTickets = inboxTickets.filter(ticket => ticket.status !== 'Lost');
   const unreadInboxTickets = inboxTickets.filter(ticket => ticket.status === 'New Query');
   const inboxCount = unreadInboxTickets.length;
 
   const getProcessedData = () => {
     if (activeModule === 'inbox') {
-      let filtered = [...activeInboxTickets];
+      let filtered = [...inboxTickets]; // Use the full set of tickets, not the pre-filtered active ones
 
       // Pipeline Filter (Primary Selection)
       if (pipelineTab === 'NEW_QUERY') {
