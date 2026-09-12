@@ -843,9 +843,24 @@ export default function App() {
     // Fast, responsive, focus-safe content editor draft states
     const editorConfig = localConfig || websiteConfig || DEFAULT_CONFIG;
 
-    const updateConfigLocal = (newConfig: any) => {
-      setLocalConfig(newConfig);
-      setIsConfigDirty(true);
+    const updateConfigLocal = async (newConfig: any) => {
+      setLocalConfig(newConfig); // Keep it snappy for UI
+      setIsActionPending(true);
+      try {
+        const sanitizedConfig = JSON.parse(JSON.stringify(newConfig));
+        if (sanitizedConfig.platforms) {
+          sanitizedConfig.platforms = sanitizedConfig.platforms.map((platform: any) => {
+            const { icon, ...rest } = platform;
+            return rest;
+          });
+        }
+        await setDoc(doc(db, 'config', 'website'), sanitizedConfig);
+        setIsConfigDirty(false); // No draft changes anymore, it's live
+      } catch (err) {
+        console.error("Failed to update config in real-time", err);
+      } finally {
+        setIsActionPending(false);
+      }
     };
 
     const handlePublishConfig = async () => {
