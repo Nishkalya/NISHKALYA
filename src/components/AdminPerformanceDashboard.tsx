@@ -105,9 +105,9 @@ export default function AdminPerformanceDashboard() {
   };
 
   const getLatencyColor = (ms: number) => {
-    if (ms <= 300) return 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5';
-    if (ms <= 1000) return 'text-amber-400 border-amber-500/20 bg-amber-500/5';
-    return 'text-rose-400 border-rose-500/20 bg-rose-500/5';
+    if (ms <= 300) return 'text-emerald-700 border-emerald-200 bg-emerald-50';
+    if (ms <= 1000) return 'text-amber-700 border-amber-200 bg-amber-50';
+    return 'text-rose-700 border-rose-200 bg-rose-50';
   };
 
   const getBrowserNameOnly = (ua: string) => {
@@ -445,7 +445,7 @@ export default function AdminPerformanceDashboard() {
                     <div 
                       key={log.id} 
                       onClick={() => setSelectedLog(selectedLog?.id === log.id ? null : log)}
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-white transition-colors gap-3 ${selectedLog?.id === log.id ? 'bg-[#1f242c]' : ''}`}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-white transition-colors gap-3 ${selectedLog?.id === log.id ? 'bg-blue-50/80' : ''}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         {/* Event type marker */}

@@ -195,10 +195,26 @@ export default function App() {
   const [isConfigDirty, setIsConfigDirty] = useState(false);
   const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance' | 'users'>('messages');
   const [isEditorDropdownOpen, setIsEditorDropdownOpen] = useState(true);
+  const [isAdminSidebarOpen, setIsAdminSidebarOpen] = useState(false);
   const [marketingUser, setMarketingUser] = useState<any>(() => {
     try {
-      const saved = localStorage.getItem('marketing_user_session');
-      return saved ? JSON.parse(saved) : null;
+      const saved = sessionStorage.getItem('marketing_user_session') || localStorage.getItem('marketing_user_session');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+          sessionStorage.removeItem('marketing_user_session');
+          localStorage.removeItem('marketing_user_session');
+          return null;
+        }
+        // Strip any legacy passwordHash if present in browser storage
+        const { passwordHash, auditLogs, ...safeUser } = parsed;
+        if (passwordHash) {
+          localStorage.setItem('marketing_user_session', JSON.stringify(safeUser));
+        }
+        return safeUser;
+      }
+      return null;
     } catch (e) {
       console.error("Failed to parse marketing user session", e);
       return null;
@@ -501,15 +517,42 @@ export default function App() {
     }
   }, [formData.name, formData.email, formData.company, formData.service, formData.message]);
 
+  const sanitizeHtml = (rawHtml: string) => {
+    if (!rawHtml) return '';
+    return rawHtml
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<(iframe|object|embed|form|meta|link|style)\b[^>]*>/gi, '')
+      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/javascript\s*:/gi, '');
+  };
+
+  const getSafeExternalUrl = (rawUrl?: string | null) => {
+    if (!rawUrl) return '';
+    const trimmed = rawUrl.trim();
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return '';
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    } else if (formData.name.trim().length > 150) {
+      newErrors.name = 'Name must be 150 characters or fewer';
+    }
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (formData.email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-    if (!formData.message.trim()) newErrors.message = 'Message is required';
+    if (formData.company && formData.company.length > 200) {
+      newErrors.company = 'Company name must be 200 characters or fewer';
+    }
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required';
+    } else if (formData.message.trim().length > 5000) {
+      newErrors.message = 'Message must be 5000 characters or fewer';
+    }
     return newErrors;
   };
 
@@ -601,14 +644,12 @@ export default function App() {
   const handleAdminLogin = async () => {
     setIsLoggingIn(true);
     try {
-      console.log("Attempting Google Login (Popup)...");
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      console.log("Login successful:", result.user.email);
+      await signInWithPopup(auth, provider);
       setCurrentView('admin');
     } catch (error: any) {
-      console.error("Login failed:", error);
+      console.error("Login failed:", error?.code || "auth_error");
       
       // Provide actionable feedback for the common "domain not authorized" error
       if (error.code === 'auth/popup-blocked') {
@@ -641,19 +682,13 @@ export default function App() {
     setIsLoggingIn(true);
     try {
       setLoginError(null);
-      console.log("Attempting Email/Password Login for:", loginEmail);
       await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      console.log("Email login successful");
       setCurrentView('admin'); // Ensure we switch to admin view on success
     } catch (error: any) {
-      console.error("Email login failed, trying seamless signUp fallback:", error);
-      
       // If the email is the admin bootstrap email, try to auto-create their account if auth fails
       if (loginEmail === 'nishkalya@gmail.com') {
         try {
-          console.log("Attempting seamless account creation / auth setup for admin...");
           await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
-          console.log("Seamless admin account created & signed in successfully");
           setCurrentView('admin');
           return;
         } catch (createErr: any) {
@@ -725,13 +760,13 @@ export default function App() {
               <motion.div 
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-3.5 bg-red-950/40 border border-red-900/60 rounded-xl text-left text-red-400 text-xs font-mono flex items-center justify-between gap-3"
+                className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-left text-red-600 text-xs font-mono flex items-center justify-between gap-3"
               >
                 <span>{loginError}</span>
                 <button 
                   type="button" 
                   onClick={() => setLoginError(null)} 
-                  className="text-red-400 hover:text-slate-900 shrink-0 cursor-pointer p-1"
+                  className="text-red-500 hover:text-slate-900 shrink-0 cursor-pointer p-1"
                 >
                   <X size={14} />
                 </button>
@@ -896,23 +931,41 @@ export default function App() {
     ];
 
     return (
-      <div className="h-screen w-full overflow-hidden flex bg-slate-50 text-slate-900 select-none">
-        {/* Left Vertical Navigation Sidebar (ERP Rail ~260px) */}
-        <aside className="w-64 min-w-[260px] max-w-[260px] h-full bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-20 overflow-hidden">
+      <div className="h-screen w-full overflow-hidden flex bg-slate-50 text-slate-900 select-none relative">
+        {/* Mobile Backdrop for Admin Sidebar */}
+        {isAdminSidebarOpen && (
+          <div
+            onClick={() => setIsAdminSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-30 lg:hidden"
+          />
+        )}
+
+        {/* Left Vertical Navigation Sidebar (ERP Rail ~260px, responsive drawer on mobile/tablet) */}
+        <aside className={`w-64 min-w-[260px] max-w-[260px] h-full bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-40 overflow-hidden fixed lg:static inset-y-0 left-0 transition-transform duration-200 ${
+          isAdminSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        }`}>
           {/* Header & Brand */}
-          <div className="p-4 border-slate-400 border-slate-200 flex items-center justify-between shrink-0 bg-white">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shadow-inner shrink-0">
                 <span className="text-blue-600 font-mono font-black text-sm">N</span>
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-extrabold tracking-wider text-slate-900 font-sans uppercase truncate">Command Center</div>
-                <div className="flex items-center gap-1.5 text-[9px] text-emerald-400 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <div className="flex items-center gap-1.5 text-[9px] text-emerald-600 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   ERP v2.4 • Online
                 </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsAdminSidebarOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              aria-label="Close Sidebar"
+            >
+              <X size={16} />
+            </button>
           </div>
 
           {/* Vertical Navigation Sections */}
@@ -929,7 +982,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                     adminTab === 'messages' 
                       ? 'bg-slate-100 text-blue-600 border border-slate-200 shadow-sm font-semibold' 
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-[#1c2128] border border-transparent'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -960,7 +1013,7 @@ export default function App() {
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                       adminTab === 'content' 
                         ? 'bg-slate-100 text-blue-600 border border-slate-200 shadow-sm font-semibold' 
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-[#1c2128] border border-transparent'
+                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -1027,7 +1080,7 @@ export default function App() {
                               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-all text-left cursor-pointer ${
                                 isSecActive
                                   ? 'bg-[#58a6ff]/15 text-blue-600 border border-[#58a6ff]/30 font-semibold shadow-sm'
-                                  : 'text-slate-500 hover:text-slate-900 hover:bg-[#1c2128] border border-transparent'
+                                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                               }`}
                             >
                               <div className="flex items-center gap-2 truncate">
@@ -1054,7 +1107,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                     adminTab === 'users' 
                       ? 'bg-slate-100 text-blue-600 border border-slate-200 shadow-sm font-semibold' 
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-[#1c2128] border border-transparent'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -1068,7 +1121,7 @@ export default function App() {
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                     adminTab === 'performance' 
                       ? 'bg-slate-100 text-blue-600 border border-slate-200 shadow-sm font-semibold' 
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-[#1c2128] border border-transparent'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -1116,11 +1169,19 @@ export default function App() {
         </aside>
 
         {/* Right Independent Content Workspace */}
-        <section className="flex-1 h-full overflow-hidden flex flex-col bg-slate-50">
+        <section className="flex-1 h-full overflow-hidden flex flex-col bg-slate-50 min-w-0">
           {/* Fixed ERP Top Bar */}
-          <header className="h-14 shrink-0 px-6 border-slate-400 border-slate-200 bg-white/70 backdrop-blur-md flex items-center justify-between z-10">
+          <header className="h-14 shrink-0 px-4 sm:px-6 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between z-10">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+              <button
+                type="button"
+                onClick={() => setIsAdminSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shrink-0"
+                aria-label="Open Navigation Menu"
+              >
+                <Menu size={16} />
+              </button>
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-500 truncate">
                 <span>Admin</span>
                 <span>/</span>
                 <span className="text-slate-900 font-semibold">
@@ -1151,8 +1212,8 @@ export default function App() {
 
               {adminTab === 'content' && isConfigDirty && (
                 <div className="flex items-center gap-2">
-                  <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-mono font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                     Unpublished Draft
                   </span>
                   <button
@@ -1163,7 +1224,7 @@ export default function App() {
                   </button>
                   <button
                     onClick={handlePublishConfig}
-                    className="px-3.5 py-1.5 bg-[#238636] hover:bg-[#2eaa44] border border-[#2ea44f] text-slate-900 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                   >
                     <Check size={12} /> Publish Live
                   </button>
@@ -1191,7 +1252,7 @@ export default function App() {
                       }
                     }
                   }}
-                  className="px-3 py-1.5 bg-[#A67C00] text-slate-900 font-bold rounded-lg hover:bg-[#8A6600] transition-all text-[10px] uppercase tracking-widest shadow-md flex items-center gap-1.5 cursor-pointer font-mono"
+                  className="px-3 py-1.5 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition-all text-[10px] uppercase tracking-widest shadow-md flex items-center gap-1.5 cursor-pointer font-mono"
                 >
                   <Shield size={13} /> Verify
                 </button>
@@ -1205,8 +1266,8 @@ export default function App() {
               {adminBanner && (
                 <div className={`p-4 rounded-xl border text-xs font-mono flex items-center justify-between transition-all ${
                   adminBanner.type === 'success' 
-                    ? 'bg-emerald-950/40 border-slate-400merald-800/60 text-emerald-400' 
-                    : 'bg-red-950/40 border-red-800/60 text-red-400'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                    : 'bg-red-50 border-red-200 text-red-700'
                 }`}>
                   <span>{adminBanner.message}</span>
                   <button onClick={() => setAdminBanner(null)} className="p-1 hover:text-slate-900 cursor-pointer">
@@ -1486,7 +1547,7 @@ export default function App() {
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] h-full overflow-hidden">
-              <div className="p-6 sm:p-10 md:p-14 bg-slate-50 flex flex-col items-center justify-center border-slate-400 md:border-slate-400-0 md:border-r border-slate-200 shrink-0">
+              <div className="p-6 sm:p-10 md:p-14 bg-slate-50 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 shrink-0">
                 <div className="text-center w-full">
                   <div className="mb-6 md:mb-10 w-16 h-16 md:w-28 md:h-28 mx-auto flex items-center justify-center bg-white rounded-2xl shadow-md border border-slate-200">
                     {React.cloneElement(service.icon, { size: 36, className: "md:w-14 md:h-14 text-blue-600", strokeWidth: 1.2 })}
@@ -1888,7 +1949,7 @@ export default function App() {
     >
       {/* Clean compiled theme integration handled by index.css variables */}
       {currentUser?.email === 'nishkalya@gmail.com' && currentView !== 'admin' && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-white text-slate-900 text-[9px] font-bold uppercase tracking-[0.3em] h-8 flex items-center justify-center gap-6 border-slate-400 border-slate-200">
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-white text-slate-900 text-[9px] font-bold uppercase tracking-[0.3em] h-8 flex items-center justify-center gap-6 border-b border-slate-200">
           <div className="flex items-center gap-2 text-blue-600">
             <div className="w-1.5 h-1.5 rounded-full bg-[#58a6ff] animate-pulse"></div>
             Admin View
@@ -1925,7 +1986,7 @@ export default function App() {
       <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#238636]/2 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
       {/* Navigation (hidden after admin login or in marketing ERP dashboard per user request) */}
-      <nav className={`fixed left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-slate-400 border-slate-200 transition-all duration-300 top-0 ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser)) || currentUser?.email === 'nishkalya@gmail.com' || isAdmin) ? 'hidden' : ''}`}>
+      <nav className={`fixed left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 transition-all duration-300 top-0 ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser)) || currentUser?.email === 'nishkalya@gmail.com' || isAdmin) ? 'hidden' : ''}`}>
         <div className={`flex items-center justify-between px-6 md:px-12 py-4 w-full max-w-7xl mx-auto ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser)) || currentUser?.email === 'nishkalya@gmail.com' || isAdmin) ? 'hidden' : ''}`}>
           <div 
             className="flex items-center space-x-2 group cursor-pointer" 
@@ -1942,11 +2003,11 @@ export default function App() {
             <span className="text-lg font-bold tracking-tight text-slate-900 uppercase font-sans">Nishkalya</span>
           </div>
           <div className="hidden sm:flex space-x-8 text-[11px] font-semibold tracking-[0.05em] text-slate-500 uppercase flex-wrap justify-center">
-            <button aria-label="Home" onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-blue-600 transition-colors ${currentView === 'home' ? 'text-blue-600 border-slate-400-2 border-blue-500 pb-1' : ''}`}>Home</button>
+            <button aria-label="Home" onClick={() => { setCurrentView('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-blue-600 transition-colors ${currentView === 'home' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : ''}`}>Home</button>
             <button aria-label="About" onClick={() => scrollToSection('about')} className="hover:text-blue-600 transition-colors pb-1">About</button>
             <button aria-label="Services" onClick={() => scrollToSection('services')} className="hover:text-blue-600 transition-colors pb-1">Services</button>
-            <button aria-label="Projects" onClick={() => { setCurrentView('projects'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-blue-600 transition-colors ${currentView === 'projects' ? 'text-blue-600 border-slate-400-2 border-blue-500 pb-1' : ''}`}>Projects</button>
-            <button aria-label="Development" onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-blue-600 transition-colors ${currentView === 'marketing' ? 'text-blue-600 border-slate-400-2 border-blue-500 pb-1' : ''}`}>Development</button>
+            <button aria-label="Projects" onClick={() => { setCurrentView('projects'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-blue-600 transition-colors ${currentView === 'projects' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : ''}`}>Projects</button>
+            <button aria-label="Development" onClick={() => { setCurrentView('marketing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:text-blue-600 transition-colors ${currentView === 'marketing' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : ''}`}>Development</button>
             <button aria-label="Contact" onClick={() => scrollToSection('contact')} className="hover:text-blue-600 transition-colors pb-1">Contact</button>
           </div>
           <div className="flex items-center gap-4">
@@ -1978,7 +2039,7 @@ export default function App() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="sm:hidden bg-white border-slate-400 border-slate-200 overflow-hidden"
+              className="sm:hidden bg-white border-b border-slate-200 overflow-hidden"
             >
               <div className="p-8 flex flex-col gap-6 text-xs font-medium uppercase text-slate-500 text-center">
                 <button onClick={() => { setCurrentView('home'); setIsMobileMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-blue-600 py-2">Home</button>
@@ -2135,7 +2196,7 @@ export default function App() {
                     <div className="space-y-6 mb-10">
                       {websiteConfig?.about?.paragraphs?.slice(0, 2).map((p: string, i: number) => (
                         <p key={i} className="text-slate-600 text-base md:text-lg leading-relaxed font-light">
-                          <span dangerouslySetInnerHTML={{ __html: p }} />
+                          <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(p) }} />
                         </p>
                       ))}
                       
@@ -2149,7 +2210,7 @@ export default function App() {
                           >
                             {websiteConfig?.about?.paragraphs?.slice(2).map((p: string, i: number) => (
                               <p key={i} className="text-slate-600 text-base md:text-lg leading-relaxed font-light">
-                                <span dangerouslySetInnerHTML={{ __html: p }} />
+                                <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(p) }} />
                               </p>
                             ))}
                           </motion.div>
@@ -2241,7 +2302,7 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="pt-32 pb-32 px-6 md:px-12 w-full max-w-7xl mx-auto min-h-screen"
           >
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-6 md:gap-8 pb-8 md:pb-12 border-slate-400 border-slate-200/50">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-6 md:gap-8 pb-8 md:pb-12 border-b border-slate-200/80">
               <div>
                 <div className="inline-flex items-center gap-2 text-blue-600 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] mb-4 font-mono">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#58a6ff] animate-pulse" />
@@ -2308,9 +2369,10 @@ export default function App() {
                     setHoveredProject={setHoveredProject}
                     onClick={() => {
                       setSelectedProjectForPreview(project);
-                      if (project.link) {
+                      const safeLink = getSafeExternalUrl(project.link);
+                      if (safeLink) {
                         setIsFlipped(false);
-                        setActivePreviewUrl(project.link);
+                        setActivePreviewUrl(safeLink);
                         setIsIframeLoading(true);
                       } else {
                         setIsFlipped(true);
@@ -2349,8 +2411,8 @@ export default function App() {
                       id={`platform-tab-${platform.id}`}
                       className={`relative flex flex-col items-start p-4 rounded-xl border transition-all duration-300 text-left overflow-hidden group cursor-pointer ${
                         isActive
-                          ? 'bg-[#0f1524]/60 border-[#58a6ff]/70 shadow-[0_0_20px_rgba(88,166,255,0.15)] text-slate-900'
-                          : 'bg-slate-50/30 border-slate-200/50 hover:border-[#58a6ff]/40 text-slate-500 hover:text-slate-900 backdrop-blur-sm'
+                          ? 'bg-blue-50/80 border-blue-400 shadow-sm text-slate-900'
+                          : 'bg-white border-slate-200 hover:border-blue-300 text-slate-600 hover:text-slate-900 shadow-xs'
                       }`}
                     >
                       {/* Active glow flare inside tab */}
@@ -2360,15 +2422,15 @@ export default function App() {
                       
                       <div className="flex items-center justify-between w-full mb-3 z-10">
                         <div className={`p-2 rounded-lg transition-transform duration-300 group-hover:scale-110 ${
-                          isActive ? 'bg-[#58a6ff]/10 text-blue-600' : 'bg-white/50 text-slate-500 group-hover:text-slate-700'
+                          isActive ? 'bg-blue-100/80 text-blue-600' : 'bg-slate-50 text-slate-500 group-hover:text-slate-700'
                         }`}>
                           {getPlatformIcon(platform.iconType || platform.id, 18)}
                         </div>
                         {/* Counters representation */}
                         <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
                           isActive 
-                            ? 'bg-[#58a6ff]/20 text-blue-600 border-[#58a6ff]/30' 
-                            : 'bg-white text-slate-500/60 border-transparent group-hover:text-slate-500 group-hover:border-slate-200'
+                            ? 'bg-blue-100 text-blue-700 border-blue-200' 
+                            : 'bg-slate-50 text-slate-500 border-slate-200 group-hover:text-slate-700'
                         }`}>
                           {platform.items?.length || 0}
                         </span>
@@ -2380,13 +2442,13 @@ export default function App() {
                         </span>
                       </div>
 
-                      {/* Cyberpunk HUD style corner bracket on active tab */}
+                      {/* HUD style corner bracket on active tab */}
                       {isActive && (
                         <>
                           <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#58a6ff]" />
                           <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#58a6ff]" />
-                          <div className="absolute bottom-0 left-0 w-2 h-2 border-slate-400 border-l border-[#58a6ff]" />
-                          <div className="absolute bottom-0 right-0 w-2 h-2 border-slate-400 border-r border-[#58a6ff]" />
+                          <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#58a6ff]" />
+                          <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#58a6ff]" />
                         </>
                       )}
                     </button>
@@ -2395,9 +2457,9 @@ export default function App() {
               </div>
 
               {/* Selected Platform Context Detail banner */}
-              <div className="mb-8 p-5 bg-slate-50/45 border border-slate-200/40 rounded-2xl flex items-center gap-4">
+              <div className="mb-8 p-5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-4">
                 <div className="w-1.5 h-8 bg-[#58a6ff] rounded-r-md" />
-                <p className="text-slate-500 text-xs font-mono tracking-wide leading-relaxed uppercase">
+                <p className="text-slate-600 text-xs font-mono tracking-wide leading-relaxed uppercase">
                   ACTIVE MATRIX // {displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.name || ''}: {displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.description || ''}
                 </p>
               </div>
@@ -2412,15 +2474,12 @@ export default function App() {
                   transition={{ duration: 0.3 }}
                   className="grid md:grid-cols-2 gap-6"
                 >
-                  {(displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.items || []).map((item: any, idx: number) => (
+                  {(displayPlatforms.find((p: any) => p.id === activeProfilePlatform)?.items || []).map((item: any) => (
                     <div
                       key={item.id}
                       id={`platform-item-${item.id}`}
-                      className="group relative bg-[#0c1017]/45 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-6 hover:border-[#58a6ff]/40 hover:shadow-[0_0_20px_rgba(88,166,255,0.08)] transition-all duration-300 flex flex-col justify-between overflow-hidden"
+                      className="group relative bg-white border border-slate-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs"
                     >
-                      {/* Interactive live-vignette frames inside active item */}
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_60%,rgba(13,17,23,0.3)_90%,rgba(13,17,23,0.85)_100%)] pointer-events-none z-10 transition-opacity duration-300 group-hover:opacity-75" />
-
                       {/* Decors */}
                       <div className="absolute top-0 right-0 w-32 h-12 bg-gradient-to-bl from-[#58a6ff]/5 to-transparent pointer-events-none" />
 
@@ -2438,28 +2497,28 @@ export default function App() {
                             )}
                           </div>
                           {item.date && (
-                            <span className="text-[9px] font-mono text-slate-500 font-bold px-2 py-0.5 rounded bg-slate-100/40 border border-slate-200/30">
+                            <span className="text-[9px] font-mono text-slate-500 font-bold px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
                               {item.date}
                             </span>
                           )}
                         </div>
 
                         {/* Description content */}
-                        <p className="text-slate-500 text-xs font-light leading-relaxed mb-5 z-20 relative">
+                        <p className="text-slate-600 text-xs font-light leading-relaxed mb-5 z-20 relative">
                           {item.description}
                         </p>
                       </div>
 
                       {/* Footer containing badges, stats, and active real link */}
-                      <div className="border-t border-slate-200/40 pt-4 mt-auto flex flex-wrap items-center justify-between gap-3 z-20 relative">
+                      <div className="border-t border-slate-200/60 pt-4 mt-auto flex flex-wrap items-center justify-between gap-3 z-20 relative">
                         {/* Badges representation for high structural organization (Sthira) */}
                         <div className="flex flex-wrap gap-1.5">
-                          {item.badges?.map((badge, bIdx) => (
+                          {item.badges?.map((badge: string, bIdx: number) => (
                             <span
                               key={bIdx}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100/50 text-[9px] font-mono text-slate-500 tracking-tight uppercase border border-slate-200/60"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-50 text-[9px] font-mono text-slate-600 tracking-tight uppercase border border-slate-200"
                             >
-                              <span className="w-1 h-1 rounded-full bg-slate-200" />
+                              <span className="w-1 h-1 rounded-full bg-blue-500" />
                               {badge}
                             </span>
                           ))}
@@ -2467,9 +2526,9 @@ export default function App() {
 
                         {/* Stats counters (e.g. Stars, Forks, Uptime, Rating, Solved) */}
                         <div className="flex items-center gap-4">
-                          {item.stats?.map((stat, sIdx) => (
+                          {item.stats?.map((stat: any, sIdx: number) => (
                             <div key={sIdx} className="flex flex-col items-start">
-                              <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest leading-none">
+                              <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest leading-none">
                                 {stat.label}
                               </span>
                               <span className="text-[11px] font-bold text-slate-900 font-mono mt-0.5">
@@ -2479,12 +2538,12 @@ export default function App() {
                           ))}
 
                           {/* Outer Link */}
-                          {item.link && (
+                          {getSafeExternalUrl(item.link) && (
                             <a
-                              href={item.link}
+                              href={getSafeExternalUrl(item.link)}
                               target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 p-2 rounded-lg bg-[#58a6ff]/5 hover:bg-[#58a6ff]/15 text-blue-600 border border-[#58a6ff]/10 hover:border-[#58a6ff]/35 transition-all duration-200 text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 transition-all duration-200 text-[10px] font-bold uppercase tracking-wider cursor-pointer"
                               aria-label={`View ${item.title}`}
                             >
                               <span className="hidden sm:inline">Explore</span>
@@ -2495,7 +2554,7 @@ export default function App() {
                       </div>
 
                       {/* Active indicator dot */}
-                      <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-zinc-700/60 group-hover:bg-[#58a6ff] transition-colors duration-300" />
+                      <div className="absolute top-2.5 left-2.5 w-1 h-1 rounded-full bg-slate-300 group-hover:bg-[#58a6ff] transition-colors duration-300" />
                     </div>
                   ))}
                 </motion.div>
@@ -2513,14 +2572,14 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
               onClick={() => setProjectModal({ ...projectModal, isOpen: false })}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-[#0a0a0c] border border-slate-200 rounded-3xl p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh] lg:max-h-[90vh] scrollbar-hide"
+              className="relative w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh] lg:max-h-[90vh] scrollbar-hide"
             >
               <button 
                 onClick={() => setProjectModal({ ...projectModal, isOpen: false })}
@@ -2934,14 +2993,14 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
               onClick={() => setTestimonialModal({ ...testimonialModal, isOpen: false })}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-xl bg-[#0a0a0c] border border-slate-200 rounded-3xl p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh] scrollbar-hide text-left"
+              className="relative w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-6 md:p-10 shadow-2xl overflow-y-auto max-h-[85vh] scrollbar-hide text-left"
             >
               <button 
                 onClick={() => setTestimonialModal({ ...testimonialModal, isOpen: false })}
@@ -3075,7 +3134,7 @@ export default function App() {
                   <label htmlFor="isTestimonialActive" className="text-xs text-slate-700 select-none font-medium">Verify and show active on landing page slider</label>
                 </div>
 
-                <div className="pt-4 border-t border-zinc-900 flex gap-4">
+                <div className="pt-4 border-t border-slate-200 flex gap-4">
                   <button 
                     type="button"
                     onClick={() => setTestimonialModal({ ...testimonialModal, isOpen: false })}
@@ -3266,18 +3325,18 @@ export default function App() {
 
                 {/* FRONT SIDE: LIVE PREVIEW */}
                 <div 
-                  className={`absolute inset-0 backface-hidden bg-slate-50 ${showFullPreview ? 'rounded-none' : 'rounded-3xl border border-white/10 shadow-2xl'} overflow-hidden flex flex-col`}
+                  className={`absolute inset-0 backface-hidden bg-slate-50 ${showFullPreview ? 'rounded-none' : 'rounded-3xl border border-slate-200 shadow-2xl'} overflow-hidden flex flex-col`}
                   style={{ backfaceVisibility: 'hidden' }}
                 >
                   {/* Card Header */}
-                  <div className="h-14 bg-white border-slate-400 border-white/5 flex items-center justify-between px-6 shrink-0">
+                  <div className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
                     <div className="flex items-center gap-3">
                       <div className="flex gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
                         <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
                         <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
                       </div>
-                      <div className="h-4 w-[1px] bg-white/10 mx-2" />
+                      <div className="h-4 w-[1px] bg-slate-200 mx-2" />
                       <div className="flex items-center gap-2 text-slate-500 font-mono text-[10px] uppercase tracking-widest">
                         <Activity size={12} className="text-amber-500" />
                         <span>Live_Instance.sh</span>
@@ -3295,7 +3354,7 @@ export default function App() {
                       </button>
                       <button 
                         onClick={() => setIsFlipped(true)}
-                        className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-slate-900 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-white/5 flex items-center gap-2"
+                        className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border border-slate-200 flex items-center gap-2"
                       >
                         <Settings size={12} /> View Details
                       </button>
@@ -3303,7 +3362,7 @@ export default function App() {
                   </div>
 
                   {/* Canvas Viewport */}
-                  <div className="flex-1 relative bg-black">
+                  <div className="flex-1 relative bg-white">
                     <AnimatePresence>
                       {isIframeLoading && (
                         <motion.div 
@@ -3311,7 +3370,7 @@ export default function App() {
                           exit={{ opacity: 0 }}
                           className="absolute inset-0 z-20 bg-slate-50 flex flex-col items-center justify-center p-6 text-center"
                         >
-                          <div className="w-10 h-10 border-2 border-white/5 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+                          <div className="w-10 h-10 border-2 border-slate-200 border-t-amber-500 rounded-full animate-spin mb-4"></div>
                           <div className="text-[9px] font-mono text-slate-500 uppercase tracking-[0.4em]">Booting_System...</div>
                         </motion.div>
                       )}
@@ -3319,30 +3378,32 @@ export default function App() {
 
                     <iframe 
                       key={activePreviewUrl}
-                      src={activePreviewUrl || ''} 
+                      src={getSafeExternalUrl(activePreviewUrl)} 
                       onLoad={() => setIsIframeLoading(false)}
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      referrerPolicy="no-referrer"
                       className="w-full h-full border-none pointer-events-auto bg-white"
                       title="Project Live View"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                     />
                     
                     {/* Perspective Label Overlay */}
-                    <div className="absolute bottom-6 left-6 p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5 pointer-events-none">
-                       <div className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Visual Architecture</div>
-                       <div className="text-[11px] text-slate-900/70 font-mono italic">Rendering stable stream at 60fps</div>
+                    <div className="absolute bottom-6 left-6 p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200 shadow-md pointer-events-none">
+                       <div className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Visual Architecture</div>
+                       <div className="text-[11px] text-slate-700 font-mono italic">Rendering stable stream at 60fps</div>
                     </div>
                   </div>
                 </div>
 
                 {/* BACK SIDE: PROJECT DETAILS */}
                 <div 
-                  className="absolute inset-0 backface-hidden bg-white rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+                  className="absolute inset-0 backface-hidden bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col"
                   style={{ 
                     backfaceVisibility: 'hidden',
                     transform: 'rotateY(180deg)'
                   }}
                 >
-                  <div className="h-14 bg-[#1c2128] border-slate-400 border-white/5 flex items-center justify-between px-6 shrink-0">
+                  <div className="h-14 bg-slate-100 border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500">
                          {getProjectIcon(selectedProjectForPreview.iconType, 16)}
@@ -3365,8 +3426,8 @@ export default function App() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                       <div className="lg:col-span-7 space-y-10">
                         <section className="space-y-4">
-                          <div className="flex items-center justify-between border-slate-400 border-white/5 pb-2">
-                            <div className="text-amber-500 font-mono text-[9px] uppercase tracking-[0.4em]">Overview</div>
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <div className="text-amber-600 font-mono text-[9px] uppercase tracking-[0.4em]">Overview</div>
                             <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[9px] uppercase tracking-widest">
                               <Clock size={11} className="text-amber-500" />
                               <span>{getReadingTime(selectedProjectForPreview.fullDetails?.overview || '')} min read</span>
@@ -3375,28 +3436,28 @@ export default function App() {
                           <h3 className="text-2xl md:text-4xl font-light text-slate-900 leading-tight" style={{ fontFamily: "'Georgia', serif" }}>
                             Mechanical & <span className="italic">Architectural</span> Vision
                           </h3>
-                          <div className="markdown-body text-slate-500 text-sm md:text-base leading-relaxed font-light">
+                          <div className="markdown-body text-slate-600 text-sm md:text-base leading-relaxed font-light">
                             <ReactMarkdown>{selectedProjectForPreview.fullDetails?.overview || ''}</ReactMarkdown>
                           </div>
                         </section>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                           <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                           <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Key Attributes</div>
                              <ul className="space-y-3">
                                {selectedProjectForPreview.fullDetails?.features?.slice(0, 4).map((f, i) => (
-                                 <li key={i} className="text-xs text-slate-500 flex gap-3">
+                                 <li key={i} className="text-xs text-slate-600 flex gap-3">
                                    <div className="w-1 h-1 rounded-full bg-amber-500 mt-1.5 shrink-0" />
                                    {f}
                                  </li>
                                ))}
                              </ul>
                            </div>
-                           <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                           <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Deployment Stack</div>
                              <div className="flex flex-wrap gap-2">
                                {selectedProjectForPreview.fullDetails?.techStack?.map((tech, i) => (
-                                 <span key={i} className="px-2.5 py-1 bg-black/20 text-[10px] font-mono text-slate-500 rounded-md border border-white/5">
+                                 <span key={i} className="px-2.5 py-1 bg-white text-[10px] font-mono text-slate-700 rounded-md border border-slate-200">
                                    {tech.name}
                                  </span>
                                ))}
@@ -3406,14 +3467,14 @@ export default function App() {
                       </div>
 
                       <div className="lg:col-span-5 space-y-8">
-                         <div className="bg-black/20 rounded-2xl p-6 border border-white/5 space-y-6">
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-slate-400 border-white/5 pb-4">Specifications</div>
+                         <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-6">
+                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-200 pb-4">Specifications</div>
                             <div className="space-y-4">
                               {[
                                 { l: 'Project Category', v: selectedProjectForPreview.category },
                                 { l: 'License Type', v: selectedProjectForPreview.fullDetails?.license || 'Proprietary' },
                                 { l: 'Reading Time', v: `${getReadingTime(selectedProjectForPreview.fullDetails?.overview || '')} min read` },
-                                { l: 'Current Status', v: 'Active Node', c: 'text-emerald-500' },
+                                { l: 'Current Status', v: 'Active Node', c: 'text-emerald-600' },
                                 { l: 'Engine Version', v: 'v4.2.1-stable' }
                               ].map((spec, i) => (
                                 <div key={i} className="flex justify-between items-center text-[11px] font-mono">
@@ -3424,25 +3485,27 @@ export default function App() {
                             </div>
                          </div>
 
-                         <div className="bg-amber-500/5 rounded-2xl p-6 border border-amber-500/10">
+                         <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
                             <div className="flex items-center gap-3 mb-4">
-                              <Shield size={16} className="text-amber-500" />
+                              <Shield size={16} className="text-amber-600" />
                               <span className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Integrity Protocol</span>
                             </div>
-                            <p className="text-[11px] text-slate-500 leading-relaxed italic">
+                            <p className="text-[11px] text-slate-600 leading-relaxed italic">
                               "Every solution we deliver is sthira (stable), śubhra (clean), and samanvita (well-integrated)."
                             </p>
                          </div>
 
                          <div className="flex flex-col gap-3">
-                            <a 
-                              href={selectedProjectForPreview.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full py-4 bg-white/5 hover:bg-white/10 text-slate-900 font-bold rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all border border-white/10 flex items-center justify-center gap-3"
-                            >
-                              <Maximize2 size={14} /> Global Node Access
-                            </a>
+                            {getSafeExternalUrl(selectedProjectForPreview.link) && (
+                              <a 
+                                href={getSafeExternalUrl(selectedProjectForPreview.link)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl text-[10px] uppercase tracking-[0.2em] transition-all border border-slate-200 flex items-center justify-center gap-3"
+                              >
+                                <Maximize2 size={14} /> Global Node Access
+                              </a>
+                            )}
                             <button 
                               onClick={() => { setActivePreviewUrl(null); setSelectedProjectForPreview(null); }}
                               className="w-full py-4 text-slate-500 hover:text-slate-900 text-[9px] font-bold uppercase tracking-widest transition-colors"

@@ -5,25 +5,26 @@
       "description": "A portfolio project entity",
       "type": "object",
       "properties": {
-        "title": { "type": "string", "description": "The title of the project" },
-        "category": { "type": "string", "description": "The category of the project" },
-        "desc": { "type": "string", "description": "Short description of the project" },
+        "title": { "type": "string", "maxLength": 200, "description": "The title of the project" },
+        "category": { "type": "string", "maxLength": 150, "description": "The category of the project" },
+        "desc": { "type": "string", "maxLength": 2000, "description": "Short description of the project" },
         "iconType": { "type": "string", "enum": ["message", "eye", "layout", "chart"], "description": "Icon type identifier" },
-        "link": { "type": "string", "format": "uri", "description": "Live preview URL" },
-        "screenshots": { "type": "array", "items": { "type": "string" }, "description": "URLs of project screenshots" },
-        "videoUrl": { "type": "string", "format": "uri", "description": "URL of a project video" },
+        "link": { "type": "string", "format": "uri", "maxLength": 1000, "description": "Live preview URL" },
+        "screenshots": { "type": "array", "items": { "type": "string", "maxLength": 1000 }, "description": "URLs of project screenshots" },
+        "videoUrl": { "type": "string", "format": "uri", "maxLength": 1000, "description": "URL of a project video" },
+        "order": { "type": "number", "description": "Display sort order" },
         "fullDetails": {
           "type": "object",
           "properties": {
-            "overview": { "type": "string", "description": "Detailed markdown overview" },
-            "features": { "type": "array", "items": { "type": "string" }, "description": "List of key features" },
-            "techStack": { 
-              "type": "array", 
-              "items": { 
+            "overview": { "type": "string", "maxLength": 20000, "description": "Detailed markdown overview" },
+            "features": { "type": "array", "items": { "type": "string", "maxLength": 500 }, "description": "List of key features" },
+            "techStack": {
+              "type": "array",
+              "items": {
                 "type": "object",
                 "properties": {
-                  "name": { "type": "string" },
-                  "role": { "type": "string" }
+                  "name": { "type": "string", "maxLength": 100 },
+                  "role": { "type": "string", "maxLength": 200 }
                 }
               }
             },
@@ -32,13 +33,13 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "name": { "type": "string" },
-                  "desc": { "type": "string" }
+                  "name": { "type": "string", "maxLength": 200 },
+                  "desc": { "type": "string", "maxLength": 500 }
                 }
               }
             },
-            "license": { "type": "string" },
-            "status": { "type": "string", "description": "e.g., Active Node, Production" }
+            "license": { "type": "string", "maxLength": 200 },
+            "status": { "type": "string", "maxLength": 100, "description": "e.g., Active Node, Production" }
           }
         },
         "isActive": { "type": "boolean", "description": "Whether the project is visible on the main page" },
@@ -52,21 +53,23 @@
       "description": "User with administrative privileges",
       "type": "object",
       "properties": {
-        "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["admin"] }
+        "email": { "type": "string", "format": "email", "maxLength": 254, "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" },
+        "role": { "type": "string", "enum": ["admin"] },
+        "promotedBy": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["email", "role"]
+      "required": ["email"]
     },
     "Testimonial": {
       "title": "Testimonial",
       "description": "A client testimonial quote",
       "type": "object",
       "properties": {
-        "quote": { "type": "string", "description": "The testimonial text quote" },
-        "author": { "type": "string", "description": "Name of the client who gave the testimonial" },
-        "title": { "type": "string", "description": "Title or role of the client (e.g., CEO, Product Manager)" },
-        "company": { "type": "string", "description": "Company name of the client" },
-        "avatarUrl": { "type": "string", "description": "URL to the user's avatar image" },
+        "quote": { "type": "string", "maxLength": 2000, "description": "The testimonial text quote" },
+        "author": { "type": "string", "maxLength": 150, "description": "Name of the client who gave the testimonial" },
+        "title": { "type": "string", "maxLength": 150, "description": "Title or role of the client (e.g., CEO, Product Manager)" },
+        "company": { "type": "string", "maxLength": 150, "description": "Company name of the client" },
+        "avatarUrl": { "type": "string", "maxLength": 1000, "description": "URL to the user's avatar image" },
         "rating": { "type": "number", "description": "Rating out of 5 stars" },
         "isActive": { "type": "boolean", "description": "Whether the testimonial is verified and active to display on the slider" },
         "createdAt": { "type": "string", "format": "date-time" },
@@ -79,9 +82,9 @@
       "description": "A client/page performance network monitoring log",
       "type": "object",
       "properties": {
-        "page": { "type": "string", "description": "Name of the page or route being tracked" },
+        "page": { "type": "string", "maxLength": 250, "description": "Name of the page or route being tracked" },
         "loadTimeMs": { "type": "number", "description": "Measured page load speed or render response duration in ms" },
-        "userAgent": { "type": "string", "description": "User agent of the browser" },
+        "userAgent": { "type": "string", "maxLength": 600, "description": "User agent of the browser" },
         "type": { "type": "string", "enum": ["pageload", "transition"], "description": "The type of load action" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -92,9 +95,10 @@
       "description": "Custom authenticated user for the Marketing area",
       "type": "object",
       "properties": {
-        "username": { "type": "string", "description": "Unique username/userID of the marketer" },
-        "passwordHash": { "type": "string", "description": "Securely hashed password" },
+        "username": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9._-]+$", "description": "Unique username/userID of the marketer" },
+        "passwordHash": { "type": "string", "maxLength": 128, "description": "Securely hashed password" },
         "isLocked": { "type": "boolean", "description": "Whether the account is locked" },
+        "auditLogs": { "type": "array", "description": "Security audit trail entries" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -105,15 +109,15 @@
       "description": "Customer inquiry message submitted via contact form or marketing inbox",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "Sender name" },
-        "email": { "type": "string", "description": "Sender email" },
-        "company": { "type": "string", "description": "Sender company" },
-        "service": { "type": "string", "description": "Requested service" },
-        "budget": { "type": "string", "description": "Estimated budget" },
-        "timeline": { "type": "string", "description": "Project timeline" },
-        "message": { "type": "string", "description": "Inquiry text" },
-        "status": { "type": "string", "description": "Status (unread, read, New Query, In Process, Won, Lost)" },
-        "notes": { "type": "string", "description": "Internal notes for this ticket" },
+        "name": { "type": "string", "maxLength": 150, "description": "Sender name" },
+        "email": { "type": "string", "format": "email", "maxLength": 254, "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "description": "Sender email" },
+        "company": { "type": "string", "maxLength": 200, "description": "Sender company" },
+        "service": { "type": "string", "maxLength": 200, "description": "Requested service" },
+        "budget": { "type": "string", "maxLength": 150, "description": "Estimated budget" },
+        "timeline": { "type": "string", "maxLength": 150, "description": "Project timeline" },
+        "message": { "type": "string", "maxLength": 5000, "description": "Inquiry text" },
+        "status": { "type": "string", "maxLength": 50, "description": "Status (unread, read, New Query, In Process, Won, Lost)" },
+        "notes": { "type": "string", "maxLength": 5000, "description": "Internal notes for this ticket" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "email", "message"]
@@ -123,10 +127,10 @@
       "description": "Website configuration document",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "subtitle": { "type": "string" },
-        "tagline": { "type": "string" },
-        "bio": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "subtitle": { "type": "string", "maxLength": 500 },
+        "tagline": { "type": "string", "maxLength": 500 },
+        "bio": { "type": "string", "maxLength": 5000 },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
     },
@@ -135,14 +139,14 @@
       "description": "Customer query in the marketing pipeline matrix",
       "type": "object",
       "properties": {
-        "customerName": { "type": "string" },
-        "category": { "type": "string" },
+        "customerName": { "type": "string", "maxLength": 150 },
+        "category": { "type": "string", "maxLength": 150 },
         "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
         "status": { "type": "string", "enum": ["New Query", "In Process", "Won", "Lost"] },
-        "assignedTo": { "type": "string" },
-        "createdDate": { "type": "string" },
-        "description": { "type": "string" },
-        "notes": { "type": "string" },
+        "assignedTo": { "type": "string", "maxLength": 100 },
+        "createdDate": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "notes": { "type": "string", "maxLength": 5000 },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

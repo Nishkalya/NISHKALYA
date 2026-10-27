@@ -6,58 +6,174 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // 2. Primitives
+    // 2. Primitives & Validation Helpers
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.size() >= 3 && email.size() <= 254 && email.matches('^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isOptionalString(data, field, maxLen) {
+      return !(field in data) || data[field] == null || (data[field] is string && data[field].size() <= maxLen);
     }
 
     function isAdmin() {
       return isSignedIn() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        request.auth.token.email == 'nishkalya@gmail.com'
+        (request.auth.token.email == 'nishkalya@gmail.com' && (
+          request.auth.token.email_verified == true ||
+          request.auth.token.firebase.sign_in_provider == 'password'
+        ))
       );
+    }
+
+    function isValidMessage(data) {
+      let allowedKeys = ['name', 'email', 'company', 'service', 'budget', 'timeline', 'message', 'status', 'notes', 'createdAt', 'updatedAt'];
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(['name', 'email', 'message']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
+        isValidEmail(data.email) &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 5000 &&
+        isOptionalString(data, 'company', 200) &&
+        isOptionalString(data, 'service', 200) &&
+        isOptionalString(data, 'budget', 150) &&
+        isOptionalString(data, 'timeline', 150) &&
+        isOptionalString(data, 'status', 50) &&
+        isOptionalString(data, 'notes', 5000);
+    }
+
+    function isValidMessageUpdate(data) {
+      let allowedKeys = ['name', 'email', 'company', 'service', 'budget', 'timeline', 'message', 'status', 'notes', 'createdAt', 'updatedAt'];
+      return data.keys().hasOnly(allowedKeys) &&
+        isOptionalString(data, 'name', 150) &&
+        isOptionalString(data, 'email', 254) &&
+        isOptionalString(data, 'company', 200) &&
+        isOptionalString(data, 'service', 200) &&
+        isOptionalString(data, 'budget', 150) &&
+        isOptionalString(data, 'timeline', 150) &&
+        isOptionalString(data, 'message', 5000) &&
+        isOptionalString(data, 'status', 50) &&
+        isOptionalString(data, 'notes', 5000);
+    }
+
+    function isValidMarketingQuery(data) {
+      let allowedKeys = ['customerName', 'category', 'priority', 'status', 'assignedTo', 'createdDate', 'description', 'notes', 'createdAt', 'updatedAt'];
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(['customerName', 'category', 'priority', 'status']) &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 150 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 150 &&
+        data.priority in ['Low', 'Medium', 'High', 'Critical'] &&
+        data.status in ['New Query', 'In Process', 'Won', 'Lost'] &&
+        isOptionalString(data, 'assignedTo', 100) &&
+        isOptionalString(data, 'createdDate', 50) &&
+        isOptionalString(data, 'description', 5000) &&
+        isOptionalString(data, 'notes', 5000);
+    }
+
+    function isValidPerformanceLog(data) {
+      let allowedKeys = ['page', 'loadTimeMs', 'userAgent', 'type', 'createdAt'];
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(['page', 'loadTimeMs', 'userAgent', 'type']) &&
+        data.page is string && data.page.size() >= 1 && data.page.size() <= 250 &&
+        data.loadTimeMs is number && data.loadTimeMs >= 0 && data.loadTimeMs <= 600000 &&
+        data.userAgent is string && data.userAgent.size() <= 600 &&
+        data.type in ['pageload', 'transition'];
+    }
+
+    function isValidMarketingUser(data) {
+      let allowedKeys = ['username', 'passwordHash', 'isLocked', 'createdAt', 'updatedAt', 'auditLogs'];
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(['username', 'passwordHash', 'isLocked']) &&
+        data.username is string && data.username.size() >= 1 && data.username.size() <= 64 &&
+        data.passwordHash is string && data.passwordHash.size() >= 16 && data.passwordHash.size() <= 128 &&
+        data.isLocked is bool &&
+        (!( 'auditLogs' in data ) || (data.auditLogs is list && data.auditLogs.size() <= 200));
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['title', 'category', 'desc', 'iconType']) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 150 &&
+        data.desc is string && data.desc.size() <= 2000 &&
+        data.iconType in ['message', 'eye', 'layout', 'chart'] &&
+        isOptionalString(data, 'link', 1000) &&
+        isOptionalString(data, 'videoUrl', 1000);
+    }
+
+    function isValidTestimonial(data) {
+      let allowedKeys = ['quote', 'author', 'title', 'company', 'avatarUrl', 'rating', 'isActive', 'createdAt', 'updatedAt'];
+      return data.keys().hasOnly(allowedKeys) &&
+        data.keys().hasAll(['quote', 'author', 'title']) &&
+        data.quote is string && data.quote.size() >= 1 && data.quote.size() <= 2000 &&
+        data.author is string && data.author.size() >= 1 && data.author.size() <= 150 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+        isOptionalString(data, 'company', 150) &&
+        isOptionalString(data, 'avatarUrl', 1000) &&
+        (!( 'rating' in data ) || (data.rating is number && data.rating >= 1 && data.rating <= 5)) &&
+        (!( 'isActive' in data ) || data.isActive is bool);
     }
 
     // 3. Collections
     match /config/{configId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isValidId(configId);
     }
 
     match /projects/{projectId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidId(projectId) && isValidProject(request.resource.data);
+      allow delete: if isAdmin() && isValidId(projectId);
     }
 
     match /testimonials/{testimonialId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidId(testimonialId) && isValidTestimonial(request.resource.data);
+      allow delete: if isAdmin() && isValidId(testimonialId);
     }
 
     match /performance_logs/{logId} {
-      allow create: if true;
+      allow create: if isValidId(logId) && isValidPerformanceLog(request.resource.data);
       allow read, delete: if isAdmin();
     }
 
     match /messages/{messageId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if isValidId(messageId) && isValidMessage(request.resource.data);
+      allow update: if isValidId(messageId) && isValidMessageUpdate(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     match /marketing_queries/{queryId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if isValidId(queryId) && isValidMarketingQuery(request.resource.data);
+      allow delete: if true;
     }
 
     match /admins/{adminId} {
       allow read: if isAdmin();
       allow get: if isSignedIn() && request.auth.uid == adminId;
-      allow create: if isSignedIn() && request.auth.token.email == 'nishkalya@gmail.com' && request.auth.uid == adminId;
+      allow create: if isSignedIn() &&
+        request.auth.uid == adminId &&
+        request.auth.token.email == 'nishkalya@gmail.com' &&
+        (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'password') &&
+        request.resource.data.email == 'nishkalya@gmail.com';
     }
 
     match /marketing_users/{userId} {
-      allow get: if true;
+      allow get: if isValidId(userId);
       allow list: if isAdmin();
-      allow create: if (userId == 'Vishal') || isAdmin();
-      allow update, delete: if isAdmin();
+      allow create: if isValidId(userId) && isValidMarketingUser(request.resource.data) && (
+        (userId == 'Vishal' && !exists(/databases/$(database)/documents/marketing_users/Vishal)) ||
+        isAdmin()
+      );
+      allow update: if isAdmin() && isValidId(userId) && isValidMarketingUser(request.resource.data);
+      allow delete: if isAdmin() && isValidId(userId) && userId != 'Vishal';
     }
   }
 }

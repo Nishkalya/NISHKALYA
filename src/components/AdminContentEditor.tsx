@@ -516,7 +516,7 @@ export function AdminContentEditor({
                                 newParas[i] = e.target.value;
                                 updateConfig({ ...websiteConfig, about: { ...websiteConfig.about, paragraphs: newParas }});
                               }}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-zinc-200 outline-none focus:border-[#58a6ff]/70 transition-all resize-none"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/70 transition-all resize-none"
                             />
                             <button 
                               onClick={() => {
@@ -821,7 +821,7 @@ export function AdminContentEditor({
                           <button 
                             onClick={() => setAdminSelectedPlatformId(p.id)}
                             className={`px-3 py-1 text-xs rounded transition-all cursor-pointer ${
-                              isActive ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:text-zinc-200'
+                              isActive ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900'
                             }`}
                           >
                             {p.name} ({p.items?.length || 0})

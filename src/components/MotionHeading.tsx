@@ -29,8 +29,13 @@ export const MotionHeading: React.FC<MotionHeadingProps> = ({
 }) => {
   if (!html) return null;
 
+  const safeHtml = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<(iframe|object|embed|form|meta|link|style)\b[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+
   // Pattern split: match HTML tags (e.g. <span class="text-blue-600">), non-tag words, and consecutive whitespaces
-  const tokens = html.match(/(<[^>]+>|[^<>\s]+|\s+)/g) || [html];
+  const tokens = safeHtml.match(/(<[^>]+>|[^<>\s]+|\s+)/g) || [safeHtml];
 
   let currentSpanClass = '';
   let wordIndex = 0;
@@ -50,7 +55,7 @@ export const MotionHeading: React.FC<MotionHeadingProps> = ({
             // Extractor of the class/className attribute (e.g., class="...")
             const classMatch = token.match(/class(?:Name)?=["']([^"']+)["']/);
             if (classMatch) {
-              currentSpanClass = classMatch[1];
+              currentSpanClass = classMatch[1].replace(/[^a-zA-Z0-9_\-\s:/[\]#.%]/g, '');
             }
           }
           return null; // Tags are parsed for state, not rendered as flat text

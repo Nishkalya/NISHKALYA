@@ -184,8 +184,8 @@ export default function AdminUserManagement() {
       {feedbackMessage && (
         <div className={`p-4 rounded-xl border text-xs font-mono flex items-center justify-between transition-all ${
           feedbackMessage.type === 'success' 
-            ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-400' 
-            : 'bg-red-950/30 border-red-800/40 text-red-400'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+            : 'bg-red-50 border-red-200 text-red-700'
         }`}>
           <span>{feedbackMessage.text}</span>
           <button onClick={() => setFeedbackMessage(null)} className="p-1 hover:text-slate-900 cursor-pointer">
@@ -253,7 +253,7 @@ export default function AdminUserManagement() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-sans">
-              <thead className="bg-[#0c1017] text-slate-500 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider font-mono">
+              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider font-mono">
                 <tr>
                   <th className="p-4 pl-6">User ID (Username)</th>
                   <th className="p-4">Status</th>
@@ -263,24 +263,24 @@ export default function AdminUserManagement() {
               </thead>
               <tbody className="divide-y divide-slate-200/45">
                 {filteredUsers.map((user) => (
-                  <tr key={user.username} className="hover:bg-white/30 transition-colors">
+                  <tr key={user.username} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-4 pl-6 font-bold text-slate-900">
                       {user.username}
                     </td>
                     <td className="p-4">
                       {user.isLocked ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-950/40 text-red-400 border border-red-900/40 text-[10px] font-mono font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-50 text-red-700 border border-red-200 text-[10px] font-mono font-bold uppercase tracking-wider">
                           <Lock size={10} />
                           Locked
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 text-[10px] font-mono font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-bold uppercase tracking-wider">
                           <Unlock size={10} />
                           Active
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-slate-500/40 font-mono text-[10px]">
+                    <td className="p-4 text-slate-500 font-mono text-[10px]">
                       {user.passwordHash ? `${user.passwordHash.substring(0, 16)}... [SHA-256]` : 'unsecured'}
                     </td>
                     <td className="p-4 text-center pr-6 flex items-center justify-center gap-2">
@@ -289,8 +289,8 @@ export default function AdminUserManagement() {
                         onClick={() => handleToggleLock(user)}
                         className={`p-2 rounded-lg border transition-all cursor-pointer ${
                           user.isLocked 
-                            ? 'bg-emerald-950/20 text-emerald-400 border-emerald-900/30 hover:bg-emerald-950/60' 
-                            : 'bg-red-950/20 text-red-400 border-red-900/30 hover:bg-red-950/60'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
+                            : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
                         }`}
                         title={user.isLocked ? 'Unlock access' : 'Lock/Suspend access'}
                       >
@@ -336,8 +336,8 @@ export default function AdminUserManagement() {
                         disabled={user.username === 'Vishal'}
                         className={`p-2 rounded-lg border transition-all ${
                           user.username === 'Vishal'
-                            ? 'bg-slate-100/20 text-zinc-700 border-transparent cursor-not-allowed'
-                            : 'bg-red-950/20 text-red-400 border-red-900/30 hover:bg-red-950/80 cursor-pointer'
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                            : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100 cursor-pointer'
                         }`}
                         title="Permanently remove"
                       >
@@ -355,9 +355,9 @@ export default function AdminUserManagement() {
       {/* DELETE CONFIRMATION MODAL */}
       {deleteCandidateUser && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setDeleteCandidateUser(null)} />
-          <div className="relative w-full max-w-sm bg-[#0a0a0c] border border-red-900/40 rounded-3xl p-6 shadow-2xl space-y-5 text-center">
-            <div className="w-12 h-12 bg-red-950/40 border border-red-800/60 text-red-400 rounded-2xl flex items-center justify-center mx-auto">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setDeleteCandidateUser(null)} />
+          <div className="relative w-full max-w-sm bg-white border border-red-200 rounded-3xl p-6 shadow-2xl space-y-5 text-center">
+            <div className="w-12 h-12 bg-red-50 border border-red-200 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
               <Trash2 size={20} />
             </div>
             <div>
@@ -387,8 +387,8 @@ export default function AdminUserManagement() {
       {/* CREATE MODAL */}
       {showCreateModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCreateModal(false)} />
-          <div className="relative w-full max-w-sm bg-[#0a0a0c] border border-slate-200 rounded-3xl p-8 shadow-2xl space-y-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+          <div className="relative w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl space-y-6">
             <button 
               onClick={() => setShowCreateModal(false)}
               className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 transition-colors"
@@ -397,7 +397,7 @@ export default function AdminUserManagement() {
             </button>
 
             <div className="text-center">
-              <div className="w-11 h-11 bg-emerald-950/30 border border-emerald-900 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <div className="w-11 h-11 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <UserPlus size={18} />
               </div>
               <h3 className="text-lg font-bold text-slate-900 tracking-tight">Add New Marketer</h3>
@@ -405,7 +405,7 @@ export default function AdminUserManagement() {
             </div>
 
             {createError && (
-              <p className="p-3 bg-red-950/40 border border-red-900/60 text-red-400 text-[11px] rounded-xl font-medium">{createError}</p>
+              <p className="p-3 bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-xl font-medium">{createError}</p>
             )}
 
             <form onSubmit={handleCreate} className="space-y-4">
@@ -417,7 +417,7 @@ export default function AdminUserManagement() {
                   value={createUsername}
                   onChange={(e) => setCreateUsername(e.target.value)}
                   placeholder="e.g. nishkalya"
-                  className="w-full bg-[#121216] border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -429,14 +429,14 @@ export default function AdminUserManagement() {
                   value={createPassword}
                   onChange={(e) => setCreatePassword(e.target.value)}
                   placeholder="Set account password"
-                  className="w-full bg-[#121216] border border-zinc-850 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-blue-500"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isCreating}
-                className="w-full mt-2 bg-[#238636] hover:bg-[#2eaa44] text-slate-900 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {isCreating ? 'Provisioning...' : 'Provision Account'}
               </button>
@@ -448,8 +448,8 @@ export default function AdminUserManagement() {
       {/* EDIT MODAL - USERNAME & PASSWORD EDIT */}
       {showEditModal && selectedUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => { setShowEditModal(false); setSelectedUser(null); }} />
-          <div className="relative w-full max-w-md bg-[#0a0a0c] border border-slate-200 rounded-3xl p-7 shadow-2xl space-y-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => { setShowEditModal(false); setSelectedUser(null); }} />
+          <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl p-7 shadow-2xl space-y-6">
             <button 
               onClick={() => { setShowEditModal(false); setSelectedUser(null); }}
               className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
@@ -458,7 +458,7 @@ export default function AdminUserManagement() {
             </button>
 
             <div className="text-center">
-              <div className="w-11 h-11 bg-[#58a6ff]/15 border border-[#58a6ff]/40 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 font-semibold shadow-inner">
+              <div className="w-11 h-11 bg-blue-50 border border-blue-200 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 font-semibold shadow-inner">
                 <Edit size={18} />
               </div>
               <h3 className="text-lg font-bold text-slate-900 tracking-tight">Edit Marketer Account</h3>
@@ -468,8 +468,8 @@ export default function AdminUserManagement() {
             </div>
 
             {editError && (
-              <div className="p-3.5 bg-red-950/40 border border-red-900/60 text-red-400 text-[11px] rounded-xl font-medium flex items-center gap-2">
-                <ShieldAlert size={15} className="shrink-0 text-red-400" />
+              <div className="p-3.5 bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-xl font-medium flex items-center gap-2">
+                <ShieldAlert size={15} className="shrink-0 text-red-600" />
                 <span>{editError}</span>
               </div>
             )}
@@ -482,7 +482,7 @@ export default function AdminUserManagement() {
                     User ID / Username
                   </label>
                   {selectedUser.username === 'Vishal' && (
-                    <span className="text-[9px] font-mono text-amber-400/90 px-1.5 py-0.2 rounded bg-amber-950/30 border border-amber-900/40">
+                    <span className="text-[9px] font-mono text-amber-700 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">
                       Seed Default
                     </span>
                   )}
@@ -494,7 +494,7 @@ export default function AdminUserManagement() {
                     value={editUsername}
                     onChange={(e) => setEditUsername(e.target.value)}
                     placeholder="Enter user name"
-                    className="w-full bg-[#121216] border border-slate-200 focus:border-[#58a6ff] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none font-mono transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 outline-none font-mono transition-colors"
                   />
                 </div>
                 <p className="text-[10px] text-slate-500 mt-1">
@@ -513,7 +513,7 @@ export default function AdminUserManagement() {
                     value={editPassword}
                     onChange={(e) => setEditPassword(e.target.value)}
                     placeholder="Enter new password to re-key (optional)"
-                    className="w-full bg-[#121216] border border-slate-200 focus:border-[#58a6ff] rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-slate-900 outline-none font-mono transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-slate-900 outline-none font-mono transition-colors"
                   />
                   <button
                     type="button"
@@ -540,8 +540,8 @@ export default function AdminUserManagement() {
                     onClick={() => setEditIsLocked(false)}
                     className={`py-2 px-3 rounded-xl border text-xs font-mono font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                       !editIsLocked 
-                        ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-400 shadow-sm' 
-                        : 'bg-[#121216] border-slate-200 text-slate-500 hover:text-slate-700'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm' 
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     <Unlock size={13} />
@@ -553,8 +553,8 @@ export default function AdminUserManagement() {
                     onClick={() => setEditIsLocked(true)}
                     className={`py-2 px-3 rounded-xl border text-xs font-mono font-medium flex items-center justify-center gap-2 cursor-pointer transition-all ${
                       editIsLocked 
-                        ? 'bg-red-950/40 border-red-700/60 text-red-400 shadow-sm' 
-                        : 'bg-[#121216] border-slate-200 text-slate-500 hover:text-slate-700'
+                        ? 'bg-red-50 border-red-300 text-red-700 shadow-sm' 
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     <Lock size={13} />
@@ -573,7 +573,7 @@ export default function AdminUserManagement() {
                     setAuditVerificationResult(null);
                     setShowAuditModal(true);
                   }}
-                  className="text-[11px] font-mono text-[#3fb950] hover:text-[#56d364] flex items-center gap-1.5 cursor-pointer underline-offset-2 hover:underline"
+                  className="text-[11px] font-mono text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 cursor-pointer underline-offset-2 hover:underline"
                 >
                   <ShieldCheck size={13} />
                   <span>View & Check Audit History for this user</span>
@@ -591,7 +591,7 @@ export default function AdminUserManagement() {
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="flex-1 py-2.5 bg-[#1f6feb] hover:bg-[#388bfd] text-slate-900 rounded-xl text-xs font-bold uppercase tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-950/20"
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-blue-600/20"
                 >
                   {isUpdating ? 'Saving...' : 'Save User & Password'}
                 </button>
@@ -604,8 +604,8 @@ export default function AdminUserManagement() {
       {/* AUDIT & SECURITY INSPECTION MODAL */}
       {showAuditModal && selectedAuditUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => { setShowAuditModal(false); setSelectedAuditUser(null); }} />
-          <div className="relative w-full max-w-lg bg-[#0a0a0c] border border-slate-200 rounded-3xl p-7 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => { setShowAuditModal(false); setSelectedAuditUser(null); }} />
+          <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-7 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button 
               onClick={() => { setShowAuditModal(false); setSelectedAuditUser(null); }}
               className="absolute top-5 right-5 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
@@ -615,18 +615,18 @@ export default function AdminUserManagement() {
 
             {/* Header */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-[#3fb950]/15 border border-[#3fb950]/40 text-[#3fb950] rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+              <div className="w-11 h-11 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
                 <ShieldCheck size={20} />
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
                   <span>Security & Audit Inspection</span>
                   {selectedAuditUser.isLocked ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950/50 text-red-400 border border-red-900/40">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
                       Locked
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/50 text-emerald-400 border border-emerald-900/40">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                       Active
                     </span>
                   )}
@@ -648,20 +648,22 @@ export default function AdminUserManagement() {
                   type="button"
                   onClick={() => handleRunAuditVerification(selectedAuditUser)}
                   disabled={isVerifyingAudit}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-[#3fb950] hover:text-[#56d364] border border-slate-200 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-emerald-700 border border-slate-200 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <RefreshCw size={11} className={isVerifyingAudit ? "animate-spin" : ""} />
                   <span>{isVerifyingAudit ? 'Verifying...' : 'Verify Cryptographic Audit'}</span>
                 </button>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5 font-mono text-[11px] text-slate-500 break-all select-all">
-                {selectedAuditUser.passwordHash || 'No cryptographic hash on record'}
+              <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-2.5 font-mono text-[11px] text-slate-600 break-all">
+                {selectedAuditUser.passwordHash
+                  ? `${selectedAuditUser.passwordHash.startsWith('pbkdf2$') ? 'PBKDF2-SHA256' : 'SHA-256'} • ${selectedAuditUser.passwordHash.slice(0, 12)}••••••••••••••••••••${selectedAuditUser.passwordHash.slice(-6)}`
+                  : 'No cryptographic hash on record'}
               </div>
 
               {auditVerificationResult && (
-                <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/40 text-emerald-400 text-[11px] font-mono flex items-center gap-2">
-                  <CheckCircle2 size={15} className="shrink-0 text-emerald-400" />
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-mono flex items-center gap-2">
+                  <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
                   <span>{auditVerificationResult}</span>
                 </div>
               )}
@@ -669,7 +671,7 @@ export default function AdminUserManagement() {
 
             {/* Key Meta Timestamps */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-[#121216] border border-slate-200/60 rounded-xl">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 mb-1">
                   <Calendar size={11} />
                   <span>Account Registered</span>
@@ -681,7 +683,7 @@ export default function AdminUserManagement() {
                 </p>
               </div>
 
-              <div className="p-3 bg-[#121216] border border-slate-200/60 rounded-xl">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 mb-1">
                   <Clock size={11} />
                   <span>Last Modified</span>

@@ -28,17 +28,88 @@ export interface MarketingUser {
   auditLogs?: AuditEntry[];
 }
 
-// Secure native SHA-256 hashing using Web Crypto API (fully Client-Side safe)
-export async function hashPassword(password: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(password);
+export interface SafeMarketingSession {
+  username: string;
+  isLocked: boolean;
+  expiresAt: number;
+}
+
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+export function createSafeSession(user: Pick<MarketingUser, 'username' | 'isLocked'>): SafeMarketingSession {
+  return {
+    username: user.username,
+    isLocked: Boolean(user.isLocked),
+    expiresAt: Date.now() + SESSION_DURATION_MS,
+  };
+}
+
+// Legacy SHA-256 helper for backwards compatibility with existing records
+async function sha256Hex(input: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(input);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Salted PBKDF2-SHA256 password hashing (100,000 iterations) using Web Crypto API
+export async function hashPassword(password: string, existingSaltHex?: string): Promise<string> {
+  try {
+    const saltBytes = new Uint8Array(16);
+    if (existingSaltHex && /^[0-9a-f]{32}$/i.test(existingSaltHex)) {
+      for (let i = 0; i < 16; i++) {
+        saltBytes[i] = parseInt(existingSaltHex.slice(i * 2, i * 2 + 2), 16);
+      }
+    } else {
+      crypto.getRandomValues(saltBytes);
+    }
+    const saltHex = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(password),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+    const derivedBits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: saltBytes,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      256
+    );
+    const hashHex = Array.from(new Uint8Array(derivedBits))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    return `pbkdf2$${saltHex}$${hashHex}`;
+  } catch {
+    // Fallback if PBKDF2 is unavailable in constrained environment
+    return sha256Hex(password);
+  }
+}
+
+export async function verifyPassword(passwordPlain: string, storedHash: string): Promise<boolean> {
+  if (!storedHash) return false;
+  if (storedHash.startsWith('pbkdf2$')) {
+    const parts = storedHash.split('$');
+    if (parts.length !== 3) return false;
+    const saltHex = parts[1];
+    const recomputed = await hashPassword(passwordPlain, saltHex);
+    return recomputed === storedHash;
+  }
+  const legacyHash = await sha256Hex(passwordPlain);
+  return legacyHash === storedHash;
+}
+
+// Brute-force rate limiter for login attempts (max 5 failed attempts per 60s window)
+const loginAttemptTracker = new Map<string, { count: number; lockUntil: number }>();
+
 export const marketingUserService = {
   /**
-   * Automatically seeds the default user (Vishal / 1234) if it does not yet exist.
+   * Automatically seeds the default user if it does not yet exist.
    */
   seedDefaultUser: async () => {
     const defaultUsername = 'Vishal';
@@ -62,7 +133,6 @@ export const marketingUserService = {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-        console.log('[MarketingUser] Default user "Vishal" successfully seeded.');
       } catch (error) {
         console.error('[MarketingUser] Error seeding default user:', error);
         handleFirestoreError(error, OperationType.WRITE, `marketing_users/${defaultUsername}`);
@@ -71,24 +141,37 @@ export const marketingUserService = {
   },
 
   /**
-   * Logs in a custom marketing user
+   * Logs in a custom marketing user with rate limiting & PBKDF2/SHA-256 verification
    */
-  login: async (username: string, password: string): Promise<{ success: boolean; error?: string; user?: MarketingUser }> => {
+  login: async (username: string, password: string): Promise<{ success: boolean; error?: string; user?: SafeMarketingSession }> => {
     try {
-      if (!username || !password) {
+      const normalizedUser = username.trim();
+      if (!normalizedUser || !password) {
         return { success: false, error: 'User ID and Password are required.' };
       }
+
+      const now = Date.now();
+      const attemptState = loginAttemptTracker.get(normalizedUser);
+      if (attemptState && now < attemptState.lockUntil) {
+        const waitSec = Math.ceil((attemptState.lockUntil - now) / 1000);
+        return { success: false, error: `Too many failed attempts. Please wait ${waitSec}s before trying again.` };
+      }
       
-      const docRef = doc(db, 'marketing_users', username);
+      const docRef = doc(db, 'marketing_users', normalizedUser);
       let docSnap;
       try {
         docSnap = await getDoc(docRef);
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `marketing_users/${username}`);
+        handleFirestoreError(error, OperationType.GET, `marketing_users/${normalizedUser}`);
         throw error;
       }
 
       if (!docSnap.exists()) {
+        const prevCount = (attemptState?.count || 0) + 1;
+        loginAttemptTracker.set(normalizedUser, {
+          count: prevCount,
+          lockUntil: prevCount >= 5 ? now + 60_000 : 0,
+        });
         return { success: false, error: 'Invalid User ID or Password' };
       }
 
@@ -98,11 +181,17 @@ export const marketingUserService = {
         return { success: false, error: 'Account Locked' };
       }
 
-      const inputHash = await hashPassword(password);
-      if (inputHash === userData.passwordHash) {
-        return { success: true, user: userData };
+      const isValid = await verifyPassword(password, userData.passwordHash);
+      if (isValid) {
+        loginAttemptTracker.delete(normalizedUser);
+        return { success: true, user: createSafeSession(userData) };
       }
 
+      const prevCount = (attemptState?.count || 0) + 1;
+      loginAttemptTracker.set(normalizedUser, {
+        count: prevCount,
+        lockUntil: prevCount >= 5 ? now + 60_000 : 0,
+      });
       return { success: false, error: 'Invalid User ID or Password' };
     } catch (error) {
       console.error('[MarketingUser] Error during custom login:', error);

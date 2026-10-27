@@ -321,8 +321,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     try {
       const res = await marketingUserService.login(username, password);
       if (res.success && res.user) {
-        setMarketingUser(res.user);
-        localStorage.setItem('marketing_user_session', JSON.stringify(res.user));
+        const safeSession = {
+          username: res.user.username,
+          isLocked: Boolean(res.user.isLocked),
+          expiresAt: res.user.expiresAt || Date.now() + 8 * 60 * 60 * 1000
+        };
+        setMarketingUser(safeSession);
+        sessionStorage.setItem('marketing_user_session', JSON.stringify(safeSession));
+        localStorage.setItem('marketing_user_session', JSON.stringify(safeSession));
       } else {
         setLoginError(res.error || 'Authentication failed.');
       }
@@ -335,6 +341,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
   const handleLogout = () => {
     setMarketingUser(null);
+    sessionStorage.removeItem('marketing_user_session');
     localStorage.removeItem('marketing_user_session');
     setUsername('');
     setPassword('');
@@ -1126,10 +1133,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                           }`}>Action Status</span>
                           <span className="inline-block mt-0.5">
                             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
-                              selectedTicket?.status === 'New Query' ? (portalTheme === 'white' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-blue-950/20 text-blue-400 border-blue-900/40') :
-                              selectedTicket?.status === 'In Process' ? (portalTheme === 'white' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-950/20 text-amber-500 border-amber-900/40') :
-                              selectedTicket?.status === 'Won' ? (portalTheme === 'white' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-950/20 text-emerald-400 border-emerald-900/40') :
-                              (portalTheme === 'white' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-950/20 text-red-500 border-red-900/40')
+                              selectedTicket?.status === 'New Query' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              selectedTicket?.status === 'In Process' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              selectedTicket?.status === 'Won' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              'bg-red-50 text-red-700 border-red-200'
                             }`}>
                               {selectedTicket?.status}
                             </span>
@@ -1160,16 +1167,16 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                           <span className={`w-1.5 h-1.5 rounded-full ${portalTheme === 'white' ? 'bg-sky-600' : 'bg-[#58a6ff]'}`}></span>
                           Routing Operations
                         </span>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <button
                             onClick={() => selectedTicket && handleMoveInboxToQuery(selectedTicket)}
-                            className="px-4 py-2 bg-[#2ea44f] hover:bg-[#2c974b] text-slate-900 border border-[#2ea44f]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-700/30 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                           >
                             <span>✓ Convert to Query</span>
                           </button>
                           <button
                             onClick={() => selectedTicket && handleMoveInboxToQuery(selectedTicket, 'Lost')}
-                            className="px-4 py-2 bg-[#cf222e] hover:bg-[#b91c1c] text-slate-900 border border-[#cf222e]/35 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+                            className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white border border-red-700/30 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                           >
                             <span>✗ Mark as Lost</span>
                           </button>
@@ -1220,34 +1227,28 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setDeleteCandidateId(null)}
-                  className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+                  className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
                 />
                 
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`relative w-full max-w-sm border rounded-3xl p-6 shadow-2xl space-y-5 text-center ${
-                    portalTheme === 'white' ? 'bg-white border-red-200' : 'bg-slate-50 border-red-900/40'
-                  }`}
+                  className="relative w-full max-w-sm border rounded-3xl p-6 shadow-2xl space-y-5 text-center bg-white border-red-200"
                 >
-                  <div className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto ${
-                    portalTheme === 'white' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-red-950/40 border-red-800/60 text-red-400'
-                  }`}>
+                  <div className="w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto bg-red-50 border-red-200 text-red-600">
                     <Trash2 size={20} />
                   </div>
                   <div>
-                    <h3 className={`text-base font-bold ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Delete Record</h3>
-                    <p className={`text-xs mt-1.5 font-light leading-relaxed ${portalTheme === 'white' ? 'text-slate-500' : 'text-slate-500'}`}>
+                    <h3 className="text-base font-bold text-slate-900">Delete Record</h3>
+                    <p className="text-xs mt-1.5 font-light leading-relaxed text-slate-500">
                       Are you sure you want to permanently remove this inquiry record? This action cannot be reversed.
                     </p>
                   </div>
                   <div className="flex gap-3 pt-2">
                     <button
                       onClick={() => setDeleteCandidateId(null)}
-                      className={`flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                        portalTheme === 'white' ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-900'
-                      }`}
+                      className="flex-1 py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700"
                     >
                       Cancel
                     </button>
@@ -1272,14 +1273,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setShowEditModal(false)}
-                  className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+                  className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
                 />
                 
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200'}`}
+                  className="relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border bg-white border-slate-200"
                 >
                   <button 
                     onClick={() => setShowEditModal(false)}
@@ -1289,12 +1290,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   </button>
 
                   {/* Icon and title header */}
-                  <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
-                    <div className="w-10 h-10 bg-amber-950/10 border border-amber-900/60 text-amber-500 rounded-xl flex items-center justify-center">
+                  <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                    <div className="w-10 h-10 bg-amber-50 border border-amber-200 text-amber-600 rounded-xl flex items-center justify-center">
                       <Edit2 size={16} />
                     </div>
                     <div>
-                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Modify Parameters</h3>
+                      <h3 className="text-base font-bold tracking-tight text-slate-900">Modify Parameters</h3>
                       <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mt-0.5">Record ID: {activeModule === 'inbox' ? selectedTicket?.id : selectedQuery?.id}</p>
                     </div>
                   </div>
@@ -1498,14 +1499,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setShowAddModal(false)}
-                  className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+                  className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
                 />
                 
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border ${portalTheme === 'white' ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200'}`}
+                  className="relative w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 overflow-hidden max-h-[90vh] overflow-y-auto border bg-white border-slate-200"
                 >
                   <button 
                     onClick={() => setShowAddModal(false)}
@@ -1515,12 +1516,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                   </button>
 
                   {/* Icon and title header */}
-                  <div className="flex items-center gap-3 border-b border-slate-200/50 pb-4">
-                    <div className="w-10 h-10 bg-emerald-950/20 border border-emerald-900/60 text-emerald-400 rounded-xl flex items-center justify-center">
+                  <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                    <div className="w-10 h-10 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl flex items-center justify-center">
                       <Plus size={18} />
                     </div>
                     <div>
-                      <h3 className={`text-base font-bold tracking-tight ${portalTheme === 'white' ? 'text-slate-900' : 'text-slate-900'}`}>Create Mock Record</h3>
+                      <h3 className="text-base font-bold tracking-tight text-slate-900">Create Mock Record</h3>
                       <p className="text-[10px] uppercase font-mono tracking-widest text-slate-500 mt-0.5">Assigned ID: {addFormValues.id}</p>
                     </div>
                   </div>
@@ -1530,7 +1531,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                     {activeModule === 'inbox' ? (
                       /* INBOX FORM FIELDS FOR ADDING */
                       <>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Contact Name</label>
                             <input
@@ -1539,7 +1540,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               placeholder="e.g. Liam Sterling"
                               value={addFormValues.name || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, name: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                              className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                           <div>
@@ -1550,7 +1551,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               placeholder="l.sterling@corp.com"
                               value={addFormValues.email || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, email: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                              className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                         </div>
@@ -1563,11 +1564,11 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             placeholder="Inquiring about White-Label SaaS models"
                             value={addFormValues.subject || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, subject: e.target.value })}
-                            className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                            className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Creation Date</label>
                             <input
@@ -1575,7 +1576,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               required
                               value={addFormValues.date || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, date: e.target.value })}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-sky-500/50 font-mono"
                             />
                           </div>
                           <div>
@@ -1583,7 +1584,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             <select
                               value={addFormValues.status || 'New Query'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, status: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                              className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono bg-slate-50 border-slate-300 text-slate-900"
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -1601,14 +1602,14 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             placeholder="Type simulated query message here..."
                             value={addFormValues.message || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, message: e.target.value })}
-                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                            className="w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
                       </>
                     ) : (
                       /* QUERY MANAGEMENT FORM FIELDS FOR ADDING */
                       <>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Customer Name</label>
                             <input
@@ -1617,7 +1618,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               placeholder="e.g. Diana Prince"
                               value={addFormValues.customerName || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, customerName: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                              className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                           <div>
@@ -1628,18 +1629,18 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               placeholder="e.g. Enterprise AI"
                               value={addFormValues.category || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, category: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                              className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors font-mono bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Priority Urgency</label>
                             <select
                               value={addFormValues.priority || 'Medium'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, priority: e.target.value })}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-350"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-sky-500/50 font-mono"
                             >
                               <option value="Low">Low</option>
                               <option value="Medium">Medium</option>
@@ -1655,12 +1656,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               placeholder="e.g. Vishal"
                               value={addFormValues.assignedTo || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, assignedTo: e.target.value })}
-                              className={`w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                              className="w-full border rounded-xl px-4 py-2.5 text-xs outline-none focus:border-sky-500/50 transition-colors bg-slate-50 border-slate-300 text-slate-900"
                             />
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-[8.5px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 font-mono">Created Date</label>
                             <input
@@ -1668,7 +1669,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                               required
                               value={addFormValues.createdDate || ''}
                               onChange={(e) => setAddFormValues({ ...addFormValues, createdDate: e.target.value })}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-sky-500/50 font-mono"
                             />
                           </div>
                           <div>
@@ -1676,7 +1677,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             <select
                               value={addFormValues.status || 'New Query'}
                               onChange={(e) => setAddFormValues({ ...addFormValues, status: e.target.value })}
-                              className="w-full bg-white border border-slate-200/60 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-[#58a6ff]/50 font-mono text-zinc-350"
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-sky-500/50 font-mono"
                             >
                               <option value="New Query">New Query</option>
                               <option value="In Process">In Process</option>
@@ -1694,7 +1695,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                             placeholder="Type query documentation / logs summary here..."
                             value={addFormValues.description || ''}
                             onChange={(e) => setAddFormValues({ ...addFormValues, description: e.target.value })}
-                            className={`w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors ${portalTheme === 'white' ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-white border-slate-200 text-slate-900'}`}
+                            className="w-full border rounded-xl p-4 text-xs outline-none focus:border-sky-500/50 transition-colors bg-slate-50 border-slate-300 text-slate-900"
                           />
                         </div>
                       </>
@@ -1704,13 +1705,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
                       <button
                         type="button"
                         onClick={() => setShowAddModal(false)}
-                        className={`px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors ${portalTheme === 'white' ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-600' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-900'}`}
+                        className="px-5 py-2.5 border rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors bg-white hover:bg-slate-100 border-slate-300 text-slate-600 cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="px-5 py-2.5 bg-emerald-650 hover:bg-emerald-600 border border-emerald-800 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 border border-emerald-700 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
                       >
                         <CheckCircle size={14} />
                         <span>Provision Mock</span>
