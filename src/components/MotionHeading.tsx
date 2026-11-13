@@ -14,7 +14,7 @@ const childVariants: any = {
     y: 0,
     opacity: 1,
     transition: {
-      duration: 0.8,
+      duration: 0.45,
       ease: [0.16, 1, 0.3, 1],
       delay: customDelay
     }
@@ -66,7 +66,7 @@ export const MotionHeading: React.FC<MotionHeadingProps> = ({
           return <span key={index} className="inline-block">{token}</span>;
         }
 
-        const animateDelay = delay + wordIndex * 0.08;
+        const animateDelay = delay + wordIndex * 0.035;
         wordIndex++;
 
         return (

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { 
@@ -105,17 +105,15 @@ import { TestimonialSection } from './components/TestimonialSection';
 import { MotionHeading } from './components/MotionHeading';
 import firebaseConfig from '../firebase-applet-config.json';
 import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
-import AdminPerformanceDashboard from './components/AdminPerformanceDashboard';
 import { ProjectCard } from './components/ProjectCard';
 import { PLATFORMS } from './data/platformsData';
 import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelper';
-import { AdminContentEditor } from './components/AdminContentEditor';
 import { marketingUserService } from './services/marketingUserService';
-import MarketingPage from './components/MarketingPage';
-import AdminUserManagement from './components/AdminUserManagement';
 
-
-
+const AdminPerformanceDashboard = lazy(() => import('./components/AdminPerformanceDashboard'));
+const AdminContentEditor = lazy(() => import('./components/AdminContentEditor').then(m => ({ default: m.AdminContentEditor })));
+const MarketingPage = lazy(() => import('./components/MarketingPage'));
+const AdminUserManagement = lazy(() => import('./components/AdminUserManagement'));
 
 export default function App() {
   const containerVariants: any = {
@@ -123,19 +121,19 @@ export default function App() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
+        staggerChildren: 0.05,
+        delayChildren: 0.05
       }
     }
   };
 
   const itemVariants: any = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 14, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.8,
+        duration: 0.45,
         ease: "easeOut",
       }
     }
@@ -189,8 +187,19 @@ export default function App() {
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [detailsTab, setDetailsTab] = useState<'details' | 'browse'>('details');
   const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin' | 'marketing'>('home');
-  const [websiteConfig, setWebsiteConfig] = useState<any>(DEFAULT_CONFIG);
-  const [isConfigLoading, setIsConfigLoading] = useState(true);
+  const [websiteConfig, setWebsiteConfig] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('nk_cached_config');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {
+      // Ignore cache read error
+    }
+    return DEFAULT_CONFIG;
+  });
+  const [isConfigLoading, setIsConfigLoading] = useState(false);
   const [localConfig, setLocalConfig] = useState<any>(null);
   const [isConfigDirty, setIsConfigDirty] = useState(false);
   const [adminTab, setAdminTab] = useState<'messages' | 'content' | 'performance' | 'users'>('messages');
@@ -220,8 +229,19 @@ export default function App() {
       return null;
     }
   });
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isProjectsLoading, setIsProjectsLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    try {
+      const cached = localStorage.getItem('nk_cached_projects');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Ignore cache read error
+    }
+    return DEFAULT_PROJECTS.map((p: any, idx) => ({ id: p.id || String(idx), ...p })) as Project[];
+  });
+  const [isProjectsLoading, setIsProjectsLoading] = useState(false);
   const [activeProfilePlatform, setActiveProfilePlatform] = useState<string>('github');
   const [adminSelectedPlatformId, setAdminSelectedPlatformId] = useState<string>('github');
 
@@ -333,15 +353,18 @@ export default function App() {
   }, [currentView, websiteConfig, selectedProjectForPreview]);
 
   useEffect(() => {
-    // Real-time config listener
+    // Real-time config listener (subscribe once on mount, cache for instant subsequent boots)
     const unsubConfig = onSnapshot(doc(db, 'config', 'website'), (snapshot) => {
       if (snapshot.exists()) {
-        setWebsiteConfig(snapshot.data());
-      } else {
-        // Only try to seed if we have a user and they are admin
-        if (isAdmin && currentUser?.email === 'nishkalya@gmail.com') {
-          setDoc(doc(db, 'config', 'website'), DEFAULT_CONFIG).catch(err => handleFirestoreError(err, 'write', 'config/website'));
+        const data = snapshot.data();
+        setWebsiteConfig(data);
+        try {
+          localStorage.setItem('nk_cached_config', JSON.stringify(data));
+        } catch {
+          // Ignore quota error
         }
+      } else if (auth.currentUser?.email === 'nishkalya@gmail.com') {
+        setDoc(doc(db, 'config', 'website'), DEFAULT_CONFIG).catch(err => handleFirestoreError(err, 'write', 'config/website'));
       }
       setIsConfigLoading(false);
     }, (error) => {
@@ -349,24 +372,22 @@ export default function App() {
       setIsConfigLoading(false);
     });
 
-    // Real-time projects listener
+    // Real-time projects listener (subscribe once on mount)
     const q = query(collection(db, 'projects'), orderBy('order', 'asc'));
     const unsubProjects = onSnapshot(q, (snapshot) => {
       const projs = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
       if (projs.length > 0) {
         setProjects(projs);
-      } else {
-        // Only try to seed if we have a user and they are admin
-        if (isAdmin && currentUser?.email === 'nishkalya@gmail.com') {
-          DEFAULT_PROJECTS.forEach(async (p: any, idx: number) => {
-            const { id, ...rest } = p;
-            // Use provided ID if available, otherwise it's just a seed
-            await setDoc(doc(db, 'projects', id || String(idx)), { ...rest, order: idx }).catch(err => handleFirestoreError(err, 'write', 'projects/' + (id || idx)));
-          });
-        } else {
-          // If genuinely empty and we are not seeding, fallback to DEFAULT_PROJECTS to make sure standard portfolio loads smoothly
-          setProjects(DEFAULT_PROJECTS.map((p: any, idx) => ({ id: p.id || String(idx), ...p })) as any);
+        try {
+          localStorage.setItem('nk_cached_projects', JSON.stringify(projs));
+        } catch {
+          // Ignore quota error
         }
+      } else if (auth.currentUser?.email === 'nishkalya@gmail.com') {
+        DEFAULT_PROJECTS.forEach(async (p: any, idx: number) => {
+          const { id, ...rest } = p;
+          await setDoc(doc(db, 'projects', id || String(idx)), { ...rest, order: idx }).catch(err => handleFirestoreError(err, 'write', 'projects/' + (id || idx)));
+        });
       }
       setIsProjectsLoading(false);
     }, (error) => {
@@ -378,7 +399,7 @@ export default function App() {
       unsubConfig();
       unsubProjects();
     };
-  }, [isAdmin, currentUser]);
+  }, []);
 
   // Handle local draft config synchronization reactive to content tab state
   useEffect(() => {
@@ -504,10 +525,11 @@ export default function App() {
   }, [projects, isProjectsLoading]);
 
   useEffect(() => {
+    if (currentView !== 'marketing' && currentView !== 'admin') return;
     marketingUserService.seedDefaultUser().catch(err => {
       console.warn("Marketing user seeding bypassed or already initialized.", err);
     });
-  }, []);
+  }, [currentView]);
 
   useEffect(() => {
     try {
@@ -1355,27 +1377,33 @@ export default function App() {
                   </div>
                 </div>
               ) : adminTab === 'content' ? (
-                <AdminContentEditor 
-                  websiteConfig={editorConfig}
-                  updateConfig={updateConfigLocal}
-                  isConfigDirty={isConfigDirty}
-                  handlePublishConfig={handlePublishConfig}
-                  setLocalConfig={setLocalConfig}
-                  projects={projects}
-                  adminTestimonials={adminTestimonials}
-                  handleEditProject={handleEditProject}
-                  handleDeleteProject={handleDeleteProject}
-                  handleAddTestimonial={handleAddTestimonial}
-                  handleEditTestimonial={handleEditTestimonial}
-                  handleDeleteTestimonial={handleDeleteTestimonial}
-                  activeContentSection={activeContentSection as any || 'hero'}
-                  setActiveContentSection={setActiveContentSection}
-                  hideSidebar={true}
-                />
+                <Suspense fallback={<div className="py-16 text-center text-xs font-mono text-slate-400">Loading editor...</div>}>
+                  <AdminContentEditor 
+                    websiteConfig={editorConfig}
+                    updateConfig={updateConfigLocal}
+                    isConfigDirty={isConfigDirty}
+                    handlePublishConfig={handlePublishConfig}
+                    setLocalConfig={setLocalConfig}
+                    projects={projects}
+                    adminTestimonials={adminTestimonials}
+                    handleEditProject={handleEditProject}
+                    handleDeleteProject={handleDeleteProject}
+                    handleAddTestimonial={handleAddTestimonial}
+                    handleEditTestimonial={handleEditTestimonial}
+                    handleDeleteTestimonial={handleDeleteTestimonial}
+                    activeContentSection={activeContentSection as any || 'hero'}
+                    setActiveContentSection={setActiveContentSection}
+                    hideSidebar={true}
+                  />
+                </Suspense>
               ) : adminTab === 'users' ? (
-                <AdminUserManagement />
+                <Suspense fallback={<div className="py-16 text-center text-xs font-mono text-slate-400">Loading user management...</div>}>
+                  <AdminUserManagement />
+                </Suspense>
               ) : (
-                <AdminPerformanceDashboard />
+                <Suspense fallback={<div className="py-16 text-center text-xs font-mono text-slate-400">Loading telemetry...</div>}>
+                  <AdminPerformanceDashboard />
+                </Suspense>
               )}
             </div>
           </div>
@@ -1801,16 +1829,16 @@ export default function App() {
     });
   };
 
-  if (isAuthLoading || isConfigLoading) {
+  if (currentView === 'admin' && isAuthLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
          <div className="flex flex-col items-center gap-4">
            <motion.div 
               animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               className="w-10 h-10 border-2 border-slate-200 border-t-blue-500 rounded-full shadow-sm"
             />
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 font-mono animate-pulse">Initializing Studio</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 font-mono animate-pulse">Authenticating Console</span>
          </div>
       </div>
     );
@@ -2069,7 +2097,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.15 }}
             className="h-full w-full overflow-hidden flex flex-col"
           >
             {AdminDashboard()}
@@ -2080,21 +2108,23 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.15 }}
             className="h-full w-full overflow-hidden flex flex-col"
           >
-            <MarketingPage 
-              marketingUser={marketingUser} 
-              setMarketingUser={setMarketingUser} 
-              onOpenAdmin={() => {
-                setCurrentView('admin');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onExitPortal={() => {
-                setCurrentView('home');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
+            <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center text-xs font-mono text-slate-400">Loading portal...</div>}>
+              <MarketingPage 
+                marketingUser={marketingUser} 
+                setMarketingUser={setMarketingUser} 
+                onOpenAdmin={() => {
+                  setCurrentView('admin');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onExitPortal={() => {
+                  setCurrentView('home');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </Suspense>
           </motion.div>
         ) : currentView === 'home' ? (
           <motion.div
@@ -2102,7 +2132,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.18 }}
           >
             {/* Hero Section */}
             <section className="relative min-h-[90vh] md:min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6 md:px-12 z-10 w-full text-center bg-gradient-to-b from-white via-slate-50 to-slate-100">
@@ -2296,10 +2326,10 @@ export default function App() {
         ) : (
           <motion.div
             key="projects"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18 }}
             className="pt-32 pb-32 px-6 md:px-12 w-full max-w-7xl mx-auto min-h-screen"
           >
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 md:mb-20 gap-6 md:gap-8 pb-8 md:pb-12 border-b border-slate-200/80">
@@ -3311,7 +3341,7 @@ export default function App() {
                   rotateY: isFlipped ? 180 : 0 
                 }}
                 exit={{ opacity: 0, scale: 0.9, rotateX: -20 }}
-                transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
                 className={`relative w-full h-full preserve-3d ${showFullPreview ? 'rounded-none' : ''}`}
               >
                 {/* Close Button - Outside Card for better UX */}
@@ -3623,7 +3653,7 @@ export default function App() {
       )}
 
       {/* Testimonials Section */}
-      {currentView === 'home' && <TestimonialSection />}
+      {currentView === 'home' && <TestimonialSection projects={projects} />}
 
       {/* Contact Section */}
       {currentView === 'home' && (

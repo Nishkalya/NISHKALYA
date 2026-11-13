@@ -129,6 +129,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   });
 
   let vite: any;
+  let cachedProdHtml: string | null = null;
   if (process.env.NODE_ENV !== "production") {
     vite = await createViteServer({
       server: { middlewareMode: true },
@@ -137,14 +138,20 @@ Sitemap: ${baseUrl}/sitemap.xml
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    // Serve static files safely without auto-triggering index.html
-    app.use(express.static(distPath, { index: false }));
+    const distHtmlPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(distHtmlPath)) {
+      cachedProdHtml = fs.readFileSync(distHtmlPath, 'utf8');
+    }
+    // Serve static files with immutable cache headers for hashed assets
+    app.use(express.static(distPath, {
+      index: false,
+      maxAge: '1y',
+      immutable: true,
+    }));
   }
 
   // Fallback for HTML request / page routes
   app.all("*", async (req, res, next) => {
-    const isHtmlRequest = req.method === 'GET' && (req.headers.accept?.includes('text/html') || Object.keys(req.query).length === 0);
-    
     // Skip if it looks like an asset/file request
     if (req.path.includes('.') && !req.path.endsWith('.html')) {
        return next();
@@ -164,9 +171,14 @@ Sitemap: ${baseUrl}/sitemap.xml
           return res.status(404).send("index.html not found");
         }
       } else {
-        const distHtmlPath = path.join(process.cwd(), 'dist', 'index.html');
-        if (fs.existsSync(distHtmlPath)) {
-          html = fs.readFileSync(distHtmlPath, 'utf8');
+        if (!cachedProdHtml) {
+          const distHtmlPath = path.join(process.cwd(), 'dist', 'index.html');
+          if (fs.existsSync(distHtmlPath)) {
+            cachedProdHtml = fs.readFileSync(distHtmlPath, 'utf8');
+          }
+        }
+        if (cachedProdHtml) {
+          html = cachedProdHtml;
         } else {
           return res.status(404).send("Production asset index.html not found");
         }

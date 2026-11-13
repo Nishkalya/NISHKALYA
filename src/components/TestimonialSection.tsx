@@ -4,10 +4,16 @@ import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
 import { testimonialService, Testimonial, DEFAULT_TESTIMONIALS } from '../services/testimonialService';
 import { projectService } from '../services/projectService';
 
-export const TestimonialSection: React.FC = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [projectsList, setProjectsList] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface TestimonialSectionProps {
+  projects?: any[];
+}
+
+export const TestimonialSection: React.FC<TestimonialSectionProps> = ({ projects: externalProjects }) => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(() =>
+    DEFAULT_TESTIMONIALS.map((t, idx) => ({ id: `default-${idx}`, ...t })) as Testimonial[]
+  );
+  const [projectsList, setProjectsList] = useState<any[]>(externalProjects || []);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
   const [isHovered, setIsHovered] = useState(false);
@@ -32,13 +38,17 @@ export const TestimonialSection: React.FC = () => {
     };
   }, []);
 
-  // Subscribe to project data to dynamically sync case study tags
+  // Sync projects from parent prop or subscribe only if not provided
   useEffect(() => {
+    if (externalProjects && externalProjects.length > 0) {
+      setProjectsList(externalProjects);
+      return;
+    }
     const unsubscribe = projectService.subscribeToProjects((items) => {
       setProjectsList(items);
     }, true);
     return () => unsubscribe();
-  }, []);
+  }, [externalProjects]);
 
   // Autoplay effect
   useEffect(() => {

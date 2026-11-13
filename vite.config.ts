@@ -20,6 +20,7 @@ export default defineConfig((_env) => {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
             'vendor-libs': ['motion/react', 'lucide-react', 'react-markdown'],
           },
         },
