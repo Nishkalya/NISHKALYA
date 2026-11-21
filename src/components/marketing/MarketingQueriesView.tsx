@@ -363,8 +363,8 @@ export default function MarketingQueriesView({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 w-full space-y-3">
-      {/* 3 Pipeline Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 gap-2.5 w-full font-mono shrink-0">
+      {/* 4 Pipeline Status Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full font-mono shrink-0">
         <button
           onClick={() => handlePipelineTabChange('NEW_QUERY')}
           className={`p-2.5 sm:p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-16 ${
@@ -380,6 +380,23 @@ export default function MarketingQueriesView({
           <span className={`text-lg font-bold tracking-tight ${
             pipelineTab === 'NEW_QUERY' ? (isWhite ? 'text-sky-800' : 'text-slate-900') : (isWhite ? 'text-slate-800' : 'text-slate-900')
           }`}>{newQueryCount}</span>
+        </button>
+
+        <button
+          onClick={() => handlePipelineTabChange('INPROCESS')}
+          className={`p-2.5 sm:p-3 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-16 ${
+            pipelineTab === 'INPROCESS'
+              ? (isWhite ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm' : 'bg-amber-500/10 text-amber-400 border-amber-500/60 shadow-sm')
+              : (isWhite ? 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200 shadow-sm' : 'bg-white/70 hover:bg-white text-slate-400 border-slate-800')
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider font-bold">In Process</span>
+            <span className={`w-2 h-2 rounded-full ${isWhite ? 'bg-amber-500' : 'bg-amber-400'}`}></span>
+          </div>
+          <span className={`text-lg font-bold tracking-tight ${
+            pipelineTab === 'INPROCESS' ? (isWhite ? 'text-amber-800' : 'text-slate-900') : (isWhite ? 'text-slate-800' : 'text-slate-900')
+          }`}>{inProcessCount}</span>
         </button>
 
         <button

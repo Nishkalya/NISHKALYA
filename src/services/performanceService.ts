@@ -11,8 +11,7 @@ import {
   getDocs,
   writeBatch
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { handleFirestoreError, OperationType } from './testimonialService';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 export interface PerformanceLog {
   id: string;

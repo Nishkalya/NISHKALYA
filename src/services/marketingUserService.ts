@@ -109,38 +109,6 @@ const loginAttemptTracker = new Map<string, { count: number; lockUntil: number }
 
 export const marketingUserService = {
   /**
-   * Automatically seeds the default user if it does not yet exist.
-   */
-  seedDefaultUser: async () => {
-    const defaultUsername = 'Vishal';
-    const docRef = doc(db, 'marketing_users', defaultUsername);
-    let docSnap;
-    try {
-      docSnap = await getDoc(docRef);
-    } catch (error) {
-      console.error('[MarketingUser] Error checking default user:', error);
-      handleFirestoreError(error, OperationType.GET, `marketing_users/${defaultUsername}`);
-      return;
-    }
-    
-    if (docSnap && !docSnap.exists()) {
-      try {
-        const defaultHash = await hashPassword('1234');
-        await setDoc(docRef, {
-          username: defaultUsername,
-          passwordHash: defaultHash,
-          isLocked: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      } catch (error) {
-        console.error('[MarketingUser] Error seeding default user:', error);
-        handleFirestoreError(error, OperationType.WRITE, `marketing_users/${defaultUsername}`);
-      }
-    }
-  },
-
-  /**
    * Logs in a custom marketing user with rate limiting & PBKDF2/SHA-256 verification
    */
   login: async (username: string, password: string): Promise<{ success: boolean; error?: string; user?: SafeMarketingSession }> => {
@@ -168,9 +136,10 @@ export const marketingUserService = {
 
       if (!docSnap.exists()) {
         const prevCount = (attemptState?.count || 0) + 1;
+        const lockDuration = prevCount >= 5 ? Math.min(300_000, 60_000 * Math.pow(2, prevCount - 5)) : 0;
         loginAttemptTracker.set(normalizedUser, {
           count: prevCount,
-          lockUntil: prevCount >= 5 ? now + 60_000 : 0,
+          lockUntil: lockDuration ? now + lockDuration : 0,
         });
         return { success: false, error: 'Invalid User ID or Password' };
       }
@@ -188,9 +157,10 @@ export const marketingUserService = {
       }
 
       const prevCount = (attemptState?.count || 0) + 1;
+      const lockDuration = prevCount >= 5 ? Math.min(300_000, 60_000 * Math.pow(2, prevCount - 5)) : 0;
       loginAttemptTracker.set(normalizedUser, {
         count: prevCount,
-        lockUntil: prevCount >= 5 ? now + 60_000 : 0,
+        lockUntil: lockDuration ? now + lockDuration : 0,
       });
       return { success: false, error: 'Invalid User ID or Password' };
     } catch (error) {
@@ -328,12 +298,14 @@ export const marketingUserService = {
         await deleteDoc(oldDocRef);
 
         try {
-          const sessionRaw = localStorage.getItem('marketing_user_session');
-          if (sessionRaw) {
-            const session = JSON.parse(sessionRaw);
-            if (session.username === currentUsername) {
-              session.username = targetUsername;
-              localStorage.setItem('marketing_user_session', JSON.stringify(session));
+          for (const storage of [sessionStorage, localStorage]) {
+            const sessionRaw = storage.getItem('marketing_user_session');
+            if (sessionRaw) {
+              const session = JSON.parse(sessionRaw);
+              if (session.username === currentUsername) {
+                session.username = targetUsername;
+                storage.setItem('marketing_user_session', JSON.stringify(session));
+              }
             }
           }
         } catch {
@@ -352,32 +324,6 @@ export const marketingUserService = {
     } catch (error) {
       console.error('[MarketingUser] Error updating user account:', error);
       handleFirestoreError(error, OperationType.WRITE, `marketing_users/${currentUsername}`);
-      throw error;
-    }
-  },
-
-  /**
-   * Updates an existing custom marketing user (e.g. password or lock status)
-   */
-  updateUser: async (username: string, updates: { passwordPlain?: string; isLocked?: boolean }): Promise<void> => {
-    try {
-      const docRef = doc(db, 'marketing_users', username);
-      const updateData: any = {
-        updatedAt: new Date().toISOString()
-      };
-
-      if (updates.passwordPlain !== undefined && updates.passwordPlain !== '') {
-        updateData.passwordHash = await hashPassword(updates.passwordPlain);
-      }
-
-      if (updates.isLocked !== undefined) {
-        updateData.isLocked = updates.isLocked;
-      }
-
-      await updateDoc(docRef, updateData);
-    } catch (error) {
-      console.error('[MarketingUser] Error updating user:', error);
-      handleFirestoreError(error, OperationType.UPDATE, `marketing_users/${username}`);
       throw error;
     }
   },

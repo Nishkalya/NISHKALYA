@@ -45,7 +45,7 @@ service cloud.firestore {
         isOptionalString(data, 'budget', 150) &&
         isOptionalString(data, 'timeline', 150) &&
         isOptionalString(data, 'status', 50) &&
-        isOptionalString(data, 'notes', 5000);
+        isOptionalString(data, 'notes', 500000);
     }
 
     function isValidMessageUpdate(data) {
@@ -59,7 +59,7 @@ service cloud.firestore {
         isOptionalString(data, 'timeline', 150) &&
         isOptionalString(data, 'message', 5000) &&
         isOptionalString(data, 'status', 50) &&
-        isOptionalString(data, 'notes', 5000);
+        isOptionalString(data, 'notes', 500000);
     }
 
     function isValidMarketingQuery(data) {
@@ -73,7 +73,7 @@ service cloud.firestore {
         isOptionalString(data, 'assignedTo', 100) &&
         isOptionalString(data, 'createdDate', 50) &&
         isOptionalString(data, 'description', 5000) &&
-        isOptionalString(data, 'notes', 5000);
+        isOptionalString(data, 'notes', 500000);
     }
 
     function isValidPerformanceLog(data) {
@@ -120,6 +120,10 @@ service cloud.firestore {
     }
 
     // 3. Collections
+    match /test/connection {
+      allow get: if true;
+    }
+
     match /config/{configId} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(configId);
@@ -145,14 +149,19 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow read: if true;
       allow create: if isValidId(messageId) && isValidMessage(request.resource.data);
-      allow update: if isValidId(messageId) && isValidMessageUpdate(request.resource.data);
-      allow delete: if isAdmin();
+      allow update: if isValidId(messageId) && isValidMessageUpdate(request.resource.data) && (
+        !('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt
+      );
+      allow delete: if isValidId(messageId);
     }
 
     match /marketing_queries/{queryId} {
       allow read: if true;
-      allow create, update: if isValidId(queryId) && isValidMarketingQuery(request.resource.data);
-      allow delete: if true;
+      allow create: if isValidId(queryId) && isValidMarketingQuery(request.resource.data);
+      allow update: if isValidId(queryId) && isValidMarketingQuery(request.resource.data) && (
+        !('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt
+      );
+      allow delete: if isValidId(queryId);
     }
 
     match /admins/{adminId} {
@@ -168,10 +177,7 @@ service cloud.firestore {
     match /marketing_users/{userId} {
       allow get: if isValidId(userId);
       allow list: if isAdmin();
-      allow create: if isValidId(userId) && isValidMarketingUser(request.resource.data) && (
-        (userId == 'Vishal' && !exists(/databases/$(database)/documents/marketing_users/Vishal)) ||
-        isAdmin()
-      );
+      allow create: if isAdmin() && isValidId(userId) && isValidMarketingUser(request.resource.data);
       allow update: if isAdmin() && isValidId(userId) && isValidMarketingUser(request.resource.data);
       allow delete: if isAdmin() && isValidId(userId) && userId != 'Vishal';
     }

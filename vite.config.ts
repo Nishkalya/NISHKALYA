@@ -11,6 +11,19 @@ export default defineConfig((_env) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'motion/react',
+        'lucide-react',
+        'react-markdown',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+      ],
+    },
     build: {
       sourcemap: false,
       cssCodeSplit: true,

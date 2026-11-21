@@ -108,7 +108,6 @@ import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
 import { ProjectCard } from './components/ProjectCard';
 import { PLATFORMS } from './data/platformsData';
 import { updateDynamicProjectSEO, clearDynamicProjectSEO } from './utils/seoHelper';
-import { marketingUserService } from './services/marketingUserService';
 
 const AdminPerformanceDashboard = lazy(() => import('./components/AdminPerformanceDashboard'));
 const AdminContentEditor = lazy(() => import('./components/AdminContentEditor').then(m => ({ default: m.AdminContentEditor })));
@@ -143,9 +142,9 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [adminMessages, setAdminMessages] = useState<any[]>([]);
-  const [isAdminView, setIsAdminView] = useState(false);
   const [isActionPending, setIsActionPending] = useState(false);
   const [selectedAdminMessage, setSelectedAdminMessage] = useState<any | null>(null);
+  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState(false);
 
   const [formData, setFormData] = useState(() => {
     try {
@@ -178,14 +177,11 @@ export default function App() {
   const [activePreviewUrl, setActivePreviewUrl] = useState<string | null>(null);
   const [selectedProjectForPreview, setSelectedProjectForPreview] = useState<Project | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile' | 'full'>('desktop');
-  const [isLiveViewExpanded, setIsLiveViewExpanded] = useState(false);
   const [hoveredProject, setHoveredProject] = useState<Project | null>(null);
   const [failedProjectScreenshots, setFailedProjectScreenshots] = useState<Set<string>>(new Set());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [showFullPreview, setShowFullPreview] = useState(false);
-  const [detailsTab, setDetailsTab] = useState<'details' | 'browse'>('details');
   const [currentView, setCurrentView] = useState<'home' | 'projects' | 'admin' | 'marketing'>('home');
   const [websiteConfig, setWebsiteConfig] = useState<any>(() => {
     try {
@@ -243,18 +239,6 @@ export default function App() {
   });
   const [isProjectsLoading, setIsProjectsLoading] = useState(false);
   const [activeProfilePlatform, setActiveProfilePlatform] = useState<string>('github');
-  const [adminSelectedPlatformId, setAdminSelectedPlatformId] = useState<string>('github');
-
-  // Custom Platform states to avoid iframe window.prompt / window.confirm issues:
-  const [showAddPlatformForm, setShowAddPlatformForm] = useState(false);
-  const [newPlatformName, setNewPlatformName] = useState('');
-  const [newPlatformDesc, setNewPlatformDesc] = useState('');
-  const [newPlatformIcon, setNewPlatformIcon] = useState('link');
-  const [platformIdToDelete, setPlatformIdToDelete] = useState<string | null>(null);
-  const [itemIdToDelete, setItemIdToDelete] = useState<string | null>(null);
-  const [activeTagInputItemId, setActiveTagInputItemId] = useState<string | null>(null);
-  const [newTagName, setNewTagName] = useState('');
-  const [serviceIndexToDelete, setServiceIndexToDelete] = useState<number | null>(null);
   const [themeMode, setThemeMode] = useState<'dark' | 'white' | 'personal'>('white');
   const [activeContentSection, setActiveContentSection] = useState<'hero' | 'theme' | 'about' | 'services' | 'platforms' | 'projects' | 'testimonials' | 'process' | 'techStack'>('hero');
 
@@ -525,18 +509,14 @@ export default function App() {
   }, [projects, isProjectsLoading]);
 
   useEffect(() => {
-    if (currentView !== 'marketing' && currentView !== 'admin') return;
-    marketingUserService.seedDefaultUser().catch(err => {
-      console.warn("Marketing user seeding bypassed or already initialized.", err);
-    });
-  }, [currentView]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('contact_form_draft', JSON.stringify(formData));
-    } catch (e) {
-      console.error("Failed to save contact form draft", e);
-    }
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('contact_form_draft', JSON.stringify(formData));
+      } catch (e) {
+        console.error("Failed to save contact form draft", e);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [formData.name, formData.email, formData.company, formData.service, formData.message]);
 
   const sanitizeHtml = (rawHtml: string) => {
@@ -878,24 +858,6 @@ export default function App() {
         </div>
       );
     }
-
-    const updateConfig = async (newConfig: any) => {
-      setIsActionPending(true);
-      try {
-        const sanitizedConfig = { ...newConfig };
-        if (sanitizedConfig.platforms) {
-          sanitizedConfig.platforms = sanitizedConfig.platforms.map((platform: any) => {
-            const { icon, ...rest } = platform;
-            return rest;
-          });
-        }
-        await setDoc(doc(db, 'config', 'website'), sanitizedConfig);
-      } catch (err) {
-        console.error("Failed to update config", err);
-      } finally {
-        setIsActionPending(false);
-      }
-    };
 
     // Fast, responsive, focus-safe content editor draft states
     const editorConfig = localConfig || websiteConfig || DEFAULT_CONFIG;
@@ -1414,7 +1376,6 @@ export default function App() {
 
   const AdminMessageModal = ({ message, onClose }: { message: any, onClose: () => void }) => {
     if (!message) return null;
-    const [confirmDeleteMessage, setConfirmDeleteMessage] = useState(false);
 
     return (
       <AnimatePresence>
@@ -1730,7 +1691,7 @@ export default function App() {
   const [testimonialToDelete, setTestimonialToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || currentView !== 'admin') return;
     const unsubscribe = testimonialService.subscribeToTestimonials((items) => {
       setAdminTestimonials(items);
       if (items.length === 0 && currentUser?.email === 'nishkalya@gmail.com') {
@@ -1740,7 +1701,7 @@ export default function App() {
     return () => {
       unsubscribe();
     };
-  }, [isAdmin, currentUser]);
+  }, [isAdmin, currentUser, currentView]);
 
   const handleAddTestimonial = () => {
     setTestimonialModal({
@@ -2007,11 +1968,7 @@ export default function App() {
         </div>
       )}
       <ServiceModal service={selectedService} onClose={() => setSelectedService(null)} />
-      <AdminMessageModal message={selectedAdminMessage} onClose={() => setSelectedAdminMessage(null)} />
-      
-      {/* Ambient Background Accents */}
-      <div className={`fixed top-[-10%] right-[-10%] w-[800px] h-[800px] bg-[#58a6ff]/3 rounded-full blur-[140px] pointer-events-none z-0 ${currentUser?.email === 'nishkalya@gmail.com' && currentView !== 'admin' ? 'translate-y-8' : ''}`}></div>
-      <div className="fixed bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#238636]/2 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <AdminMessageModal message={selectedAdminMessage} onClose={() => { setSelectedAdminMessage(null); setConfirmDeleteMessage(false); }} />
 
       {/* Navigation (hidden after admin login or in marketing ERP dashboard per user request) */}
       <nav className={`fixed left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 transition-all duration-300 top-0 ${(currentView === 'admin' || (currentView === 'marketing' && Boolean(marketingUser)) || currentUser?.email === 'nishkalya@gmail.com' || isAdmin) ? 'hidden' : ''}`}>
@@ -3467,7 +3424,15 @@ export default function App() {
                             Mechanical & <span className="italic">Architectural</span> Vision
                           </h3>
                           <div className="markdown-body text-slate-600 text-sm md:text-base leading-relaxed font-light">
-                            <ReactMarkdown>{selectedProjectForPreview.fullDetails?.overview || ''}</ReactMarkdown>
+                            <ReactMarkdown
+                              urlTransform={(url) => {
+                                const trimmed = (url || '').trim();
+                                if (/^(https?:\/\/|mailto:|#|\/)/i.test(trimmed)) return trimmed;
+                                return '';
+                              }}
+                            >
+                              {selectedProjectForPreview.fullDetails?.overview || ''}
+                            </ReactMarkdown>
                           </div>
                         </section>
 
@@ -3690,10 +3655,10 @@ export default function App() {
               </div>
 
               <div className="flex gap-4 sm:gap-6 mt-12 md:mt-16">
-                 <a href="https://github.com/Nishkalya" target="_blank" rel="noreferrer" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Github size={16} /></a>
-                 <a href="#" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Linkedin size={16} /></a>
-                 <a href="#" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Twitter size={16} /></a>
-                 <a href="#" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Dribbble size={16} /></a>
+                 <a href="https://github.com/Nishkalya" target="_blank" rel="noreferrer" aria-label="GitHub" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Github size={16} /></a>
+                 <a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Linkedin size={16} /></a>
+                 <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="Twitter" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Twitter size={16} /></a>
+                 <a href="https://dribbble.com" target="_blank" rel="noreferrer" aria-label="Dribbble" className="w-10 h-10 border border-slate-200 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"><Dribbble size={16} /></a>
               </div>
             </motion.div>
 
@@ -3845,9 +3810,9 @@ export default function App() {
               <p className="text-slate-500 text-sm font-light leading-relaxed mb-6">We craft next-generation products at the intersection of AI and stunning design. Built for impact, designed for the future.</p>
               <div className="flex flex-wrap gap-4">
                 <a href="https://github.com/Nishkalya" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">GitHub</a>
-                <a href="#" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">𝕏 (Twitter)</a>
-                <a href="#" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">LinkedIn</a>
-                <a href="#" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">Dribbble</a>
+                <a href="https://x.com" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">𝕏 (Twitter)</a>
+                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">LinkedIn</a>
+                <a href="https://dribbble.com" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors text-[9px] font-bold uppercase tracking-widest font-mono">Dribbble</a>
               </div>
             </div>
             
@@ -3864,9 +3829,9 @@ export default function App() {
               <div className="space-y-3 md:space-y-4">
                 <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 font-mono">Social</div>
                 <a href="https://github.com/Nishkalya" target="_blank" rel="noreferrer" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">GitHub</a>
-                <a href="#" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">LinkedIn</a>
-                <a href="#" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">Dribbble</a>
-                <a href="#" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">Instagram</a>
+                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">LinkedIn</a>
+                <a href="https://dribbble.com" target="_blank" rel="noreferrer" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">Dribbble</a>
+                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="block text-slate-500 hover:text-blue-600 text-xs md:text-sm transition-colors font-light">Instagram</a>
               </div>
             </div>
           </div>

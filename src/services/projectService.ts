@@ -1,18 +1,12 @@
 import { 
   collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
   doc, 
   query, 
   orderBy, 
   onSnapshot,
-  serverTimestamp,
-  getDoc,
-  getDocs,
-  where
+  getDoc
 } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { db } from '../lib/firebase';
 
 export interface Project {
   id: string;
@@ -46,56 +40,17 @@ const ADMINS_COLLECTION = 'admins';
 
 export const projectService = {
   subscribeToProjects: (callback: (projects: Project[]) => void, onlyActive = true) => {
-    const q = onlyActive 
-      ? query(collection(db, PROJECTS_COLLECTION), where('isActive', '==', true), orderBy('createdAt', 'desc'))
-      : query(collection(db, PROJECTS_COLLECTION), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, PROJECTS_COLLECTION), orderBy('order', 'asc'));
     
     return onSnapshot(q, (snapshot) => {
-      const projects = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const projects = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
       })) as Project[];
-      callback(projects);
+      callback(onlyActive ? projects.filter(p => p.isActive !== false) : projects);
     }, (error) => {
       console.error("Error subscribing to projects:", error);
     });
-  },
-
-  addProject: async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const docRef = await addDoc(collection(db, PROJECTS_COLLECTION), {
-        ...project,
-        isActive: project.isActive ?? true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      return docRef.id;
-    } catch (error) {
-      console.error("Error adding project:", error);
-      throw error;
-    }
-  },
-
-  updateProject: async (id: string, project: Partial<Project>) => {
-    try {
-      const docRef = doc(db, PROJECTS_COLLECTION, id);
-      await updateDoc(docRef, {
-        ...project,
-        updatedAt: serverTimestamp()
-      });
-    } catch (error) {
-      console.error("Error updating project:", error);
-      throw error;
-    }
-  },
-
-  deleteProject: async (id: string) => {
-    try {
-      await deleteDoc(doc(db, PROJECTS_COLLECTION, id));
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      throw error;
-    }
   },
 
   checkIsAdmin: async (uid: string) => {
@@ -109,3 +64,4 @@ export const projectService = {
     }
   }
 };
+

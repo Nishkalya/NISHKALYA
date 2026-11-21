@@ -9,20 +9,19 @@ async function startServer() {
 
   app.disable("x-powered-by");
 
-  // Lightweight in-memory rate limiter per IP (120 requests per 60s window for dynamic routes)
+  // Lightweight in-memory rate limiter per IP for API/mutation routes
   const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
   const RATE_LIMIT_WINDOW_MS = 60_000;
-  const RATE_LIMIT_MAX = 120;
+  const RATE_LIMIT_MAX = 600;
 
-  // Apply comprehensive HTTP security headers, CORS validation, and rate limiting
+  // Apply HTTP security headers, CORS validation, and rate limiting
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("X-XSS-Protection", "0");
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'self' https://*.google.com https://*.run.app;");
 
     // Strict CORS validation: only reflect trusted same-origin or AI Studio preview origins
     const origin = req.headers.origin;
@@ -35,6 +34,7 @@ async function startServer() {
           parsedOrigin.hostname === "nishkalya.studio" ||
           parsedOrigin.hostname.endsWith(".nishkalya.studio") ||
           parsedOrigin.hostname.endsWith(".run.app") ||
+          parsedOrigin.hostname.endsWith(".google.com") ||
           parsedOrigin.hostname === "localhost" ||
           parsedOrigin.hostname === "127.0.0.1";
 
@@ -53,8 +53,13 @@ async function startServer() {
       return res.status(204).end();
     }
 
-    // Rate limit non-static asset requests
-    if (!req.path.startsWith("/assets/") && !req.path.startsWith("/node_modules/") && !req.path.startsWith("/src/")) {
+    // Rate limit API / non-Vite requests
+    if (
+      !req.path.startsWith("/assets/") &&
+      !req.path.startsWith("/node_modules/") &&
+      !req.path.startsWith("/src/") &&
+      !req.path.startsWith("/@")
+    ) {
       const forwarded = req.headers["x-forwarded-for"];
       const clientIp = (typeof forwarded === "string" ? forwarded.split(",")[0] : req.socket.remoteAddress || "unknown").trim();
       const now = Date.now();
@@ -130,9 +135,14 @@ Sitemap: ${baseUrl}/sitemap.xml
 
   let vite: any;
   let cachedProdHtml: string | null = null;
+  let cachedDevHtml: string | null = null;
   if (process.env.NODE_ENV !== "production") {
     vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+        watch: null,
+      },
       appType: "custom", // Use custom to control the index.html routing
     });
     app.use(vite.middlewares);
@@ -162,11 +172,14 @@ Sitemap: ${baseUrl}/sitemap.xml
       const baseUrl = getBaseUrl(req);
 
       if (process.env.NODE_ENV !== "production") {
-        const rawHtmlPath = path.resolve(process.cwd(), 'index.html');
-        if (fs.existsSync(rawHtmlPath)) {
-          html = fs.readFileSync(rawHtmlPath, 'utf8');
-          // Let Vite rewrite scripts etc.
-          html = await vite.transformIndexHtml(req.originalUrl, html);
+        if (!cachedDevHtml) {
+          const rawHtmlPath = path.resolve(process.cwd(), 'index.html');
+          if (fs.existsSync(rawHtmlPath)) {
+            cachedDevHtml = fs.readFileSync(rawHtmlPath, 'utf8');
+          }
+        }
+        if (cachedDevHtml) {
+          html = await vite.transformIndexHtml(req.originalUrl, cachedDevHtml);
         } else {
           return res.status(404).send("index.html not found");
         }

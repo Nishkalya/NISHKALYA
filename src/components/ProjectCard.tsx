@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { Github, ExternalLink, Cpu } from 'lucide-react';
 import { Project } from '../services/projectService';
@@ -10,52 +10,52 @@ interface ProjectCardProps {
   setHoveredProject: (p: Project | null) => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({
+export const ProjectCard: React.FC<ProjectCardProps> = React.memo(({
   project,
   index,
   onClick,
   setHoveredProject,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
-  
-  // States for interactive 3D Tilt and custom holographic glint reflection
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-  const [glintX, setGlintX] = useState(50);
-  const [glintY, setGlintY] = useState(50);
-  const [isHovered, setIsHovered] = useState(false);
+  const glintRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
-    const card = cardRef.current;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
 
-    // Convert positions to percentages for custom glint style
-    const glintPercentX = (x / rect.width) * 100;
-    const glintPercentY = (y / rect.height) * 100;
-    setGlintX(glintPercentX);
-    setGlintY(glintPercentY);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const card = cardRef.current;
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
 
-    // Subtle 3D tilt: max 10 degrees to keep it professional but responsive
-    const tiltX = -((y / rect.height) - 0.5) * 12;
-    const tiltY = ((x / rect.width) - 0.5) * 12;
-    setRotateX(tiltX);
-    setRotateY(tiltY);
+      const glintPercentX = (x / rect.width) * 100;
+      const glintPercentY = (y / rect.height) * 100;
+      const tiltX = -((y / rect.height) - 0.5) * 10;
+      const tiltY = ((x / rect.width) - 0.5) * 10;
+
+      card.style.transform = `perspective(1200px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) translateY(-6px)`;
+      card.style.transition = 'none';
+      if (glintRef.current) {
+        glintRef.current.style.background = `radial-gradient(circle at ${glintPercentX.toFixed(1)}% ${glintPercentY.toFixed(1)}%, rgba(88, 166, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 35%, transparent 70%)`;
+      }
+    });
   };
 
   const handleMouseEnter = () => {
-    setIsHovered(true);
     setHoveredProject(project);
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
-    setRotateX(0);
-    setRotateY(0);
-    setGlintX(50);
-    setGlintY(50);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (cardRef.current) {
+      cardRef.current.style.transition = 'transform 260ms cubic-bezier(0.25, 1, 0.5, 1)';
+      cardRef.current.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+    }
     setHoveredProject(null);
   };
 
@@ -87,9 +87,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
+      transition={{ delay: Math.min(index * 0.04, 0.2), duration: 0.28 }}
       className="perspective-[1200px]"
     >
       <div
@@ -100,17 +100,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         onClick={onClick}
         id={`project-card-${project.id}`}
         style={{
-          transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(${isHovered ? '-8px' : '0px'})`,
-          transition: isHovered ? 'none' : 'transform 300ms cubic-bezier(0.25, 1, 0.5, 1)',
+          transform: 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateY(0px)',
+          transition: 'transform 260ms cubic-bezier(0.25, 1, 0.5, 1)',
         }}
         className="relative overflow-hidden cursor-pointer select-none rounded-[24px] bg-gradient-to-br from-white via-slate-50 to-blue-50/30 border border-slate-200 hover:border-blue-400/60 shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_10px_30px_rgba(37,99,235,0.12)] flex flex-col justify-between p-6 h-[460px] md:h-[480px] w-full max-w-sm mx-auto group duration-300"
       >
         {/* Holographic light sweep / moving reflection overlay */}
         <div 
+          ref={glintRef}
           className="absolute inset-0 pointer-events-none z-10 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-          style={{
-            background: `radial-gradient(circle at ${glintX}% ${glintY}%, rgba(88, 166, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 35%, transparent 70%)`
-          }}
         />
 
         {/* Diagonal high-end metallic/holographic reflection line sweep */}
@@ -227,4 +225,4 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       </div>
     </motion.div>
   );
-};
+});

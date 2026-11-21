@@ -89,11 +89,6 @@ interface MarketingPageProps {
   onExitPortal?: () => void;
 }
 
-// Default Seed Datasets (initialized empty to start from 0 records)
-const DEFAULT_INBOX_TICKETS: InboxTicket[] = [];
-
-const DEFAULT_QUERY_RECORDS: QueryRecord[] = [];
-
 export default function MarketingPage({ marketingUser, setMarketingUser, onOpenAdmin, onExitPortal }: MarketingPageProps) {
   // Login states
   const [username, setUsername] = useState('');
@@ -141,37 +136,6 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
   // Form states for creating or editing entries
   const [editFormValues, setEditFormValues] = useState<any>({});
   const [addFormValues, setAddFormValues] = useState<any>({});
-  const [queryNotesText, setQueryNotesText] = useState<Record<string, string>>({});
-
-  // Clear all data table records and start from 0
-  const handleClearAllData = async () => {
-    try {
-      const q = collection(db, 'marketing_queries');
-      const snap = await getDocs(q);
-      const batchPromises = snap.docs.map(d => deleteDoc(doc(db, 'marketing_queries', d.id)));
-      await Promise.all(batchPromises);
-    } catch (e) {
-      console.error("Failed to clear queries in Firestore:", e);
-    }
-    setQueryRecords([]);
-    setSelectedQuery(null);
-    localStorage.removeItem('nishkalya_marketing_queries');
-
-    if (activeModule === 'inbox') {
-      try {
-        const qMsg = collection(db, 'messages');
-        const snapMsg = await getDocs(qMsg);
-        const batchMsg = snapMsg.docs.map(d => deleteDoc(doc(db, 'messages', d.id)));
-        await Promise.all(batchMsg);
-      } catch (e) {
-        console.error("Failed to clear messages in Firestore:", e);
-      }
-      setInboxTickets([]);
-      setSelectedTicket(null);
-      localStorage.removeItem('nishkalya_marketing_inbox');
-    }
-    setCurrentPage(1);
-  };
 
   // Real-time Firestore synchronization for Marketing Queries
   useEffect(() => {
@@ -180,6 +144,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
       const unsubscribe = onSnapshot(q, (snapshot) => {
         if (snapshot.empty) {
           setQueryRecords([]);
+          setSelectedQuery(null);
           return;
         }
 
@@ -216,11 +181,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
         setQueryRecords(queries);
 
-        // Live update active selection
+        // Live update active selection only if a query is already open in detail view
         setSelectedQuery(prev => {
-          if (!prev) return queries.length > 0 ? queries[0] : null;
-          const matching = queries.find(q => q.id === prev.id);
-          return matching || (queries.length > 0 ? queries[0] : null);
+          if (!prev) return null;
+          return queries.find(q => q.id === prev.id) || null;
         });
       }, (error) => {
         console.error('Firestore marketing_queries subscribe error:', error);
@@ -238,13 +202,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           const data = docSnap.data();
           
           let currentStatus: 'New Query' | 'In Process' | 'Won' | 'Lost' = 'New Query';
-          if (data.status === 'unread' || data.status === 'Open' || data.status === 'New') {
+          if (data.status === 'unread' || data.status === 'Open' || data.status === 'New' || data.status === 'New Query') {
             currentStatus = 'New Query';
           } else if (data.status === 'read' || data.status === 'In Progress' || data.status === 'In Process' || data.status === 'Investigating' || data.status === 'Escalated') {
             currentStatus = 'In Process';
-          } else if (data.status === 'Closed' || data.status === 'Resolved' || data.status === 'Won') {
+          } else if (data.status === 'Closed' || data.status === 'Resolved' || data.status === 'Won' || data.status === 'won') {
             currentStatus = 'Won';
-          } else if (data.status === 'Lost') {
+          } else if (data.status === 'Lost' || data.status === 'lost') {
             currentStatus = 'Lost';
           }
 
@@ -274,11 +238,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
         setInboxTickets(msgs);
 
-        // Live update active selection
+        // Live update active selection if modal/selection is active
         setSelectedTicket(prev => {
           if (!prev) return msgs.length > 0 ? msgs[0] : null;
-          const matching = msgs.find(m => m.id === prev.id);
-          return matching || (msgs.length > 0 ? msgs[0] : null);
+          return msgs.find(m => m.id === prev.id) || null;
         });
       }, (error) => {
         console.error('Firestore messages subscribe error:', error);
@@ -288,29 +251,16 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     }
   }, [marketingUser]);
 
-  // Set selected query default/active entry on module selection
+  // Reset search, filters, sorting, and pagination only when switching modules
   useEffect(() => {
-    if (activeModule === 'queries') {
-      if (queryRecords.length > 0 && !selectedQuery) {
-        setSelectedQuery(queryRecords[0]);
-      } else if (queryRecords.length === 0) {
-        setSelectedQuery(null);
-      }
-    }
-    if (activeModule === 'inbox') {
-      if (inboxTickets.length > 0 && !selectedTicket) {
-        setSelectedTicket(inboxTickets[0]);
-      } else if (inboxTickets.length === 0) {
-        setSelectedTicket(null);
-      }
-    }
-    // Reset search, filters, sorting, and pagination when switching modules
+    setSelectedQuery(null);
+    setShowViewModal(false);
     setSearchTerm('');
     setStatusFilter('all');
     setSortField('');
     setSortDirection('asc');
     setCurrentPage(1);
-  }, [activeModule, queryRecords, inboxTickets]);
+  }, [activeModule]);
 
   // Auth Functions
   const handleLogin = async (e: React.FormEvent) => {
@@ -364,17 +314,13 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
 
   const getProcessedData = () => {
     if (activeModule === 'inbox') {
-      let filtered = [...inboxTickets]; // Use the full set of tickets, not the pre-filtered active ones
+      let filtered = [...inboxTickets];
 
-      // Pipeline Filter (Primary Selection)
-      if (pipelineTab === 'NEW_QUERY') {
+      // Status Filter matching (defaults to showing New Query tickets unless user selects a specific status filter or searches)
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(ticket => ticket.status === statusFilter);
+      } else if (searchTerm.trim() === '') {
         filtered = filtered.filter(ticket => ticket.status === 'New Query');
-      } else if (pipelineTab === 'INPROCESS') {
-        filtered = filtered.filter(ticket => ticket.status === 'In Process');
-      } else if (pipelineTab === 'WON') {
-        filtered = filtered.filter(ticket => ticket.status === 'Won');
-      } else if (pipelineTab === 'LOST') {
-        filtered = filtered.filter(ticket => ticket.status === 'Lost');
       }
 
       // Search Box matcher
@@ -391,16 +337,11 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         );
       }
 
-      // Status Filter matching
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(ticket => ticket.status === statusFilter);
-      }
-
       // Column Sorting
       if (sortField) {
         filtered.sort((a: any, b: any) => {
-          let valA = a[sortField]?.toString().toLowerCase() || '';
-          let valB = b[sortField]?.toString().toLowerCase() || '';
+          const valA = a[sortField]?.toString().toLowerCase() || '';
+          const valB = b[sortField]?.toString().toLowerCase() || '';
           
           if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
           if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
@@ -443,8 +384,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
       // Column Sorting
       if (sortField) {
         filtered.sort((a: any, b: any) => {
-          let valA = a[sortField]?.toString().toLowerCase() || '';
-          let valB = b[sortField]?.toString().toLowerCase() || '';
+          const valA = a[sortField]?.toString().toLowerCase() || '';
+          const valB = b[sortField]?.toString().toLowerCase() || '';
           
           if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
           if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
@@ -508,6 +449,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           dbStatus = 'unread';
         } else if (dbStatus === 'In Process') {
           dbStatus = 'read';
+        } else if (dbStatus === 'Lost') {
+          dbStatus = 'lost';
         }
 
         await updateDoc(docRef, {
@@ -518,6 +461,15 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           status: dbStatus,
           updatedAt: serverTimestamp()
         });
+        setSelectedTicket(prev => prev ? {
+          ...prev,
+          name: editFormValues.name || prev.name,
+          email: editFormValues.email || prev.email,
+          subject: editFormValues.subject || prev.subject,
+          service: editFormValues.subject || prev.service,
+          message: editFormValues.message || prev.message,
+          status: editFormValues.status || prev.status
+        } : null);
       } catch (err) {
         console.error("Failed to update message in Firestore:", err);
       }
@@ -580,6 +532,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         let dbStatus = statusVal as string;
         if (dbStatus === 'New Query') dbStatus = 'unread';
         else if (dbStatus === 'In Process') dbStatus = 'read';
+        else if (dbStatus === 'Lost') dbStatus = 'lost';
 
         await updateDoc(docRef, { status: dbStatus, updatedAt: serverTimestamp() });
         setSelectedTicket({
@@ -656,14 +609,15 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     try {
       await setDoc(doc(db, 'marketing_queries', newId), newQueryData);
       const docRef = doc(db, 'messages', ticket.id);
-      let dbStatus = statusVal === 'Lost' ? 'lost' : 'read';
+      const dbStatus = statusVal === 'Lost' ? 'lost' : 'read';
       await updateDoc(docRef, { status: dbStatus, updatedAt: serverTimestamp() });
     } catch (err) {
       console.error("Failed to update message status during conversion:", err);
     }
 
-    setActiveModule('queries');
+    setPipelineTab(statusVal === 'Lost' ? 'LOST' : 'NEW_QUERY');
     setShowViewModal(false);
+    setActiveModule('queries');
   };
 
   // Actions: Create (Add)
@@ -686,7 +640,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
         customerName: '',
         category: 'Enterprise AI',
         priority: 'Medium',
-        assignedTo: 'Vishal',
+        assignedTo: marketingUser?.username || 'Vishal',
         createdDate: new Date().toISOString().split('T')[0],
         status: 'New Query',
         description: ''
@@ -704,6 +658,8 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           dbStatus = 'unread';
         } else if (dbStatus === 'In Process') {
           dbStatus = 'read';
+        } else if (dbStatus === 'Lost') {
+          dbStatus = 'lost';
         }
 
         const docRef = await addDoc(collection(db, 'messages'), {
@@ -715,7 +671,6 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           createdAt: serverTimestamp()
         });
 
-        // Setup temporary view select
         const newTicket: InboxTicket = {
           id: docRef.id,
           name: addFormValues.name || 'Anonymous',
@@ -732,11 +687,12 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
     } else {
       try {
         const newId = addFormValues.id || `QRY-${Math.floor(1000 + Math.random() * 9000)}`;
+        const targetStatus = addFormValues.status || 'New Query';
         const queryData = {
           customerName: addFormValues.customerName || 'Anonymous',
           category: addFormValues.category || 'General Inquiry',
           priority: addFormValues.priority || 'Medium',
-          status: addFormValues.status || 'New Query',
+          status: targetStatus,
           assignedTo: addFormValues.assignedTo || marketingUser?.username || 'Vishal',
           createdDate: addFormValues.createdDate || new Date().toISOString().split('T')[0],
           description: addFormValues.description || '',
@@ -744,7 +700,10 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
           createdAt: serverTimestamp()
         };
         await setDoc(doc(db, 'marketing_queries', newId), queryData);
-        setSelectedQuery({ id: newId, ...queryData } as any);
+        if (targetStatus === 'New Query') setPipelineTab('NEW_QUERY');
+        else if (targetStatus === 'In Process') setPipelineTab('INPROCESS');
+        else if (targetStatus === 'Won') setPipelineTab('WON');
+        else if (targetStatus === 'Lost') setPipelineTab('LOST');
       } catch (err) {
         console.error("Failed to add query to Firestore:", err);
       }
@@ -827,7 +786,7 @@ export default function MarketingPage({ marketingUser, setMarketingUser, onOpenA
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full mt-2 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg ${portalTheme === 'white' ? 'bg-sky-600 hover:bg-sky-700 text-slate-900 shadow-sky-600/20' : 'bg-[#1f6feb] hover:bg-[#238636] text-white hover:shadow-emerald-950/20'}`}
+                className={`w-full mt-2 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg ${portalTheme === 'white' ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20' : 'bg-[#1f6feb] hover:bg-[#238636] text-white hover:shadow-emerald-950/20'}`}
               >
                 {isSubmitting ? (
                   <span className="inline-block animate-pulse">Authenticating...</span>

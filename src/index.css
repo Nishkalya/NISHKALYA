@@ -339,12 +339,12 @@ input:focus, textarea:focus, select:focus {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #161b22;
+  background: var(--bg-panel);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #30363d;
-  @apply rounded-full hover:bg-slate-200 transition-colors;
+  background: var(--border-color);
+  @apply rounded-full hover:bg-slate-300 transition-colors;
 }
 
 @layer utilities {

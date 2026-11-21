@@ -277,51 +277,47 @@ export default function NotesAndDetailsWidget({
   };
 
   // 3. FILE ATTACHMENT HANDLERS
-  const processFiles = (files: FileList | null) => {
+  const processFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const newFiles: AttachedFile[] = [];
 
-    Array.from(files).forEach(file => {
+    const readSingleFile = (file: File, index: number): Promise<AttachedFile> => {
       const sizeStr = file.size > 1024 * 1024 
         ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-        : `${Math.round(file.size / 1024)} KB`;
+        : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+      const baseAttachment: AttachedFile = {
+        id: `FILE-${Date.now()}-${index}-${Math.floor(100 + Math.random() * 900)}`,
+        name: file.name,
+        size: sizeStr,
+        type: file.type || 'application/octet-stream',
+        uploadedAt: new Date().toLocaleDateString()
+      };
 
-      // Read small files as dataUrl for preview/download
-      if (file.size < 3 * 1024 * 1024) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const attached: AttachedFile = {
-            id: `FILE-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
-            name: file.name,
-            size: sizeStr,
-            type: file.type || 'application/octet-stream',
-            dataUrl: event.target?.result as string,
-            uploadedAt: new Date().toLocaleDateString()
+      // Embed dataUrl only for files under 250KB so Firestore documents stay well within the 1MB limit
+      if (file.size <= 250 * 1024) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            resolve({
+              ...baseAttachment,
+              dataUrl: event.target?.result as string
+            });
           };
-          updateNotesField({
-            ...data,
-            attachedFiles: [attached, ...data.attachedFiles]
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        const attached: AttachedFile = {
-          id: `FILE-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
-          name: file.name,
-          size: sizeStr,
-          type: file.type || 'application/octet-stream',
-          uploadedAt: new Date().toLocaleDateString()
-        };
-        newFiles.push(attached);
+          reader.onerror = () => resolve(baseAttachment);
+          reader.readAsDataURL(file);
+        });
       }
-    });
 
-    if (newFiles.length > 0) {
-      updateNotesField({
-        ...data,
-        attachedFiles: [...newFiles, ...data.attachedFiles]
-      });
-    }
+      return Promise.resolve(baseAttachment);
+    };
+
+    const uploadedAttachments = await Promise.all(
+      Array.from(files).map((file, idx) => readSingleFile(file, idx))
+    );
+
+    await updateNotesField({
+      ...data,
+      attachedFiles: [...uploadedAttachments, ...data.attachedFiles]
+    });
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

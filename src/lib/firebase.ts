@@ -5,7 +5,7 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
+  experimentalAutoDetectLongPolling: true,
 }, firebaseConfig.firestoreDatabaseId); // Use the explicit database ID to connect to the correct provisioned instance
 export const auth = getAuth(app);
 
@@ -18,7 +18,9 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+if (typeof window !== 'undefined') {
+  setTimeout(testConnection, 2000);
+}
 
 export enum OperationType {
   CREATE = 'create',

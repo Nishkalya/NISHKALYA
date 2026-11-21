@@ -150,7 +150,7 @@ export default function AdminUserManagement() {
   const handleToggleLock = async (user: MarketingUser) => {
     try {
       const nextLockState = !user.isLocked;
-      await marketingUserService.updateUser(user.username, { isLocked: nextLockState });
+      await marketingUserService.editUserAccount(user.username, { isLocked: nextLockState });
       showFeedback('success', `User "${user.username}" ${nextLockState ? 'locked' : 'unlocked'}.`);
       fetchUsers();
     } catch (error) {
